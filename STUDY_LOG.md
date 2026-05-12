@@ -1,73 +1,56 @@
-# STUDY_LOG.md
+# Study Log — AI PM Curriculum
 
-> Append-only journal of every learning session. Newest entries at the top. **Never edit a past entry** — if you need to correct something, append a new entry today with the correction. The file lives in your `ai-pm-portfolio` git repo; every update is committed.
-
----
-
-## Header (update on each session)
-
-- **Track:** [Speed Run / Foundation Sprint / Builder / Practitioner / FAANG-Ready]
-- **Target end date:** YYYY-MM-DD
-- **Days into track:** 0 / TOTAL
-- **Total sessions logged:** 0
-- **Streak (consecutive sessions with clean BOOT + close):** 0
-- **Last session date:** —
-- **Currently in:** Phase 0 — Builder's Toolkit (placeholder)
+> Append-only history of every learning session. Newest entries at the top. **Never edit a past entry.** If a past entry was wrong, append a correction entry today with a note. The error stays visible; the correction is dated.
+>
+> Authority rank: `STUDY_LOG.md` (this file) > `PROGRESS.md` (derived snapshot) > project memory > unverified claim.
 
 ---
 
-## Session entries (newest at top)
-
-### Template for each entry — copy this block, fill it, paste it above the last entry
-
-```
-## YYYY-MM-DD HH:MM — Session N
-- Boot source: [STUDY_LOG paste / past chat / RESUME reconstruction]
-- Phase / Module / Lesson worked on:
-- Lessons completed today:
-- Artifacts produced (with repo paths):
-- Decisions made (with rationale):
-- Checkpoints during session: [count]
-- Open commitments going into next session:
-- Weak areas surfaced:
-- Refresh / audit ran? [if applicable]
-- Time spent: [minutes]
-- Energy / pacing read: [low / medium / high]
-- Notes for next session:
-```
+**Streak:** 1 consecutive session with clean boot + close
+**Last session date:** 2026-05-12
+**Total sessions logged:** 1
 
 ---
 
-## Correction protocol
+## 2026-05-12 — Session 1
 
-If a past entry was wrong, do NOT edit it. Instead, append a new entry like:
-
-```
-## YYYY-MM-DD HH:MM — Correction
-- Correcting entry from: YYYY-MM-DD
-- What was claimed:
-- What was actually true:
-- Reason for correction:
-- Updated PROGRESS.md to reflect: [yes/no]
-```
-
-The original (wrong) entry stays in the log. The correction is dated. Git history preserves both. This is the audit trail.
+- **Boot source:** First session — no prior log; ran 5-question intake instead of BOOT
+- **Phase / Module / Lesson worked on:** Phase 0 (Builder's Toolkit) / Module 0.1 / Lesson 1 — The non-coder's mental model of software
+- **Lessons completed today:**
+  - Lesson 1 — The non-coder's mental model of software (passed review at 18/25, greenlit)
+- **Artifacts produced:**
+  - `phase-0-foundations/01-software-mental-model.md` — 1-page cheat sheet covering Program, Runtime, Library, Framework, Package, Client/Server, API, JSON, Terminal + e-commerce sequence diagram + walkthrough
+- **Decisions made:**
+  - Track chosen: 240-day FAANG-Ready Track (8–10 hrs/week across 5 weekdays)
+  - Goal: FAANG / top-AI-startup AI PM role + portfolio building (intake answers (a) + (c))
+  - Phase 0 (Builder's Toolkit) confirmed mandatory based on intake — no terminal comfort, no prior LLM API calls, partial Git CLI experience
+  - Folder structure standardized: open the inner `ai-pm-portfolio/` repo as the VS Code workspace; phase artifacts live in `phase-N-*/` subfolders; nested duplicate-name folder (outer `AI-PM-PORTFOLIO/`) deprecated
+  - Coding stance: prefer no-code where possible; Claude-generated code where not; will not need to write production Python from scratch but will need to read and modify it by Phase 2
+  - Editor for Phase 0: TBD next session (Cursor vs VS Code — Cursor recommended, decision deferred to Lesson 2)
+- **Checkpoints during session:** 1 (Lesson 1 close)
+- **Open commitments going into next session:**
+  - Confirm GitHub username and that `ai-pm-portfolio` repo exists publicly
+  - Decide Cursor vs VS Code before Lesson 2
+  - Apply two minor unblocking fixes to Lesson 1 artifact (move Django/Flask example to Framework entry; refine JSON definition to include "human-readable AND machine-parseable")
+- **Weak areas surfaced:**
+  - Why a virtual environment exists (carried forward to Lesson 2)
+  - How Git commit / push works mechanically (carried forward to Lesson 5)
+  - Tendency to skip examples in definitions when filling out templates — pattern flagged for future artifacts
+  - Tendency to paste templates and edit inside them rather than re-typing — minor habit to watch
+- **Refresh / audit ran?** N/A (Session 1)
+- **Time spent:** ~75 minutes (intake + Lesson 1 + 2 review cycles)
+- **Energy / pacing read:** Medium. Took two review cycles to clear Lesson 1 — this is normal and the right level of friction; not a sign to slow down or speed up.
+- **Notes for next session:**
+  - Start with `BOOT` and paste the top of this log
+  - Lesson 2 is the longest setup lesson in Phase 0 (~75 min, may split across two sessions)
+  - Pre-work: have GitHub username handy, decide editor, ensure Python 3.11+ confirmed working
+  - Capstone ideas intake offered but not yet used — learner can send `CAPSTONE IDEAS:` whenever ready, no rush
 
 ---
 
-## First entry (delete this when you start logging real sessions)
+## How to use this file going forward
 
-```
-## YYYY-MM-DD HH:MM — Session 1 (placeholder)
-- Boot source: cold start
-- Phase / Module / Lesson worked on: setting up the learning system itself
-- Lessons completed today: none yet — system setup
-- Artifacts produced: ai-pm-portfolio repo with STUDY_LOG.md, PROGRESS.md, CHANGELOG.md
-- Decisions made: chose [track] for the curriculum
-- Checkpoints during session: 0
-- Open commitments going into next session: complete first-week checklist
-- Weak areas surfaced: —
-- Time spent: [minutes]
-- Energy / pacing read: medium
-- Notes for next session: run BOOT with this log + PROGRESS.md
-```
+- Every session ends with `SAVE STATE` or `WEEK CLOSE` — both append a new entry above this section.
+- Every meaningful event during a session can be captured by typing `CHECKPOINT` — the mentor produces a 5–10 line block to append to the top.
+- Past entries are immutable. Corrections come as new entries with a "correction:" prefix and a date.
+- Commit this file to git after every update. The git history is the audit trail.
