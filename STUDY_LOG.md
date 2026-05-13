@@ -3,6 +3,8 @@
 > Append-only history of every learning session. Newest entries at the top. **Never edit a past entry.** If a past entry was wrong, append a correction entry today with a note. The error stays visible; the correction is dated.
 >
 > Authority rank: `STUDY_LOG.md` (this file) > `PROGRESS.md` (derived snapshot) > project memory > unverified claim.
+>
+> **Schema:** v2 (2026-05-13). Session entry format follows file `08_Continuity_and_State_Management.md`, Part 3. Session headers from Session 2 forward use `YYYY-MM-DD HH:MM — Session N` format. Session 1's header omits HH:MM and is preserved as-is per the immutability rule.
 
 ---
 
@@ -18,10 +20,10 @@
 - **Phase / Module / Lesson worked on:** Phase 0 (Builder's Toolkit) / Module 0.1 / Lesson 1 — The non-coder's mental model of software
 - **Lessons completed today:**
   - Lesson 1 — The non-coder's mental model of software (passed review at 18/25, greenlit)
-- **Artifacts produced:**
+- **Artifacts produced (with repo paths):**
   - `phase-0-foundations/01-software-mental-model.md` — 1-page cheat sheet covering Program, Runtime, Library, Framework, Package, Client/Server, API, JSON, Terminal + e-commerce sequence diagram + walkthrough
-- **Decisions made:**
-  - Track chosen: 240-day FAANG-Ready Track (8–10 hrs/week across 5 weekdays)
+- **Decisions made (with rationale):**
+  - Track chosen: 240-day FAANG-Ready Track (8–10 hrs/week across 5 weekdays) — matches FAANG AI PM goal at sustainable pace
   - Goal: FAANG / top-AI-startup AI PM role + portfolio building (intake answers (a) + (c))
   - Phase 0 (Builder's Toolkit) confirmed mandatory based on intake — no terminal comfort, no prior LLM API calls, partial Git CLI experience
   - Folder structure standardized: open the inner `ai-pm-portfolio/` repo as the VS Code workspace; phase artifacts live in `phase-N-*/` subfolders; nested duplicate-name folder (outer `AI-PM-PORTFOLIO/`) deprecated
@@ -50,7 +52,8 @@
 
 ## How to use this file going forward
 
-- Every session ends with `SAVE STATE` or `WEEK CLOSE` — both append a new entry above this section.
-- Every meaningful event during a session can be captured by typing `CHECKPOINT` — the mentor produces a 5–10 line block to append to the top.
-- Past entries are immutable. Corrections come as new entries with a "correction:" prefix and a date.
+- Every session ends with `SAVE STATE` or `WEEK CLOSE`. Both append a new entry **above** all prior entries (newest at top, immediately below the streak header).
+- Every meaningful event during a session can be captured by typing `CHECKPOINT`. The mentor produces a 5–10 line block to append to the top.
+- **Past entries are immutable.** If a past entry was wrong, append a new entry today with `## YYYY-MM-DD HH:MM — Correction to Session N` in the header.
 - Commit this file to git after every update. The git history is the audit trail.
+- Schema reference: `STUDY_LOG_TEMPLATE.md` (same repo) — blank skeleton with all required fields.
