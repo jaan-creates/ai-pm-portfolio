@@ -1,0 +1,532 @@
+{
+  "name": "Morning Debrief Email",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8,
+              "triggerAtMinute": 5
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b61f29e4-757b-4cb6-9165-d36e64594c2a",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0f06c2ae-d688-4c8e-b22c-f7f415cc6b97",
+              "name": "=Date",
+              "value": "={{ $now.setZone('Asia/Kolkata').toFormat('EEEE, d MMMM yyyy') }}",
+              "type": "string"
+            },
+            {
+              "id": "cf9a33de-b2ad-4af2-ab9d-0fdce40753fa",
+              "name": "day_of_week",
+              "value": "={{ $now.setZone('Asia/Kolkata').toFormat('EEEE') }}",
+              "type": "string"
+            },
+            {
+              "id": "5c28965a-b31c-4913-b556-db93be002deb",
+              "name": "streak_count",
+              "value": 1,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "7d8164bb-1532-4e20-8b19-c76ddef6a70c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather?q=Thiruvananthapuram,IN&appid=f0dc0104d2e10ba673ca9aed8f1da084&units=metric",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "680dbc57-ec19-4969-809c-68a91c7ae6c7",
+      "name": "Weather"
+    },
+    {
+      "parameters": {
+        "jsCode": "'use strict';\n\n/**\n * Converts a raw OpenWeatherMap /weather API response into a\n * channel-agnostic customer weather update object.\n *\n * The output format (customer_weather_update_v1) carries no assumptions\n * about the delivery channel — the same object works for email, WhatsApp,\n * SMS, or any other channel without modification.\n *\n * @param {object|object[]} raw - Raw OpenWeatherMap response (object or single-item array)\n * @returns {{ format: string, type: string, location: string, headline: string, message: string, context: object }}\n * @throws {Error} If the response is missing, empty, or lacks required fields\n */\nfunction formatWeatherUpdate(raw) {\n  // Unwrap array (n8n HTTP Request nodes return arrays)\n  if (Array.isArray(raw)) {\n    if (raw.length === 0) throw new Error('Invalid OpenWeatherMap response');\n    raw = raw[0];\n  }\n\n  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {\n    throw new Error('Invalid OpenWeatherMap response');\n  }\n  if (!raw.main || typeof raw.main !== 'object') {\n    throw new Error('Invalid OpenWeatherMap response');\n  }\n\n  // --- Extract fields, omitting any that are missing/undefined ---\n  const location = (raw.name && String(raw.name).trim()) || 'Your location';\n  const condition = raw.weather?.[0]?.description ?? null;\n\n  const rawTemp    = raw.main.temp;\n  const rawFeels   = raw.main.feels_like;\n  const rawHumid   = raw.main.humidity;\n  const rawWind    = raw.wind?.speed;\n  const rawVis     = raw.visibility;\n  const rawClouds  = raw.clouds?.all;\n\n  const temp       = rawTemp    != null ? Math.round(rawTemp)              : null;\n  const feelsLike  = rawFeels   != null ? Math.round(rawFeels)             : null;\n  const humidity   = rawHumid   != null ? rawHumid                         : null;\n  const windKmh    = rawWind    != null ? Math.round(rawWind * 3.6)        : null;\n  const visKm      = rawVis     != null ? rawVis / 1000                    : null;\n  const clouds     = rawClouds  != null ? rawClouds                        : null;\n\n  // --- Build context (only include present fields) ---\n  const context = {};\n  if (condition !== null)  context.condition          = condition;\n  if (temp      !== null)  context.temperature_c      = temp;\n  if (feelsLike !== null)  context.feels_like_c       = feelsLike;\n  if (humidity  !== null)  context.humidity_percent   = humidity;\n  if (windKmh   !== null)  context.wind_speed_kmh     = windKmh;\n  if (visKm     !== null)  context.visibility_km      = visKm;\n  if (clouds    !== null)  context.cloud_cover_percent = clouds;\n\n  const message = buildMessage({ location, condition, temp, feelsLike, humidity, windKmh, visKm });\n\n  return {\n    format:   'customer_weather_update_v1',\n    type:     'daily_weather_update',\n    location,\n    headline: `Today's weather update for ${location}`,\n    message,\n    context,\n  };\n}\n\n/**\n * Builds the human-readable message string from normalised weather params.\n * Always begins with \"Good morning! \".\n *\n * @private\n */\nfunction buildMessage({ location, condition, temp, feelsLike, humidity, windKmh, visKm }) {\n  const desc = (condition || '').toLowerCase();\n\n  // --- Condition detection (priority order) ---\n  const isThunderstorm = desc.includes('thunderstorm');\n  const isRain  = !isThunderstorm && (desc.includes('rain') || desc.includes('drizzle') || desc.includes('shower'));\n  const isMist  = !isRain && (desc.includes('mist') || desc.includes('fog') || desc.includes('haze') ||\n                               desc.includes('smoke') || desc.includes('dust') || desc.includes('sand'));\n  const isCloudy = !isMist && (desc.includes('cloud') || desc.includes('overcast'));\n  const isClear  = !isCloudy && (desc.includes('clear') || desc.includes('sunny') || desc.includes('fair'));\n\n  const isPartly = desc.includes('few') || desc.includes('scattered') || desc.includes('broken');\n\n  // --- Opening phrase ---\n  let opening;\n  if (isThunderstorm) {\n    opening = `${location} is expecting stormy weather today`;\n  } else if (isRain) {\n    opening = `${location} looks rainy today`;\n  } else if (isMist) {\n    opening = `${location} is looking misty today`;\n  } else if (isCloudy) {\n    opening = `${location} looks ${isPartly ? 'partly cloudy' : 'cloudy'} today`;\n  } else if (isClear) {\n    opening = `${location} looks clear and sunny today`;\n  } else {\n    opening = `${location} has ${condition || 'mixed'} conditions today`;\n  }\n\n  // --- Temperature clause ---\n  let tempClause = '';\n  if (temp !== null) {\n    tempClause = `, around ${temp}°C`;\n    if (feelsLike !== null && feelsLike !== temp) {\n      tempClause += ` but feeling closer to ${feelsLike}°C`;\n    }\n  }\n\n  // --- Humidity clause ---\n  const humidClause = (humidity !== null && humidity >= 75) ? ' with high humidity' : '';\n\n  // --- Breeze clause ---\n  const breezeClause = (windKmh !== null && windKmh > 20) ? ' and a steady breeze' : '';\n\n  // --- Advice suffix (first matching rule wins) ---\n  const isHot      = (feelsLike !== null && feelsLike >= 35) || (humidity !== null && humidity >= 75);\n  const isCool     = temp !== null && temp <= 18;\n  const isLowVis   = visKm !== null && visKm < 2;\n\n  let advice = '';\n  if (isThunderstorm) {\n    advice = ' — stay safe and avoid open areas ⛈️';\n  } else if (isRain) {\n    advice = ' — carry an umbrella ☂️';\n  } else if (isMist || isLowVis) {\n    advice = ' — take care while travelling 🚗';\n  } else if (isHot) {\n    advice = ' — stay cool and hydrated 😊';\n  } else if (isCool) {\n    advice = ' — keep something warm handy 🧥';\n  } else if (isClear) {\n    advice = ' — a great day to step outside ☀️';\n  }\n\n  return `Good morning! ${opening}${tempClause}${humidClause}${breezeClause}${advice}`;\n}\n\nmodule.exports = { formatWeatherUpdate };\n\nreturn formatWeatherUpdate($input.first().json);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "59c300f2-bc7d-4626-b62e-e9d543014303",
+      "name": "Format Weather"
+    },
+    {
+      "parameters": {
+        "jsCode": "const pick = (nodeName) => {\n  const data = $(nodeName).first().json;\n  return (data.results || []).slice(0, 2).map(r => r.title);\n};\n\nreturn {\n  news_headlines: {\n    india:    pick('News India'),\n    world:    pick('News World'),\n    business: pick('News Business'),\n    sports:   pick('News Sports'),\n    climate:  pick('News Climate'),\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        0
+      ],
+      "id": "8fe0abd0-ab77-4d32-a5b8-59a3f60759b0",
+      "name": "Merge News"
+    },
+    {
+      "parameters": {
+        "url": "https://newsdata.io/api/1/news?apikey=pub_6ef73d141b9247dfbefb2c032f4dec39&country=in&category=top&language=en&size=2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "8f3b925e-0a20-4dbc-830f-505f11e125ce",
+      "name": "News India"
+    },
+    {
+      "parameters": {
+        "url": "https://newsdata.io/api/1/news?apikey=pub_6ef73d141b9247dfbefb2c032f4dec39&category=world&language=en&size=2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "26c739f8-2155-4dc5-9998-7d95e8c6cd32",
+      "name": "News World"
+    },
+    {
+      "parameters": {
+        "url": "https://newsdata.io/api/1/news?apikey=pub_6ef73d141b9247dfbefb2c032f4dec39&category=business&language=en&size=2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "691c566b-7f1d-4634-b1ea-209f5b4d0764",
+      "name": "News Business"
+    },
+    {
+      "parameters": {
+        "url": "https://newsdata.io/api/1/news?apikey=pub_6ef73d141b9247dfbefb2c032f4dec39&category=sports&language=en&size=2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "3b2153f7-cef3-4213-9a9a-f81f06e6da26",
+      "name": "News Sports"
+    },
+    {
+      "parameters": {
+        "url": "https://newsdata.io/api/1/news?apikey=pub_6ef73d141b9247dfbefb2c032f4dec39&category=environment&language=en&size=2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "0094d67c-60e6-4f98-aa1a-72b7a1f58612",
+      "name": "News Climate"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2080,
+        0
+      ],
+      "id": "7dfa50ca-7bbc-42f7-91f9-9e1eb53c83ae",
+      "name": "Get many messages",
+      "webhookId": "bed3447a-d1e9-4175-bcba-d5cdfb7f1dd3",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rlfHRHl5sblTaqdK",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.claudeBody) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1488,
+        272
+      ],
+      "id": "bf112ecc-2c1e-48cb-9ad9-dd568ad31a76",
+      "name": "HTTP Request",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "LlAo3PZCMpSSX9DM",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "janu.bkurup@gmail.com",
+          "mode": "list",
+          "cachedResultName": "janu.bkurup@gmail.com"
+        },
+        "timeMin": "={{ $today.toISO() }}",
+        "timeMax": "={{ $today.plus({ days: 1 }).toISO() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        272
+      ],
+      "id": "bdf36fe8-0538-4255-b93f-c9967bdcb14d",
+      "name": "Get many events",
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "E1Ut8UnRvABM0Wpb",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// helper: safely read a node's first item, or return a fallback\nconst grab = (name) => {\n  try { return $(name).first().json; } catch { return null; }\n};\nconst grabAll = (name) => {\n  try { return $(name).all().map(i => i.json); } catch { return []; }\n};\n\nconst dateInfo   = grab('Edit Fields');\nconst weather    = grab('Format Weather');\nconst news       = grabAll('Merge News');\nconst calendar   = grabAll('Get many events');\nconst priorities = (grab('Priorities') || {}).priorities_text || '';\n\nconst emails = grabAll('Get many messages').map(e => ({\n  from:    e.From,\n  subject: e.Subject,\n  snippet: (e.snippet || '').slice(0, 200)\n}));\n\n// Build the Claude request payload here (robust JSON construction in JS)\nconst claudeBody = {\n  model: \"claude-sonnet-4-6\",\n  max_tokens: 1800,\n  messages: [{\n    role: \"user\",\n    content: [\n      \"You are the chief of staff writing a morning brief. Judge, don't aggregate. Use the OPERATOR PROFILE to decide what matters.\",\n      \"OPERATOR PROFILE:\\n\" + priorities,\n      \"TODAY: \" + (dateInfo?.Date || \"\"),\n      \"WEATHER: \" + JSON.stringify(weather?.context || {}),\n      \"EMAILS:\\n\" + JSON.stringify(emails),\n      \"CALENDAR:\\n\" + JSON.stringify(calendar),\n      \"NEWS:\\n\" + JSON.stringify(news),\n      \"INSTRUCTIONS: Cluster across sources. Score against the Bottleneck Test. Pick exactly ONE one_thing (or an honest quiet-day line). Return ONLY valid JSON, no markdown fences, exactly these keys: hook (1 warm sentence), one_thing (string), weather_line (string), work_items (array), personal_items (array), news (array of 2-3 strings EXCLUDING World Cup), world_cup (array of 1-3 short strings on the ongoing 2026 World Cup from the news; empty if none), read_more (array of max 3 objects {source, headline, blurb} where blurb is 1-2 sentences positioning why it's worth a skim for an AI-PM job hunt; newsletters only), actionables (array).\",\n      \"Order every array by decision-urgency, most action-needed first, pure-FYI last. Within actionables, order must-do > should-do > good-to-know.\"\n    ].join(\"\\n\\n\")\n  }]\n};\n\nreturn [{ json: { dateInfo, weather, news, calendar, emails, priorities, claudeBody } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        272
+      ],
+      "id": "ed2338e8-72dc-471a-93b9-0c8340139efb",
+      "name": "Assemble",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "424a945b-14a1-4305-a991-6606180c389e",
+              "name": "priorities_text",
+              "value": "# priorities.md — Operator Profile for Daybreak  ## LAYER 1 — Principles (judge any sender, known or not) Surface an item when it is dated to today (or overdue) AND needs my presence or action: - A bill or payment DUE today / overdue - A return pickup or courier collection happening today - An order arriving today - An appointment or booking today - A real human personally waiting on my reply — especially job/interview/recruiter, even from a brand-new sender - A hard external deadline today  Demote to a one-line FYI when it is a completed fact needing nothing from me: - Money already received (Splitwise payments, refunds already initiated) - \"Delivered\"/\"successful\" confirmations - Statements and receipts (unless they show a problem)  Drop entirely: marketing/promo broadcasts, OTP/login codes, \"rate us/join our channel\" nudges.  Tie-breakers: job/interview/recruiter beats everything; a dated action-needed item beats a done fact; if no date and not addressed to me, it's FYI not the One Thing.  ## LAYER 2 — Known senders Cluster into ONE line: Splitwise (LOW importance, friends settling up) — collapse all into one FYI, never the One Thing. FYI one line: Razorpay refunds, Instamart/Swiggy \"delivered\", Anthropic receipts (my project's own cost). Read-more slot (max 2-3, links out, never the One Thing): Lenny's Newsletter, ByteByteGo, one PM-AI newsletter (AI with Aish/HelloPM/Medium), Claude/Anthropic announcements. Always DROP: Pepperfry, OKHAI, adidas, AJIO, Trip.com, BookMyShow, Reliance Digital, MagicBricks, Max Fashion OTP, Google One surveys, Atlassian/Jira onboarding, Maven/bootcamp promos.  ## Identity Jaan — PM, 6 yrs SaaS, building an AI portfolio, job-hunting for a Series A/B AI PM role. No active interviews yet, so the day a recruiter replies, that email is the most important thing in the inbox.  ## Tone One dominant thing. Pre-forgiven (never imply I'm behind). Permission to say \"nothing urgent.\" Short, under 60 seconds. News: 2-3 items total.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        272
+      ],
+      "id": "32bffa95-b2d4-4a5b-beb5-b212d92ffe49",
+      "name": "Priorities",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "sendTo": "janu.bkurup@gmail.com",
+        "subject": "={{ \"☀️ Daybreak — \" + $('Assemble').first().json.dateInfo.Date }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1904,
+        272
+      ],
+      "id": "5bff8d9f-2a2c-411f-9a5f-6d2a334eab66",
+      "name": "Send a message",
+      "webhookId": "b8a6b41b-fbd6-4624-afd4-ada905250f16",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rlfHRHl5sblTaqdK",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Claude's reply, compute cost from usage, build the HTML email\nconst resp = $json;                                   // HTTP Request output (content + usage)\nlet raw = resp.content[0].text.replace(/```json/g,'').replace(/```/g,'').trim();\nlet b;\ntry { b = JSON.parse(raw); }\ncatch(e){ b = { hook:\"Brief parse failed\", one_thing: raw.slice(0,400), weather_line:\"\",\n  work_items:[], personal_items:[], news:[], world_cup:[], read_more:[], actionables:[] }; }\n\nconst date = $('Assemble').first().json.dateInfo.Date;\n\n// Cost — VERIFY current Sonnet pricing in your Anthropic console; these are ~early-2026 rates\nconst IN_RATE = 3/1e6, OUT_RATE = 15/1e6;\nconst u = resp.usage || {input_tokens:0, output_tokens:0};\nconst cost = \"$\" + (u.input_tokens*IN_RATE + u.output_tokens*OUT_RATE).toFixed(4);\n\nconst INK=\"#0D0D0F\", PURPLE=\"#7F77DD\", GREEN=\"#22C55E\", ORANGE=\"#F97316\", CARD=\"#fff\", BG=\"#f4f4f7\";\nconst li = a => (a||[]).map(x=>`<div style=\"margin:6px 0;color:#333;font-size:14px;line-height:1.5\">• ${x}</div>`).join('');\nconst card = (t,inner,acc)=>`<tr><td style=\"padding:8px 0\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:${CARD};border-radius:14px;border-left:4px solid ${acc};box-shadow:0 1px 3px rgba(0,0,0,.06)\"><tr><td style=\"padding:16px 20px\"><div style=\"font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:${acc};font-weight:700;margin-bottom:8px\">${t}</div>${inner}</td></tr></table></td></tr>`;\nconst readMore = (b.read_more||[]).map(r=>`<div style=\"margin:10px 0\"><div style=\"font-size:14px;font-weight:600;color:${INK}\">${r.source?r.source+' — ':''}${r.headline||''}</div><div style=\"font-size:13px;color:#555;line-height:1.5;margin-top:2px\">${r.blurb||''}</div></div>`).join('');\nconst wc = (b.world_cup&&b.world_cup.length)? card('⚽ World Cup 2026', li(b.world_cup), ORANGE):'';\n\nconst html = `<div style=\"margin:0;padding:0;background:${BG}\"><style>@keyframes shimmer{0%{background-position:0% 50%}100%{background-position:100% 50%}}</style>\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:${BG};padding:24px 0\"><tr><td align=\"center\">\n<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;width:100%;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif\">\n<tr><td style=\"background:linear-gradient(120deg,${PURPLE},${ORANGE});background-size:200% 200%;animation:shimmer 6s linear infinite alternate;border-radius:16px;padding:26px 24px\">\n<div style=\"color:#fff;font-size:13px;opacity:.9;font-weight:600\">☀️ DAYBREAK · ${date}</div>\n<div style=\"color:#fff;font-size:22px;font-weight:800;line-height:1.3;margin-top:6px\">${b.hook||''}</div></td></tr>\n<tr><td style=\"padding:16px 0 4px\"><table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:${INK};border-radius:14px\"><tr><td style=\"padding:20px 22px\">\n<div style=\"font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:${GREEN};font-weight:700;margin-bottom:6px\">Today's one thing</div>\n<div style=\"color:#fff;font-size:17px;line-height:1.5;font-weight:600\">${b.one_thing||''}</div></td></tr></table></td></tr>\n<tr><td style=\"padding:4px 6px 8px;color:#555;font-size:13px\">🌦️ ${b.weather_line||''}</td></tr>\n${wc}\n${(b.work_items&&b.work_items.length)?card('Work',li(b.work_items),PURPLE):''}\n${(b.personal_items&&b.personal_items.length)?card('For you',li(b.personal_items),GREEN):''}\n${(b.actionables&&b.actionables.length)?card('Actionables',li(b.actionables),ORANGE):''}\n${(b.news&&b.news.length)?card('World & India',li(b.news),'#888'):''}\n${readMore?card('Read more',readMore,PURPLE):''}\n<tr><td style=\"padding:14px 8px;color:#999;font-size:11px;border-top:1px solid #e5e5e5\">⚙️ Claude Sonnet · ${u.input_tokens} in / ${u.output_tokens} out · ~${cost}/run · n8n self-hosted</td></tr>\n</table></td></tr></table></div>`;\n\nreturn [{ json: { ...b, html, cost, tokens_in:u.input_tokens, tokens_out:u.output_tokens } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        272
+      ],
+      "id": "a7869170-f671-46d7-aee0-f852dbfe9879",
+      "name": "Build Email"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Weather",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weather": {
+      "main": [
+        [
+          {
+            "node": "Format Weather",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Weather": {
+      "main": [
+        [
+          {
+            "node": "News India",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News India": {
+      "main": [
+        [
+          {
+            "node": "News World",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News World": {
+      "main": [
+        [
+          {
+            "node": "News Business",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Business": {
+      "main": [
+        [
+          {
+            "node": "News Sports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Sports": {
+      "main": [
+        [
+          {
+            "node": "News Climate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Climate": {
+      "main": [
+        [
+          {
+            "node": "Merge News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge News": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Build Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Priorities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assemble": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Priorities": {
+      "main": [
+        [
+          {
+            "node": "Assemble",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1
+  },
+  "versionId": "57f69ca5-7dfc-4cc6-852a-a4e2c6ebb574",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "edc18e8e110233a80a667b904d3570238bd920dfc12a42edc18b76904e960ed8"
+  },
+  "id": "CQtmZkiKlFI2dFkV",
+  "tags": []
+}
