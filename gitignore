@@ -1,0 +1,22 @@
+# --- Secrets (never commit) ---
+.env
+.env.*
+!.env.example
+*.key
+*credentials*.json
+*secret*
+
+# --- n8n local data (if you ever export the whole instance) ---
+.n8n/
+n8n-data/
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# --- Logs & temp ---
+*.log
+tmp/
