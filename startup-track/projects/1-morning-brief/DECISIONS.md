@@ -90,3 +90,10 @@ credentials; `.gitignore` blocks stray `.env`; required keys documented in READM
 Split judgment pass from render pass; tiered email retrieval (triage → deep-read);
 calendar write-back to log the one-thing; birthdays; one-tap actionable links (HITL);
 WhatsApp delivery; always-on hosting.
+
+2026-07-12 — Added relevance filter after 3-email 
+audit showed ~40% of items required no action. 
+Three-test rule (action / decision-changing / 
+time-risk), explicit Work-Personal definitions, 
+hard caps on all sections. Curation over 
+aggregation, now enforced in prompt.
