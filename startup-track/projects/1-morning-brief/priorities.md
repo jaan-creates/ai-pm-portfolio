@@ -1,118 +1,51 @@
 # priorities.md — Operator Profile for Daybreak
 
-The brain's fuel. The morning-brief prompt reads this to decide what actually
-needs me today. It has TWO layers:
+## LAYER 0 — The Three-Test Filter (apply first, to every item)
+An item earns its own line ONLY if it passes at least one:
+1. ACTION — needs a reply, decision, or task from me today or this week
+2. DECISION-CHANGING — alters what I should do (payment failed, role posted, price changed)
+3. TIME-RISK — costs money or opportunity if ignored (expiring subscription, insurance lapse, tax deadline)
 
-- LAYER 1 (principles) — source-independent rules that judge ANY email, including
-  senders I've never received before. This is what catches the important mail that
-  isn't in my usual pattern (a first recruiter reply, a new bill, a doctor's note).
-- LAYER 2 (known senders) — fast-path rules for my recurring senders, so the brain
-  doesn't re-reason about the same promos every morning.
-
-Layer 1 handles the unknown. Layer 2 handles the predictable. Both matter.
-
----
-
-## 0. How the brief should use this file
-
-1. Cluster related items across sources (calendar + the email about it = ONE line).
-2. Judge EVERY item with Layer 1 first — even unknown senders.
-3. Apply Layer 2 shortcuts for known senders (cluster/demote/drop).
-4. Select exactly ONE "Today's One Thing" — highest-scoring only.
-5. If nothing clears the bar, say so plainly. A quiet morning is honest and
-   trustworthy. Never manufacture urgency.
-
----
+Items that fail all three — completed deliveries, receipts for known purchases, settled bills, confirmations of actions I took myself, loyalty points, promos — NEVER get their own line. Collapse ALL of them into one closure_line: "Also: [N] deliveries done, [N] receipts logged — nothing pending." If none exist, closure_line is null.
+Never use "FYI" or "no action needed" as justification to include an item. If nothing is needed and no decision changes, it does not appear.
 
 ## LAYER 1 — Principles (judge any sender, known or not)
+Surface an item when it is dated to today (or overdue) AND needs my presence or action:
+- A bill or payment DUE today / overdue
+- A return pickup or courier collection happening today
+- An order arriving today
+- An appointment or booking today
+- A real human personally waiting on my reply — especially job/interview/recruiter, even from a brand-new sender
+- A hard external deadline today
 
-### The core test: "Is something happening TODAY that needs me?"
+Demote into closure_line (not a standalone line) when it is a completed fact needing nothing from me:
+- Money already received (Splitwise payments, refunds already initiated)
+- "Delivered"/"successful" confirmations
+- Statements and receipts (unless they show a problem)
 
-SURFACE an item when it is dated to today (or overdue) AND needs my presence or
-action:
-- A bill or payment DUE today / overdue.
-- A return pickup or courier collection happening today (I must hand something over).
-- An order arriving today (I must be there to receive it).
-- An appointment, booking, or reservation today.
-- A real human personally waiting on my reply — especially anything about a job,
-  interview, or recruiter (highest priority the day it appears, even from a brand-new
-  sender I've never seen before).
-- A hard external deadline today (application closes, submission due).
+Drop entirely: marketing/promo broadcasts, OTP/login codes, "rate us/join our channel" nudges, course/bootcamp/cohort enrollment pushes (Maven, Scaler, Gen Academy — including scarcity framing like "last seats/hours").
 
-DEMOTE to a one-line FYI when it is a completed fact with nothing required from me:
-- Money already received (Splitwise payments, refunds already initiated).
-- "Delivered" / "successful" confirmations for things already done.
-- Statements and receipts (unless they show a problem I must fix).
+Tie-breakers: job/interview/recruiter beats everything; a dated action-needed item beats a done fact; if no date and not addressed to me, it goes to closure_line or is dropped — never the One Thing.
 
-DROP entirely:
-- One-way marketing / promotional broadcasts (no reply expected, nothing due).
-- OTP / login codes (they expire in minutes; useless in a 9am brief).
-- "Rate us / take our survey / join our channel" nudges.
+## LAYER 2 — Known senders
+Cluster into ONE line: Splitwise (LOW importance, friends settling up) — collapse into closure_line, never the One Thing.
+Closure_line candidates: Razorpay refunds already initiated, Instamart/Swiggy "delivered", Anthropic receipts (my project's own cost).
+Read-more slot (max 2, links out, never the One Thing): Lenny's Newsletter, ByteByteGo, one PM-AI newsletter (AI with Aish/HelloPM/Medium), Claude/Anthropic announcements. Course-enrollment emails from these same authors do NOT qualify as read-more — content only, not promotion.
+Always DROP: Pepperfry, OKHAI, adidas, AJIO, Trip.com, BookMyShow, Reliance Digital, MagicBricks, Max Fashion OTP, Google One surveys, Atlassian/Jira onboarding, Maven/bootcamp promos, Zivame, Taj InnerCircle, ChatGPT product nudges, Loom onboarding.
 
-### Tie-breakers
-- Anything job/interview/recruiter-shaped beats everything else.
-- A dated action-needed item beats a done-fact item, even a large one.
-- When unsure whether something needs me: if no date and no question addressed to
-  me, it's an FYI, not the One Thing.
+## LAYER 3 — Section definitions
+WORK = job hunt (recruiter/role posts — always add a verdict: fits my Series A/B AI PM target, or skip), portfolio deadlines and ship commitments, employer meetings today + threads awaiting MY reply, professional network messages needing response.
+PERSONAL = money at risk (failed payments, refunds to chase, unusual charges), deadlines with days remaining (ITR, insurance, renewals), subscription decisions expiring within 7 days, family/health actions.
+An item fitting neither definition goes through the Three-Test Filter — most likely closure_line or dropped. Tax, insurance, and food-delivery payment issues are PERSONAL, never WORK.
 
----
+## LAYER 4 — Hard caps
+- Actionables: max 5, verb-first, each with a time estimate ("2 min to qualify or skip")
+- News: max 3, goal-relevant only (AI PM market, India tech, macro affecting hiring). Zero is allowed.
+- Read-more: max 2
+- Empty section = one line: "Nothing for [section] today." Never pad.
 
-## LAYER 2 — Known senders (tuned from my real inbox)
+## Identity
+Jaan — PM, 6 yrs SaaS, building an AI portfolio, job-hunting for a Series A/B AI PM role. No active interviews yet, so the day a recruiter replies, that email is the most important thing in the inbox.
 
-### Cluster into ONE line (don't list separately)
-- Splitwise (hello@splitwise.com) — LOW importance, friends settling up. Collapse
-  all of them into a single FYI like "Settled up: N Splitwise payments." Never the
-  One Thing. Only elevate if one is a request FOR money from me with a due date.
-
-### FYI, one line, only if useful
-- Razorpay refunds, Instamart/Swiggy "delivered", account statements — done facts.
-- Anthropic receipts (invoice+statements@mail.anthropic.com) — this is MY project's
-  own cost; worth a quiet FYI so I keep an eye on spend.
-
-### Read-more slot (max 2-3, links out, NEVER the One Thing)
-My genuine AI/PM newsletters:
-- Lenny's Newsletter (lenny@substack.com)
-- ByteByteGo (bytebytego@substack.com)
-- AI with Aish / HelloPM / Medium Daily Digest — rotate whichever is freshest
-- Claude/Anthropic product announcements (no-reply@email.claude.com)
-
-### Always DROP (marketing / noise)
-Pepperfry, OKHAI, adidas, AJIO Luxe, Trip.com, BookMyShow, Reliance Digital,
-MagicBricks, Max Fashion OTP, Google One surveys, Atlassian/Jira onboarding spam,
-Maven/bootcamp course promos (Maven, "The Gen Academy", Mahesh Yadav, Scaler,
-Iluigidraws). None of these ever surface.
-
-> Note: dropping a sender here is a shortcut, NOT a blanket rule. If a "dropped"
-> sender ever sends something dated-and-action-needed (e.g. a real order pickup),
-> Layer 1 still catches it. Layer 2 only silences their marketing.
-
----
-
-## 1. Who I am (north star)
-
-- Name: Jaan
-- Context: PM, 6 yrs SaaS, building a public AI portfolio, job-hunting for a
-  Series A/B AI startup PM role. No active interviews yet — so the day a recruiter
-  DOES reply, that email is the most important thing in the inbox.
-- Optimizing for: advancing job conversations + shipping portfolio projects.
-- Hours/timezone: ~9am-7pm IST, Thiruvananthapuram.
-
----
-
-## 2. Tone & format (ADHD-optimized — non-negotiable)
-
-- One dominant thing. Pre-forgiven (never imply I'm behind). Permission to be quiet.
-- Short, skimmable under 60 seconds, concrete verbs.
-- News: 2-3 items total, most important only.
-
----
-
-## 3. Time window
-
-- "Overnight" = since ~7pm yesterday until the 9am run. Mondays cover the weekend.
-
----
-
-## Tuning log (append as I read real briefs)
-
-- (date) — (what it got wrong) -> (what I changed here)
+## Tone
+One dominant thing. Pre-forgiven (never imply I'm behind). Permission to say "nothing urgent." Short, under 60 seconds.
