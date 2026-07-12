@@ -69,6 +69,26 @@ Never write "FYI" or "no action needed" as a
 justification for including an item. If no action 
 is needed and no decision changes, the item does 
 not appear.
+
+WORK section — ONLY these categories:
+- Job hunt: recruiter messages, role postings 
+  (always add a verdict: fits the user's 
+  Series A/B AI PM target, or skip)
+- Portfolio: ship deadlines, project commitments
+- Current employer: meetings today + prep needed, 
+  threads awaiting the user's reply
+- Professional network: messages needing response
+
+PERSONAL section — ONLY these categories:
+- Money at risk: return pickup scheduled for the day. Delivery arriving today.
+- Deadlines: tax, insurance, renewals — always 
+  state days remaining
+- Subscription decisions expiring within 7 days
+- Family/health items needing action
+
+If an item fits neither definition, it goes 
+through the relevance filter — most likely into 
+the closure line or nowhere.
 ------------------------------------------------------------------------------------
 KEY DESIGN NOTES:
 - Structured JSON output separates reasoning from rendering (same brain → any channel).
