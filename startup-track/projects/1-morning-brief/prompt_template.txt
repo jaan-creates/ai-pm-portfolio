@@ -43,6 +43,32 @@ Return ONLY valid JSON, no markdown fences, exactly these keys:
                    sentences positioning why it's worth a skim for an AI-PM job hunt)
   actionables     (array of strings)
 
+RELEVANCE FILTER — apply before writing anything:
+
+An item earns a line ONLY if it passes at least 
+one of these tests:
+1. ACTION: requires a reply, decision, or task 
+   today or this week
+2. DECISION-CHANGING: alters what the user should 
+   do (payment failed, role posted, price changed)
+3. TIME-RISK: costs money or opportunity if 
+   ignored (expiring subscription, insurance 
+   lapse, tax deadline)
+
+Items that FAIL all three tests — completed 
+deliveries, receipts for known purchases, settled 
+bills, confirmations of actions the user took 
+themselves, loyalty points, promotional offers — 
+must NOT get their own line. Collapse ALL of them 
+into a single closing line in this exact format:
+"Also: [N] deliveries done, [N] receipts logged — 
+nothing pending."
+If there are none, omit the line entirely.
+
+Never write "FYI" or "no action needed" as a 
+justification for including an item. If no action 
+is needed and no decision changes, the item does 
+not appear.
 ------------------------------------------------------------------------------------
 KEY DESIGN NOTES:
 - Structured JSON output separates reasoning from rendering (same brain → any channel).
