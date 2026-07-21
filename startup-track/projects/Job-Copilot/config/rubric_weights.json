@@ -1,0 +1,31 @@
+{
+  "_note": "PM_RUBRIC.md §1. Base section weights + per-archetype shifts (zero-sum by design; floor 4). Harness resolves applied_weight = normalize(clamp(base+shift, floor)) to sum 100, then computes S1 = Σ(section.score × applied_weight)/100. THIS IS THE CALIBRATION TUNABLE — every change is logged in PM_RUBRIC.md changelog with the motivating golden-set case ID (GOLDEN_SET.md Runbook step 3).",
+  "sections": ["role_seniority", "domain", "product_sense", "execution", "data_metrics", "strategy", "leadership", "skills_tools"],
+  "floor": 4,
+  "base": {
+    "role_seniority": 15,
+    "domain": 10,
+    "product_sense": 15,
+    "execution": 15,
+    "data_metrics": 15,
+    "strategy": 10,
+    "leadership": 12,
+    "skills_tools": 8
+  },
+  "shifts": {
+    "A1": {},
+    "A2": { "data_metrics": 7, "product_sense": 3, "domain": -5, "strategy": -5 },
+    "A3": { "skills_tools": 5, "execution": 5, "product_sense": -5, "domain": -5 },
+    "A4": { "data_metrics": 8, "skills_tools": 4, "strategy": -4, "domain": -8 },
+    "A5": { "domain": 10, "product_sense": 2, "skills_tools": -6, "strategy": -6 },
+    "A6": {}
+  },
+  "a4_ai_domain_exception": {
+    "note": "For an A4 (Data/AI PM) JD whose DOMAIN is AI/ML itself (not merely an AI-powered product in another domain), do NOT apply the -8 domain reduction. v0.1 default is to apply it; the classifier may set ai_domain=true to suppress it."
+  },
+  "a6_role_alignment_cap": {
+    "section": "role_seniority",
+    "cap": 60,
+    "note": "PM_RUBRIC §1 A6: a product-career candidate scored against an A6 (program-heavy) JD has role_seniority capped at 60 unless the resume shows genuine ownership of product outcomes."
+  }
+}

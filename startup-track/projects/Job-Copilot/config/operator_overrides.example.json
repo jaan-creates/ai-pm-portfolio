@@ -1,0 +1,8 @@
+{
+  "_note": "PM_RUBRIC.md §5. Operator personalization. Copy to config/operator_overrides.json (gitignored — it holds your comp floor) and fill in. Overrides run AFTER scoring and may only force SKIP or annotate; they never inflate a score. NOT supplied to golden-set runs (CRITIC_MODE_PROMPT.md §Procedure step 10).",
+  "seniority_floor": "senior_pm",
+  "comp_floor": null,
+  "locations_allowed": ["<fill: e.g. Bengaluru>", "remote"],
+  "industry_blocklist": [],
+  "must_have_vetoes": []
+}

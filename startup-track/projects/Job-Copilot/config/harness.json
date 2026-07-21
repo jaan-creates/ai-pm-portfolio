@@ -1,0 +1,35 @@
+{
+  "_note": "Golden-set harness runtime config. Model/token settings for the judge, plus the deterministic S2/S3/composite recompute constants (ADR-003). Composite weights 0.50/0.35/0.15 are the calibration tunable per CRITIC_MODE_PROMPT.md §Procedure step 7.",
+  "_no_temperature": "Opus 4.8 REJECTS temperature/top_p/top_k with a 400 (confirmed via claude-api skill). The stability gate is perturbation-based (Rev 2), not temp-0-determinism-based, so temperature is not load-bearing — omitted deliberately. Do not re-add it.",
+  "model": "claude-opus-4-8",
+  "thinking": "adaptive",
+  "effort": "high",
+  "max_tokens": 16000,
+  "stream": true,
+  "runs_per_candidate": 2,
+  "stability_threshold": 5,
+  "composite_weights": { "s1": 0.5, "s2": 0.35, "s3": 0.15 },
+  "composite_cross_check_tolerance": 2,
+  "s2_recompute": {
+    "status_value": { "met": 1, "partial": 0.5, "missing": 0 },
+    "must_weight": 2,
+    "nice_weight": 1
+  },
+  "s3_recompute": {
+    "matched": 1.0,
+    "synonym_matched": 1.0,
+    "flagged_no_evidence": 0,
+    "missing_terms": 0
+  },
+  "paths": {
+    "critic_prompt": "CRITIC_MODE_PROMPT.md",
+    "rubric": "PM_RUBRIC.md",
+    "weights": "config/rubric_weights.json",
+    "jds": "golden/jds",
+    "resumes": "golden/resumes",
+    "aliases": "golden/aliases.json",
+    "labels": "golden/labels.json",
+    "results": "golden/results",
+    "report": "golden/report.md"
+  }
+}

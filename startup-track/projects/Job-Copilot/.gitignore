@@ -1,1 +1,16 @@
+# --- Competitor autopsy clones (never commit) ---
 _mined/
+
+# --- Privacy: must never enter git history (Rev 3) ---
+# Real resume — only resume.master.md (fake-data template) is committed.
+resume.master.local.md
+# Real operator config with comp floor etc. — only the .example is committed.
+config/operator_overrides.json
+# Secrets.
+.env
+.env.local
+
+# --- Harness runtime ---
+harness/node_modules/
+golden/results/*.json
+!golden/results/.gitkeep
