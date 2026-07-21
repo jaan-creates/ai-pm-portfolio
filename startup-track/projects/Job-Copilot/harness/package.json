@@ -1,0 +1,14 @@
+{
+  "name": "job-copilot-golden-harness",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Golden-set eval harness for the PM fit rubric (GOLDEN_SET.md). Run: npm install, set ANTHROPIC_API_KEY, then `node run.mjs` and `node report.mjs`.",
+  "scripts": {
+    "run": "node run.mjs",
+    "report": "node report.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest"
+  }
+}
