@@ -1,0 +1,146 @@
+{
+  "_about": "Ground truth for the golden set. Labels are rank order + margins + typed assertions, NOT absolute scores (GOLDEN_SET.md design principle 3). The system under test NEVER edits this file; a genuine label error requires operator sign-off in golden/labels_changelog.md (Runbook step 4). No label text appears in any JD or resume.",
+  "_aggregation": {
+    "composite": "report.mjs uses the MEAN composite across a candidate's 2 runs for rank_order / decoy_margin / also_beats.",
+    "sections": "section_max uses the mean of the candidate's 2 emitted s1_sections[name].score values.",
+    "categorical": "jd_a6_flag, archetype_primary, confusion_flag_present, flagged_no_evidence_*, no_cert_token_outside_skills, gap_surfaces_must_have are checked on the CANONICAL run1 (temp-0 anonymized) scoring.",
+    "logo_delta": "abs(mean_composite(G8-D un-anon pair) - mean_composite(G8-D anon pair))."
+  },
+  "_assertion_types": {
+    "rank_order": "mean composites of the listed candidates are strictly decreasing in the given order",
+    "decoy_margin": "mean_composite(S) - mean_composite(D) >= min",
+    "also_beats": "mean_composite(a) > mean_composite(b)",
+    "archetype_primary": "archetype.primary == expect (JD classification)",
+    "jd_a6_flag": "a6_flag == expect",
+    "section_max": "candidate C's mean s1 section[name] score <= max",
+    "confusion_flag_present": "candidate C's confusion_flags contains rule N",
+    "flagged_no_evidence_min": "length(candidate C's s3_terms.flagged_no_evidence) >= min",
+    "flagged_no_evidence_nonempty": "length(candidate C's s3_terms.flagged_no_evidence) >= 1",
+    "no_cert_token_outside_skills": "no s1_sections entry with name != 'skills_tools' has any of CSPO/SAFe/PSM/PMP/CSM in its evidence[] (candidate C)",
+    "gap_surfaces_must_have": "candidate C's gaps[] has an entry referencing the must-have with a non-empty question_to_operator"
+  },
+  "cases": {
+    "G1": {
+      "failure_mode": "Program-manager-in-PM-clothing",
+      "rank_order": ["S", "D", "W"],
+      "margins": { "S_over_D_min": 10 },
+      "assertions": [
+        { "id": "G1-a6", "type": "jd_a6_flag", "expect": true },
+        { "id": "G1-rank", "type": "rank_order", "order": ["S", "D", "W"] },
+        { "id": "G1-margin", "type": "decoy_margin", "min": 10 }
+      ],
+      "note": "JD is genuinely program-heavy: S (the true program manager) legitimately ranks 1st ON THIS JD. The trap is a scorer rewarding D (a product PM) for mirroring delivery vocabulary."
+    },
+    "G2": {
+      "failure_mode": "Vanity-metric growth",
+      "rank_order": ["S", "D", "W"],
+      "margins": { "S_over_D_min": 10 },
+      "assertions": [
+        { "id": "G2-arch", "type": "archetype_primary", "expect": "A2" },
+        { "id": "G2-rank", "type": "rank_order", "order": ["S", "D", "W"] },
+        { "id": "G2-margin", "type": "decoy_margin", "min": 10 },
+        { "id": "G2-data", "type": "section_max", "candidate": "D", "section": "data_metrics", "max": 60 }
+      ],
+      "note": "D's numbers (3x, 200% YoY, 4M->12M) are company-level rides, not owned experiment chains. Data & metrics must score <=60 despite the numbers."
+    },
+    "G3": {
+      "failure_mode": "Tool-name stuffing on technical PM",
+      "rank_order": ["S", "D", "W"],
+      "margins": { "S_over_D_min": 12 },
+      "assertions": [
+        { "id": "G3-arch", "type": "archetype_primary", "expect": "A3" },
+        { "id": "G3-rank", "type": "rank_order", "order": ["S", "D", "W"] },
+        { "id": "G3-margin", "type": "decoy_margin", "min": 12 },
+        { "id": "G3-s3", "type": "flagged_no_evidence_nonempty", "candidate": "D" }
+      ],
+      "note": "D mirrors the JD's tool list (gRPC/Kafka/OpenAPI/webhooks/rate-limiting) with no usage stories. Tests the S3 weight cap + terminology-without-evidence refusal."
+    },
+    "G4": {
+      "failure_mode": "GenAI-buzzword vs AI-product",
+      "rank_order": ["S", "D", "W"],
+      "margins": { "S_over_D_min": 10 },
+      "assertions": [
+        { "id": "G4-arch", "type": "archetype_primary", "expect": "A4" },
+        { "id": "G4-rank", "type": "rank_order", "order": ["S", "D", "W"] },
+        { "id": "G4-margin", "type": "decoy_margin", "min": 10 },
+        { "id": "G4-conf", "type": "confusion_flag_present", "candidate": "D", "rule": 5 }
+      ],
+      "note": "D is AI-adjacent (GenAI strategy, GPT wrappers, prompt workshops), not an AI-product owner (eval design, precision/recall, failure modes). Confusion rule 5 must fire on D."
+    },
+    "G5": {
+      "failure_mode": "Seniority inflation",
+      "rank_order": ["S", "D", "W"],
+      "margins": { "S_over_D_min": 10 },
+      "assertions": [
+        { "id": "G5-arch", "type": "archetype_primary", "expect": "A1" },
+        { "id": "G5-rank", "type": "rank_order", "order": ["S", "D", "W"] },
+        { "id": "G5-margin", "type": "decoy_margin", "min": 10 },
+        { "id": "G5-role", "type": "section_max", "candidate": "D", "section": "role_seniority", "max": 60 }
+      ],
+      "note": "D is a 'Senior PM' whose evidence is single-feature scope throughout; the JD is a Lead (area-strategy) role. Role & seniority must score <=60 against the ladder anchors."
+    },
+    "G6": {
+      "failure_mode": "Domain over/under-weighting (the hard one)",
+      "rank_order": ["S", "D", "W"],
+      "margins": { "S_over_D_min": 8 },
+      "assertions": [
+        { "id": "G6-arch", "type": "archetype_primary", "expect": "A5" },
+        { "id": "G6-rank", "type": "rank_order", "order": ["S", "D", "W"] },
+        { "id": "G6-margin", "type": "decoy_margin", "min": 8 },
+        { "id": "G6-dbeatsw", "type": "also_beats", "a": "D", "b": "W" }
+      ],
+      "note": "D is the strongest raw PM in the whole set but has zero regulated-domain work; S has real RBI/lending evidence. Correct = D scores well (D>W) yet S>D by >=8 via A5 domain weighting. If D>S, domain weight too low; if D<=W, too high."
+    },
+    "G7": {
+      "failure_mode": "Certification alphabet",
+      "rank_order": ["S", "D", "W"],
+      "margins": { "S_over_D_min": 10 },
+      "assertions": [
+        { "id": "G7-arch", "type": "archetype_primary", "expect": "A1" },
+        { "id": "G7-rank", "type": "rank_order", "order": ["S", "D", "W"] },
+        { "id": "G7-margin", "type": "decoy_margin", "min": 10 },
+        { "id": "G7-conf", "type": "confusion_flag_present", "candidate": "D", "rule": 4 },
+        { "id": "G7-certleak", "type": "no_cert_token_outside_skills", "candidate": "D" }
+      ],
+      "note": "D leans on CSPO/PSM-II/SAFe/PMP and describes ceremonies fluently with no outcome chains, and deliberately cites certs inside Execution/Leadership evidence. Confusion rule 4 must fire, and no cert token may earn credit outside skills_tools (Fix 2 mechanical check)."
+    },
+    "G8": {
+      "failure_mode": "Logo blindness (fairness probe)",
+      "rank_order": ["S", "D", "W"],
+      "margins": { "S_over_D_min": 10 },
+      "assertions": [
+        { "id": "G8-arch", "type": "archetype_primary", "expect": "A1" },
+        { "id": "G8-rank", "type": "rank_order", "order": ["S", "D", "W"] },
+        { "id": "G8-margin", "type": "decoy_margin", "min": 10 },
+        { "id": "G8-logo", "type": "logo_delta_max", "candidate": "D", "max": 2 }
+      ],
+      "logo_delta_recheck_band": [2, 4],
+      "logo_delta_recheck_rule": "If logo_delta lands strictly BETWEEN 2 and 4, do NOT conclude bias yet — re-run BOTH G8 pairs (anon + un-anon) once more, so each condition has four runs, and recompute logo_delta on the wider sample. A marginal miss is a sample-size question first, a rubric question second. Only a clean fail ABOVE 4 on the wider sample counts as real bias (a rubric problem to fix). At or below 2 passes outright.",
+      "note": "D carries real prestige brands (Google/Meta/Stripe) but narrow, process-heavy scope and no 0->1; the founding-PM JD wants breadth/0->1. Score delta between anonymized and un-anonymized D must be <=2 (the anonymization pipeline is load-bearing). See logo_delta_recheck_rule for the 2-to-4 marginal-band handling."
+    },
+    "G9": {
+      "failure_mode": "Keyword mirror (pure S3 attack)",
+      "rank_order": ["S", "D", "W"],
+      "margins": { "S_over_D_min": 15 },
+      "assertions": [
+        { "id": "G9-arch", "type": "archetype_primary", "expect": "A1" },
+        { "id": "G9-rank", "type": "rank_order", "order": ["S", "D", "W"] },
+        { "id": "G9-margin", "type": "decoy_margin", "min": 15 },
+        { "id": "G9-s3", "type": "flagged_no_evidence_min", "candidate": "D", "min": 15 }
+      ],
+      "note": "D verbatim-mirrors the JD's distinctive phrases (continuous discovery habit, opportunity solution tree, north-star metric, ...), every one evidence-free. The >=15 flagged threshold is DELIBERATELY STRICT and known-brittle: a working scorer that correctly flags only 12 of 15 borderline mirrors while crediting 3 defensible synonyms would fail this. Kept tight on purpose; revisit only via the iteration rules, never loosen silently."
+    },
+    "G10": {
+      "failure_mode": "Missing hard must-have",
+      "rank_order": ["S", "D", "W"],
+      "margins": { "S_over_D_min": 10 },
+      "assertions": [
+        { "id": "G10-arch", "type": "archetype_primary", "expect": "A1" },
+        { "id": "G10-rank", "type": "rank_order", "order": ["S", "D", "W"] },
+        { "id": "G10-margin", "type": "decoy_margin", "min": 10 },
+        { "id": "G10-gap", "type": "gap_surfaces_must_have", "candidate": "D", "must_have": "enterprise B2B products into long, complex sales cycles (6 months or more)" }
+      ],
+      "note": "D outshines S on every section EXCEPT the required enterprise-6-month-cycle must-have (missing). S2 must-have double-weighting must drag D's composite below S, and D's gap report must surface the must-have as THE gap, phrased as a question."
+    }
+  }
+}
