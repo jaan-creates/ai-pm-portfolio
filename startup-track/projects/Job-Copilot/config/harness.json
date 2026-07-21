@@ -1,7 +1,8 @@
 {
   "_note": "Golden-set harness runtime config. Model/token settings for the judge, plus the deterministic S2/S3/composite recompute constants (ADR-003). Composite weights 0.50/0.35/0.15 are the calibration tunable per CRITIC_MODE_PROMPT.md §Procedure step 7.",
-  "_no_temperature": "Opus 4.8 REJECTS temperature/top_p/top_k with a 400 (confirmed via claude-api skill). The stability gate is perturbation-based (Rev 2), not temp-0-determinism-based, so temperature is not load-bearing — omitted deliberately. Do not re-add it.",
-  "model": "claude-opus-4-8",
+  "_no_temperature": "Opus 4.8 and Sonnet 5 both REJECT non-default temperature/top_p/top_k with a 400 (confirmed via claude-api skill). The stability gate is perturbation-based (Rev 2), not temp-0-determinism-based, so temperature is not load-bearing — omitted deliberately. Do not re-add it.",
+  "_model_note": "claude-sonnet-5 chosen for the first validation run (cheaper, still a capable judge; supports adaptive thinking + effort with no code change). Swap to claude-opus-4-8 for the most trustworthy baseline. Cheaper/older models (Haiku 4.5, Sonnet 4.5) need request-shape changes — save them for the post-freeze 'how cheap can production go' experiment.",
+  "model": "claude-sonnet-5",
   "_effort_note": "medium keeps each of the 62 scoring calls in a sane time/cost window; the skill notes Opus 4.8 at medium still exceeds prior models at xhigh. Raise to high only if the golden set shows the judge under-discriminating.",
   "thinking": "adaptive",
   "effort": "medium",
