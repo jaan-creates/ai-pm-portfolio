@@ -6,9 +6,12 @@ _mined/
 resume.master.local.md
 # Real operator config with comp floor etc. — only the .example is committed.
 config/operator_overrides.json
-# Secrets.
+# Secrets — ignore .env and any .env.<anything> (e.g. .env.local, .env.prod),
+# but keep the committed template. Broad on purpose so a mis-named key file
+# can't slip through.
 .env
-.env.local
+.env.*
+!.env.example
 
 # --- Harness runtime ---
 harness/node_modules/
