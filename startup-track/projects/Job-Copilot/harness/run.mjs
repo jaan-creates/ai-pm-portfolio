@@ -41,7 +41,10 @@ function resultPath(caseId, cand, runKind) {
 
 async function doRun(caseId, cand, runKind, resumeText, probeMode) {
   const out = resultPath(caseId, cand, runKind);
-  if (existsSync(out)) { console.log(`  skip ${caseId}-${cand}-${runKind} (exists)`); return; }
+  if (existsSync(out)) {
+    // Resume skips only SUCCESSFUL results; a previous failure is retried.
+    try { if (JSON.parse(readFileSync(out, 'utf8')).ok) { console.log(`  skip ${caseId}-${cand}-${runKind} (ok)`); return; } } catch { /* corrupt → re-run */ }
+  }
   const jd = read(`${cfg.paths.jds}/${caseId}.md`);
   process.stdout.write(`  run  ${caseId}-${cand}-${runKind} … `);
   const res = await score({ criticPrompt, rubric, jd, resume: resumeText, probeMode, cfg });

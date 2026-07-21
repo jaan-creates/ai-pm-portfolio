@@ -8,22 +8,24 @@ export const SECTION_KEYS = [
   'data_metrics', 'strategy', 'leadership', 'skills_tools',
 ];
 
-const SECTION_ALIASES = {
-  role_seniority: ['role_seniority', 'role_and_seniority', 'role_seniority_section', 'roleseniority', 'role', 'seniority'],
-  domain: ['domain', 'domain_fit'],
-  product_sense: ['product_sense', 'product_sense_and_customer_insight', 'productsense', 'product'],
-  execution: ['execution', 'execution_and_delivery', 'delivery'],
-  data_metrics: ['data_metrics', 'data_and_metrics', 'data_metrics_fluency', 'datametrics', 'metrics'],
-  strategy: ['strategy', 'strategy_and_vision', 'vision'],
-  leadership: ['leadership', 'leadership_and_stakeholder_influence', 'stakeholder'],
-  skills_tools: ['skills_tools', 'skills_and_tools', 'skills_tools_coverage', 'skillstools', 'skills', 'tools'],
-};
+// Match the model's section name to a canonical key by keyword, so we're robust
+// to phrasing ("Data & metrics fluency", "Product sense & customer insight",
+// "Skills / tools coverage", …) rather than requiring an exact tag. Order matters
+// only in that the patterns are mutually exclusive across the 8 rubric sections.
+const SECTION_MATCHERS = [
+  ['role_seniority', /\brole\b|seniority/],
+  ['data_metrics', /\bdata\b|metric/],
+  ['product_sense', /product|customer\s*insight/],
+  ['execution', /execution|delivery/],
+  ['leadership', /leadership|stakeholder/],
+  ['strategy', /strateg|vision/],
+  ['domain', /domain/],
+  ['skills_tools', /skill|tool/],
+];
 
 export function canonicalSectionKey(name) {
-  const norm = String(name || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-  for (const key of SECTION_KEYS) {
-    if (SECTION_ALIASES[key].includes(norm) || norm.startsWith(key)) return key;
-  }
+  const n = String(name || '').toLowerCase();
+  for (const [key, re] of SECTION_MATCHERS) if (re.test(n)) return key;
   return null;
 }
 
