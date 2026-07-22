@@ -1,18 +1,21 @@
 # Golden-set harness
 
-Runs the PM fit rubric against the frozen golden set (`../golden/`) and reports the 6 pass gates (`GOLDEN_SET.md`). Scoring uses the Anthropic API (Opus 4.8) per the operator's choice; the run is gated only on the API key.
+Runs the PM fit rubric against the frozen golden set (`../golden/`) and reports the 6 pass gates (`GOLDEN_SET.md`). The judge model is chosen in `../config/harness.json` and routed by id (ADR-005): `gemini-*` → Google (free tier, default), `claude-*` → Anthropic. The run is gated only on the matching API key in `../.env`.
 
 ## To run
 
 ```bash
 cd harness
 npm install
-# Set your key (never committed — .env is gitignored):
-export ANTHROPIC_API_KEY=sk-ant-...        # or: cp ../.env.example ../.env and fill it in
-node run.mjs           # LIVE: one streamed call per run (best for single-case debugging)
-node run.mjs --batch   # BATCH: Message Batches API — 50% cost, async, for the full set
+# Put the matching key in ../.env (gitignored). Default model is FREE Gemini Flash:
+#   GEMINI_API_KEY=...   (free, no card: https://aistudio.google.com/app/apikey)
+# For the Claude path instead, set ANTHROPIC_API_KEY and a claude-* model in config.
+node run.mjs           # LIVE: one call per run (throttled to the free-tier RPM for Gemini)
+node run.mjs --batch   # BATCH (Anthropic only): Message Batches API, 50% cost, async
 node report.mjs        # recomputes composites, evaluates gates → golden/report.md
 ```
+
+**Model / cost.** Default `gemini-2.5-flash` on the free tier ≈ **$0** (throttled to `requests_per_min`, ~15). The report's cost line reads $0 for free Gemini. Switch `model` to `claude-sonnet-5`/`claude-opus-4-8` for the paid/private judge (set `pricing_per_mtok_usd` too). **Resumability is model-aware:** a saved run is reused only if it came from the current model, so switching judges re-scores rather than mixing. **Privacy:** the free Gemini tier may train on inputs — fine for the synthetic golden set; for real-resume runs use Gemini's paid tier or a local model (ADR-005).
 
 `run.mjs` is resumable in both modes: a run whose result file is already `ok:true` is skipped and never re-billed; only prior failures are redone. Delete a `golden/results/*.json` to re-score just that run, or the whole dir for a clean pass. In `--batch` mode the in-flight batch id is saved to `golden/results/_batch.json`, so if you interrupt the poll and re-run, it reconnects to the same batch instead of resubmitting.
 

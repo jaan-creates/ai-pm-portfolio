@@ -12,3 +12,4 @@ Each ADR follows: **Status · Context · Decision · Reasoning · Rejected alter
 | [002](ADR-002-no-vector-db-v1.md) | No vector database in v1; embeddings in one narrow role only | Accepted |
 | [003](ADR-003-deterministic-three-signal-recompute.md) | Harness recomputes S1/S2/S3 + composite from parts; model composite is a cross-check | Accepted |
 | [004](ADR-004-prompt-rubric-split.md) | Prompt/rubric composition split (behavior+schema vs. what-to-measure) | Accepted |
+| [005](ADR-005-model-providers.md) | Model providers: Gemini free tier default, Claude premium, paid/local for privacy | Accepted |

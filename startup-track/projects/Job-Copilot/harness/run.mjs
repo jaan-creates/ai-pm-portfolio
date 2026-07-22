@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
 import { loadAliases, anonymize } from './anonymize.mjs';
 import { perturb } from './perturb.mjs';
-import { score, buildParams, parseResult, client } from './score.mjs';
+import { score, buildParams, parseResult, client, providerFor } from './score.mjs';
 
 // run.mjs — score the golden set. Default = live (one streamed call per run,
 // good for single-case debugging). `--batch` = Message Batches API (50% cost,
@@ -57,9 +57,16 @@ function buildJobs() {
   return jobs;
 }
 
-// A job needs scoring unless its result file already exists and is ok:true.
+// A job needs scoring unless its result is already ok:true AND was produced by
+// the CURRENT model — so switching judges (e.g. Claude → Gemini) re-scores prior
+// runs instead of leaving a mixed-model report.
 function needs(job) {
-  if (existsSync(job.out)) { try { if (JSON.parse(readFileSync(job.out, 'utf8')).ok) return false; } catch { /* corrupt → redo */ } }
+  if (existsSync(job.out)) {
+    try {
+      const r = JSON.parse(readFileSync(job.out, 'utf8'));
+      if (r.ok && r._meta && r._meta.model === cfg.model) return false;
+    } catch { /* corrupt → redo */ }
+  }
   return true;
 }
 
@@ -84,6 +91,10 @@ async function runLive(jobs) {
 }
 
 async function runBatch(jobs) {
+  if (providerFor(cfg.model) !== 'anthropic') {
+    console.log(`--batch is Anthropic-only (Message Batches API). Model "${cfg.model}" isn't Claude — run WITHOUT --batch (the free Gemini tier needs no batch and is already ~free).`);
+    return;
+  }
   const todo = jobs.filter(needs);
   console.log(`${jobs.length - todo.length} already ok (skipped, not re-billed), ${todo.length} to score via batch.`);
   if (todo.length === 0) { console.log('Nothing to do. Now: node report.mjs'); return; }

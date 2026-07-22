@@ -1,9 +1,9 @@
 {
   "_note": "Golden-set harness runtime config. Model/token settings for the judge, plus the deterministic S2/S3/composite recompute constants (ADR-003). Composite weights 0.50/0.35/0.15 are the calibration tunable per CRITIC_MODE_PROMPT.md §Procedure step 7.",
-  "_no_temperature": "Opus 4.8 and Sonnet 5 both REJECT non-default temperature/top_p/top_k with a 400 (confirmed via claude-api skill). The stability gate is perturbation-based (Rev 2), not temp-0-determinism-based, so temperature is not load-bearing — omitted deliberately. Do not re-add it.",
-  "_model_note": "claude-sonnet-5 chosen for the first validation run (cheaper, still a capable judge; supports adaptive thinking + effort with no code change). Swap to claude-opus-4-8 for the most trustworthy baseline. Cheaper/older models (Haiku 4.5, Sonnet 4.5) need request-shape changes — save them for the post-freeze 'how cheap can production go' experiment.",
-  "model": "claude-sonnet-5",
-  "_effort_note": "medium keeps each of the 62 scoring calls in a sane time/cost window; the skill notes Opus 4.8 at medium still exceeds prior models at xhigh. Raise to high only if the golden set shows the judge under-discriminating.",
+  "_model_note": "Judge is chosen by model id (ADR-005): gemini-* → Google (free tier), claude-* → Anthropic. Default is the FREE Gemini Flash for $0 validation. Switch to claude-sonnet-5 / claude-opus-4-8 for the private/trustworthy path, or Gemini PAID tier / a local model for real-resume privacy. thinking/effort/stream below are Anthropic-only (ignored by Gemini).",
+  "model": "gemini-2.5-flash",
+  "requests_per_min": 15,
+  "_no_temperature": "Anthropic (Opus 4.8 / Sonnet 5) REJECT non-default temperature/top_p/top_k with a 400. Stability gate is perturbation-based (Rev 2), so temperature is not needed — omitted deliberately.",
   "thinking": "adaptive",
   "effort": "medium",
   "max_tokens": 16000,
@@ -11,9 +11,9 @@
   "runs_per_candidate": 2,
   "stability_threshold": 5,
   "pricing_per_mtok_usd": {
-    "_note": "For the report's cost summary. Sonnet 5 INTRO pricing (through 2026-08-31); standard is input 3 / output 15. cache write = 1.25x input, cache read = 0.1x input. Update if you switch model.",
-    "input": 2,
-    "output": 10
+    "_note": "For the report's cost summary. Gemini FREE tier = 0/0 (current). If you switch to a paid model, set the real rates: Sonnet 5 intro 2/10 (std 3/15), Opus 4.8 5/25, Gemini 2.5 Flash paid ~0.30/2.50. cache write = 1.25x input, cache read = 0.1x input.",
+    "input": 0,
+    "output": 0
   },
   "composite_weights": { "s1": 0.5, "s2": 0.35, "s3": 0.15 },
   "composite_cross_check_tolerance": 2,
