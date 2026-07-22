@@ -5,8 +5,8 @@
 // Tolerant on purpose (the operator writes this file by hand on Windows):
 //  - strips a leading UTF-8 BOM (PowerShell/Notepad add one);
 //  - accepts NAME=value lines (optionally quoted), ignores # comments;
-//  - accepts a bare `sk-ant-…` key with no NAME= prefix and treats it as
-//    ANTHROPIC_API_KEY (the most common hand-editing mistake).
+//  - accepts a bare `sk-ant-…` / `AIza…` key with no NAME= prefix and treats it
+//    as ANTHROPIC_API_KEY / GEMINI_API_KEY (the most common hand-editing mistake).
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -24,7 +24,9 @@ if (existsSync(envPath)) {
       if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
       if (!process.env[m[1]]) process.env[m[1]] = v;
     } else if (/^sk-ant-\S+$/.test(s) && !process.env.ANTHROPIC_API_KEY) {
-      process.env.ANTHROPIC_API_KEY = s; // bare key, no NAME= prefix
+      process.env.ANTHROPIC_API_KEY = s; // bare Anthropic key, no NAME= prefix
+    } else if (/^AIza[0-9A-Za-z_-]{20,}$/.test(s) && !process.env.GEMINI_API_KEY) {
+      process.env.GEMINI_API_KEY = s; // bare Google/Gemini key, no NAME= prefix
     }
   }
 }
