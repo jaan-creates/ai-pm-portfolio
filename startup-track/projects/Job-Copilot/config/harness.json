@@ -10,6 +10,11 @@
   "stream": true,
   "runs_per_candidate": 2,
   "stability_threshold": 5,
+  "pricing_per_mtok_usd": {
+    "_note": "For the report's cost summary. Sonnet 5 INTRO pricing (through 2026-08-31); standard is input 3 / output 15. cache write = 1.25x input, cache read = 0.1x input. Update if you switch model.",
+    "input": 2,
+    "output": 10
+  },
   "composite_weights": { "s1": 0.5, "s2": 0.35, "s3": 0.15 },
   "composite_cross_check_tolerance": 2,
   "s2_recompute": {

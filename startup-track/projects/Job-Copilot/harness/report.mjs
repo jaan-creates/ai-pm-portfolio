@@ -223,5 +223,39 @@ for (const caseId of Object.keys(labels.cases)) for (const cand of ['S', 'D', 'W
 }
 if (missing.length) { say(''); say(`> ⚠️ ${missing.length} result files missing (harness not fully run yet): ${missing.slice(0, 6).join(', ')}${missing.length > 6 ? ' …' : ''}`); }
 
+// ---- Cost summary (from captured usage; runs before usage-capture show as untracked) ----
+const price = cfg.pricing_per_mtok_usd || { input: 0, output: 0 };
+function costOf(u) {
+  if (!u) return null;
+  return (u.input_tokens * price.input
+    + (u.cache_creation_input_tokens || 0) * price.input * 1.25
+    + (u.cache_read_input_tokens || 0) * price.input * 0.1
+    + u.output_tokens * price.output) / 1e6;
+}
+let costTotal = 0, costed = 0, okTotal = 0;
+for (const caseId of Object.keys(labels.cases)) {
+  const cands = ['S', 'D', 'W'];
+  const kinds = ['canonical', 'perturbed', ...(caseId === 'G8' ? ['logoswap-canonical', 'logoswap-perturbed'] : [])];
+  for (const cand of cands) for (const rk of kinds) {
+    if (rk.startsWith('logoswap') && cand !== 'D') continue; // G8 logoswap is D-only
+    const rec = load(caseId, cand, rk);
+    if (!rec) continue;
+    if (rec.ok) okTotal++;
+    const c = costOf(rec.usage);
+    if (c != null) { costTotal += c; costed++; }
+  }
+}
+say('## Cost (from captured usage)');
+say('');
+if (costed === 0) {
+  say(`- No token usage captured in these results yet (they predate usage tracking). For spend so far, see the Anthropic Console → Usage. Model \`${cfg.model}\` at $${price.input}/$${price.output} per 1M in/out.`);
+} else {
+  const perRun = costTotal / costed;
+  const remaining = 62 - okTotal;
+  say(`- Priced runs: ${costed} · **total so far ≈ $${costTotal.toFixed(2)}** · **per run ≈ $${perRun.toFixed(3)}** (model \`${cfg.model}\`, $${price.input}/$${price.output} per 1M in/out, caching applied).`);
+  say(`- Projection to finish (${remaining} runs left) ≈ **$${(perRun * remaining).toFixed(2)}** live, or ≈ **$${(perRun * remaining * 0.5).toFixed(2)}** with \`--batch\` (50% off).`);
+}
+say('');
+
 writeFileSync(P(cfg.paths.report), lines.join('\n') + '\n');
 console.log(`Wrote ${cfg.paths.report} · gates ${gatesGreen ? 'GREEN' : 'not green'} · rank ${rankHits}/10 · stability violations ${stabilityViolations.length}`);
