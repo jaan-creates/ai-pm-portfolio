@@ -9,11 +9,14 @@ cd harness
 npm install
 # Set your key (never committed — .env is gitignored):
 export ANTHROPIC_API_KEY=sk-ant-...        # or: cp ../.env.example ../.env and fill it in
-node run.mjs      # 62 scoring runs, resumable (skips existing golden/results/*.json)
-node report.mjs   # recomputes composites, evaluates gates → golden/report.md
+node run.mjs           # LIVE: one streamed call per run (best for single-case debugging)
+node run.mjs --batch   # BATCH: Message Batches API — 50% cost, async, for the full set
+node report.mjs        # recomputes composites, evaluates gates → golden/report.md
 ```
 
-`run.mjs` is resumable: delete a `golden/results/*.json` file to re-score just that run, or delete the whole dir for a clean pass. `report.mjs` reads whatever results exist and flags any that are missing.
+`run.mjs` is resumable in both modes: a run whose result file is already `ok:true` is skipped and never re-billed; only prior failures are redone. Delete a `golden/results/*.json` to re-score just that run, or the whole dir for a clean pass. In `--batch` mode the in-flight batch id is saved to `golden/results/_batch.json`, so if you interrupt the poll and re-run, it reconnects to the same batch instead of resubmitting.
+
+**Cost levers.** The critic prompt + rubric (~3.6k tokens, identical every call) are cached via `cache_control` on the system block — charged full once, then ~10% per later call within the 5-min TTL (calls are ~70s apart, so the cache stays warm). Every result records real `usage` (input/output/cache tokens) so cost is measured, not estimated. `--batch` halves the whole bill. Combine them for the cheapest full run.
 
 ## What each module does
 
