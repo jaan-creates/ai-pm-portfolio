@@ -6,89 +6,116 @@
 
 ## Where the operator profile actually came from
 
-I pulled roughly the last 500 emails from my own inbox (through n8n's Gmail node —
-not manually) and fed them to an LLM. The LLM proposed the two-layer structure that
-ended up in `priorities.md`: Layer 1, principles that judge any sender including ones
-I've never received mail from; Layer 2, shortcuts for senders I get mail from
-repeatedly (Splitwise, newsletters, marketing I always drop).
+I went through roughly the last 500 emails in my own inbox and did the actual
+judgment work myself: deciding what was noise and what mattered. The concrete finding
+was narrower than "importance is a multi-signal thing" — it was a short list of
+specific senders and patterns that were always noise: Splitwise settle-ups,
+newsletters, and marketing mail that dresses itself up as urgent (a Cleartax ad
+using an ITR-deadline hook, not an actual deadline). Those became the Layer 2 drop
+rules in `priorities.md`.
 
-I don't have the specific reasoning the LLM gave for why one layer wasn't enough.
-That exchange wasn't saved anywhere, and I can't reconstruct it now. So the honest
-version is: this wasn't me independently discovering that "importance is multiple
-signals that have to be combined" through my own analysis. It was an LLM synthesizing
-a known-sender/unknown-sender split after I gave it real data, and I kept the
-structure because it made sense and matched what I actually wanted dropped. I did not
-personally notice some inbox pattern and go build a layer for it — the structure came
-from the model, not from me.
+The two-layer *structure* — Layer 1 (principles that judge any sender, including ones
+I've never received mail from) versus Layer 2 (shortcuts for known, recurring
+senders) — was not something I derived from the inbox audit. That packaging was
+suggested by Claude Code after I gave it the real data and my findings. So the
+honest split is: I did the substantive work of deciding what's actually important;
+the model did the structural work of organizing that judgment into two layers. Layer
+1's content (the "is this dated and does it need me" rules) reads as general
+judgment criteria I wrote, not something traced back to a specific pattern I found
+in the 500 emails the way the Layer 2 drop list is.
 
 ## What's implemented vs. what's prose
 
-The two layers (five sections total in the current file, counting tone/identity/time
-window) are **text in a markdown file, nothing else.** There is no code that enforces
-them. No routing logic, no gating, no "if Layer 1 passes, check Layer 2." At runtime,
-the whole `priorities.md` file gets concatenated with the day's emails, calendar,
-weather, and news into one string, and that string goes to Claude in a single API
-call. Claude reads it all as one blob and produces JSON in one holistic pass.
+Confirmed by reading the actual code nodes in `Morning Debrief Email.json`, not
+inferred. The `Assemble` node does this:
 
-The "layers" are a writing device for organizing my instructions to the model —
-useful for me when editing the file, meaningless to the runtime. Claude doesn't
-"execute" Layer 1 before Layer 2 in any verifiable sense. I have never checked a real
-Claude output against `priorities.md` line by line to confirm the model actually
-followed the ordering I wrote. I infer it's working because the emails I don't want
-mostly don't show up — that's not the same as verifying the mechanism.
+```js
+const priorities = (grab('Priorities') || {}).priorities_text || '';
+...
+"OPERATOR PROFILE:\n" + priorities,
+```
+
+The whole `priorities.md` file is grabbed as one string and concatenated whole into
+the Claude prompt, alongside emails, calendar, weather, and news. No parsing into
+Layer 1 vs. Layer 2, no sequencing, no gating. `Build Email` only parses Claude's
+JSON reply, computes cost, and renders HTML — it doesn't touch priorities logic at
+all. So: the two layers are text in a markdown file. Nothing in the pipeline
+enforces the ordering I wrote them in, and nothing would catch it if Claude ignored
+part of the file on a given morning.
+
+Given that, is code-level enforcement actually a good idea? Not uniformly. Layer 2
+is a static list of senders with deterministic outcomes ("this sender → always
+drop/collapse") — that doesn't need an LLM at all, and moving it into a real
+pre-filter in the `Assemble` node (drop those emails before they're even sent to
+Claude) would guarantee the rule is followed and cut token cost, instead of hoping a
+prompt instruction gets honored. Layer 1 is different — judging a never-before-seen
+sender requires reading and reasoning about content, which is exactly what needs the
+LLM. So the fix isn't "enforce both layers in code," it's that Layer 2 is currently
+mislabeled as the same kind of mechanism as Layer 1 when it's actually a much
+simpler, code-appropriate one.
 
 ## Why the brain is thin — and it is
 
-"Curation, not aggregation" is the thesis of this whole project. Mechanically, what
-that thesis rests on right now is **one well-crafted prompt.** There's no separate
-clustering step, no scoring step, no intermediate representation I can inspect
-between "raw inbox" and "final JSON." Architecturally this is close to a
-well-prompted summarizer — the same category as a hundred other inbox-digest tools —
-not a distinct judgment mechanism. If Claude ignored half of `priorities.md` on a
-given morning, nothing in the pipeline would catch it or even surface that it
-happened, because the only artifact that exists is the final email.
+I looked at this directly rather than taking the earlier draft of this file's word
+for it: "well-prompted summarizer" is accurate, not harsh. The test that matters is
+whether the system could detect its own failure to curate. It can't. The entire
+mechanism is one Claude call — concatenate everything into a string, ask it in the
+prompt to "cluster across sources, score against the Bottleneck Test, pick exactly
+ONE one_thing," and parse the JSON that comes back. The clustering and scoring are
+*requested in prompt text*; there's no separable step — no cluster list, no
+per-item score, no discard log — that I could point to and independently check
+against the output. If Claude silently skipped the clustering instruction on a given
+morning and just picked the most recent dated email as `one_thing`, the output shape
+would be identical and nothing would surface the difference.
 
-So: "curation, not aggregation" is the goal the prompt is written to reach, not a
-property the system guarantees. I'm stating that as a limitation, not walking it
-back — a well-crafted single prompt is a legitimate v1. But CASE_STUDY.md frames
-curation as the delivered differentiator, and that's stronger than what's actually
-built.
+So "curation, not aggregation" is the goal the prompt is aimed at, not a property
+the system structurally guarantees. That's a real limitation, not a reason to throw
+the v1 out — a well-crafted single prompt is a legitimate first version. But
+`CASE_STUDY.md` frames curation as the delivered differentiator, and that's stronger
+than what's actually built.
 
 ## What I didn't seriously consider
 
-I did not evaluate alternative judgment architectures before building this one —
-no rules-based pre-filter before the LLM call, no two-pass triage-then-deep-read,
-no code-level layer gating. `DECISIONS.md` documents real rejected alternatives, but
-only at the implementation level (n8n vs. hand-rolled code, HTTP node vs. n8n's
-native Anthropic node, one code node vs. three). There's no equivalent record of a
-rejected alternative at the judgment-pipeline level, because there wasn't one. The
-single-call-to-Claude design was the first approach I built, not one chosen among
-several I tried and discarded. The multi-pass / tiered-retrieval ideas in the v2
-roadmap are deferred work, not things I built and rejected.
+Nothing was evaluated, as best I remember. No rules-based pre-filter before the LLM
+call, no two-pass triage-then-deep-read, no code-level layer gating. `DECISIONS.md`
+documents real rejected alternatives, but only at the implementation level (n8n vs.
+hand-rolled code, HTTP node vs. n8n's native Anthropic node, one code node vs.
+three). There's no equivalent record at the judgment-pipeline level because there
+was no decision point — the single-call design was the first and only thing I
+built, not one chosen among discarded alternatives. The multi-pass / tiered-retrieval
+ideas in the v2 roadmap are deferred work, not things I built and rejected.
 
 ## The n8n and API wiring
 
-No real gap here that I'm aware of. I can explain the mechanics I built — for
-example, why "Always Output Data" is toggled on for the Calendar node specifically:
-n8n halts a workflow run by default when a node returns zero items, so a quiet
-calendar day (no events) would otherwise kill the entire brief before it reaches
-Claude. Turning that setting on forces the node to emit an empty placeholder item
-instead, so the rest of the workflow still runs. That's the kind of thing I
-understand well enough to defend, not something I copied and hope works.
+Two specific things I don't currently know, tested directly rather than accepted on
+faith:
+
+- The cost math in `Build Email` uses `IN_RATE = 3/1e6, OUT_RATE = 15/1e6`. I don't
+  know if these are still the correct Claude Sonnet per-token rates — they were
+  written in around when I built this and I haven't re-checked them since.
+- The Anthropic call uses an `httpHeaderAuth` credential stored in n8n's credential
+  store. I don't know what header it actually sends (`x-api-key` vs. `Authorization:
+  Bearer <key>`) — it's opaque to me because it lives in the credential store, not
+  in anything I've read recently.
+
+Both are real, current gaps, not resolved ones. What I can still defend without
+re-checking: why "Always Output Data" is toggled on for the Calendar node
+specifically — n8n halts a run by default when a node returns zero items, so a quiet
+calendar day (no events) would otherwise kill the whole brief before it reaches
+Claude. That setting forces an empty placeholder item instead, so the rest of the
+workflow still runs.
 
 ## Has this actually run for real?
 
-Yes. The workflow has executed and sent real emails to myself — this isn't a
-never-run design. The cost figure in `COSTS.md` (~10,686 input / ~793 output tokens,
-~$0.044/run, dated 2026-07-03) is from an actual run, visible in the email output
-itself, not a projected estimate dressed up as a measurement. It has run as a daily
-automation I don't have to babysit — meeting or exceeding the README's stated ship
-gate of 7 consecutive unattended weekday mornings.
-
-What I can't independently verify from the repo alone, and want to be honest about:
-there's no raw execution log, screenshot, or pinned n8n execution data committed
-anywhere, so none of this is provable from the repo itself — only from my own
-say-so. A reviewer reading just the files has to take the "it ran" claim on trust.
+Yes, it runs every day. I'm not able to prove that from the repo itself, and I'm
+fine with that being the honest final state: there's no raw execution log,
+screenshot, or pinned n8n execution data committed anywhere, so a reviewer reading
+just the files has to take "it runs daily" on my word, not on anything verifiable in
+this directory. The cost figure in `COSTS.md` (~10,686 input / ~793 output tokens,
+~$0.044/run, dated 2026-07-03) and the tuning-log entry in `DECISIONS.md` dated
+2026-07-12 after a 3-email audit are the closest things to evidence — specific,
+dated, falsifiable claims rather than a vague "it works" — but they're still claims,
+not artifacts.
 
 Two things worth fixing regardless of provenance: the committed
 `Morning Debrief Email.json` still has a live OpenWeatherMap key and a live
