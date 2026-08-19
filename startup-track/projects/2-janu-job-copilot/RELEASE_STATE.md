@@ -1,43 +1,53 @@
 # Janu Job Copilot — Release State
 
-Last updated: 2026-08-19 15:17 IST
+Last updated: 2026-08-20
 
-## Target
+## Frozen production baseline
 
-- Release: `1.3.3`
-- Regression suite: `p0-regression-v14`
+- Production release: `1.3.8`
+- Production regression suite: `p0-regression-v19`
+- Live preflight: `PASS`
+- P0 closure phase: `COMPLETE`
+- Production worker: `enabled`
+- Production queue at P1 start: clean (`running=0`, `queued=0`, `pendingPdf=0`)
 - Master spec: `0.19.0`
-- Deployment branch: `janu-job-copilot/apps-script-ci`
-- CI credential state: `JANU_CLASPRC_JSON confirmed; Apps Script API enabled; deployment retriggered`
+- P1 development branch: `janu-job-copilot/p1-execution`
+- P1 PR: `#2` (draft)
 
-## Current P0 defects being closed
+The previous 1.3.3/v14 text on this branch was documentation drift and is superseded by the connector-verified live tracker state above. P1 must not mutate or weaken the frozen P0 contracts while it is under development.
 
-- FL-027 — fresh application-pack EV-* hygiene failure
-- FL-028 — QA rejection did not self-heal via fresh evidence-grounded resume generation
-- FL-029 — release identity packaging mismatch in the first 1.3.2/v13 handoff
-- FL-030 — closure watchdog could be consumed by a script-lock collision
+## P1 status
 
-v14 contains/retains the required controls: `PACK-SAN-001`, `QA-REPAIR-001`, `BOOTSTRAP-003`, `BOOTSTRAP-004`, `CONTROL-001`, and `RELEASE-001`.
+`P1-A IN IMPLEMENTATION`
 
-## Strict P0 closure gate
+Current P1-A contract patch adds:
 
-Do not mark `P0 CLOSED → P1 READY` until all current-release evidence is present:
+- RetrievalProvider routing contract: cache -> direct official -> Tavily -> SerpAPI -> unavailable.
+- Retrieval provenance contract: provider, URL, retrieval timestamp, content hash, confidence.
+- Deterministic JobPosting JSON-LD parser before model extraction, plus ATS host classification for Greenhouse, Lever, Ashby and Workday.
+- Vacancy revalidation contract: >72h before tailoring and >24h before submission.
+- Vacancy fail-closed state decision: OPEN / CLOSED / UNKNOWN.
+- Source promotion idempotency key and duplicate/closed-vacancy rejection.
+- Synthetic P1-A contract self-test.
 
-- current release identity verified
-- full current regression suite PASS
-- live preflight PASS
-- Worker Runtime / Regression Gate / Trigger Topology healthy and closed
-- production worker enabled exactly once after gate
-- queue has no stale/invalid running work
-- zero unresolved system-owned Worker Error applications
-- artifact hygiene clean and no external EV-* leakage
-- Target/Keka/ClickPost recovery confirmed on the final release
-- at least two additional Apply applications reach Resume Review unattended without source changes/manual continuation
-- one-heavy-job execution remains below the 240-second hard guard and does not duplicate/requeue obsolete work
-- real scheduled Daily Sourcing cycle writes durable `__Sourcing Runs` telemetry and tracker candidates autonomously
-- Failure Learning rows for release defects are closed with live evidence
-- Motive human approval/submission gate is completed when the user elects to submit; exact submitted resume version and Applied Date become immutable
+This is not yet a production release. Provider HTTP adapters, production intake wiring, regression integration, deployment and limited live acceptance remain gated.
+
+## P1 gates
+
+P1-A closes only after retrieval routing, parser fixtures, provenance, source promotion/replay and vacancy revalidation pass deterministic tests and limited live acceptance without regressing P0 SOURCE/SCHEMA/WRITE/RECON controls.
+
+P1-B then adds budget hard caps, durable output cache, Company Cache TTL enforcement and DLQ/replay/GC. P1-C then adds immutable resume revision lineage, Gmail outcome monitoring and RetrievalProvider-backed contact discovery.
+
+Full P1 closure requires the complete P0 suite to remain green, P1 regression green, live preflight green, bounded one-heavy-job runtime, cost attribution before paid calls, clean artifacts, and no unresolved deterministic defect without failure-learning prevention evidence.
+
+## Execution-control contract
+
+A release transition advances only on evidence, not intent:
+
+`PATCHED -> VALIDATED -> DEPLOYED -> LIVE -> TESTED -> CLOSED`
+
+A stalled state becomes `STALLED -> AUTO_DIAGNOSE -> AUTO_REPAIR_RETRY`. `USER_BLOCKED` is reserved for a genuine OAuth/security/user-approval/authenticated external-submission boundary.
 
 ## Automation boundary
 
-After v14 deploys, approved runtime actions are requested through the allow-listed `__Worker State` operator-command channel. ChatGPT owns command issuance, tracker verification, regression/preflight inspection, defect triage, and iterative GitHub patch updates. Human intervention is reserved for OAuth/security setup and true user approval/authenticated external submission boundaries.
+Approved runtime actions remain constrained to the allow-listed operator-command plane and bounded production worker. ChatGPT owns repository changes, tracker inspection, regression/preflight inspection, defect triage, iterative patching and evidence-based progression. Human intervention is reserved for genuine security/OAuth and external approval/submission boundaries.
