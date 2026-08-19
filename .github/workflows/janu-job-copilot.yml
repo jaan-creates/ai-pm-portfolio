@@ -82,7 +82,10 @@ jobs:
           node --check /tmp/janu-job-copilot-combined.js
 
       - name: Full release-contract validation
-        run: node "$PROJECT_DIR/scripts/validate-release.mjs" "$LIVE_DIR" | tee /tmp/janu-release-validation.json
+        shell: bash
+        run: |
+          set -o pipefail
+          node "$PROJECT_DIR/scripts/validate-release.mjs" "$LIVE_DIR" | tee /tmp/janu-release-validation.json
 
       - name: Push validated source to Apps Script production project
         working-directory: .janu-live
