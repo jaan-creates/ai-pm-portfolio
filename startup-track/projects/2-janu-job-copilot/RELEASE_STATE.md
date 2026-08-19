@@ -9,7 +9,7 @@ Last updated: 2026-08-19
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
 - CI credential state: `JANU_CLASPRC_JSON confirmed; JANU_CLASP_JSON confirmed; Apps Script API enabled`
-- Deployment state: `RETRIGGERED AFTER V17 WORKFLOW REGISTRATION`
+- Deployment state: `ENABLE PHASE RUNTIME DIAGNOSTIC TRIGGERED`
 
 ## Current P0 defects being closed
 
