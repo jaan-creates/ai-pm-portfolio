@@ -63,6 +63,14 @@ jobs:
       - name: Pull current production Apps Script
         working-directory: .janu-live
         run: clasp pull --user "$CLASP_USER"
+      - name: Diagnose enable call graph
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'),p='.janu-live/TrackerWorkflow.js',s=fs.readFileSync(p,'utf8');
+          function body(name){const a=s.indexOf('function '+name+'(');if(a<0)return'';let depth=0,start=s.indexOf('{',a);for(let i=start;i<s.length;i++){if(s[i]==='{')depth++;else if(s[i]==='}'&&--depth===0)return s.slice(start+1,i);}return'';}
+          for(const name of ['enablePhase1_2Worker','runP0ClosureStep_']){const b=body(name);const calls=[...new Set([...b.matchAll(/\b([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g)].map(m=>m[1]).filter(x=>!['if','for','while','switch','catch','function'].includes(x)))].sort();console.log(name+': '+calls.join(','));console.log(name+'_chars='+b.length);}
+          NODE
       - name: Apply deterministic v17 release patch
         run: node "$PROJECT_DIR/scripts/patch-live-source.mjs" "$LIVE_DIR"
       - name: Enable deploying-user-only API execution
