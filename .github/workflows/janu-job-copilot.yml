@@ -63,6 +63,14 @@ jobs:
       - name: Pull current production Apps Script
         working-directory: .janu-live
         run: clasp pull --user "$CLASP_USER"
+      - name: Inspect closure durable-state helpers
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'),s=fs.readFileSync('.janu-live/TrackerWorkflow.js','utf8');
+          function fn(name){const a=s.indexOf('function '+name+'(');if(a<0){console.log(name+': MISSING');return;}let d=0,b=s.indexOf('{',a);for(let i=b;i<s.length;i++){if(s[i]==='{')d++;else if(s[i]==='}'&&--d===0){console.log('--- '+name+' ---\n'+s.slice(a,i+1));return;}}}
+          for(const n of ['p0ClosureState_','p0ClosureAttempt_','runP0ClosureBootstrap','runP0ClosureStep_'])fn(n);
+          NODE
       - name: Apply deterministic v18 release patch
         run: node "$PROJECT_DIR/scripts/patch-live-source.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
