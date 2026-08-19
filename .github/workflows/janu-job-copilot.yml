@@ -27,6 +27,7 @@ jobs:
       LIVE_DIR: .janu-live
       CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
       CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
 
     steps:
       - name: Checkout isolated Job Copilot branch
@@ -55,9 +56,13 @@ jobs:
           printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
           chmod 600 "$LIVE_DIR/.clasp.json"
 
+      - name: Confirm CI clasp identity
+        shell: bash
+        run: clasp show-authorized-user --user "$CLASP_USER"
+
       - name: Pull current production Apps Script
         working-directory: .janu-live
-        run: clasp pull
+        run: clasp pull --user "$CLASP_USER"
 
       - name: Apply deterministic Job Copilot release patch
         run: node "$PROJECT_DIR/scripts/patch-live-source.mjs" "$LIVE_DIR"
@@ -65,7 +70,7 @@ jobs:
       - name: JavaScript syntax validation
         shell: bash
         run: |
-          find "$LIVE_DIR" -maxdepth 1 -type f -name '*.gs' -print0 | sort -z | xargs -0 cat > /tmp/janu-job-copilot-combined.js
+          find "$LIVE_DIR" -maxdepth 1 -type f \( -name '*.gs' -o -name '*.js' \) -print0 | sort -z | xargs -0 cat > /tmp/janu-job-copilot-combined.js
           test -s /tmp/janu-job-copilot-combined.js
           node --check /tmp/janu-job-copilot-combined.js
 
@@ -74,7 +79,7 @@ jobs:
 
       - name: Push validated source to Apps Script production project
         working-directory: .janu-live
-        run: clasp push --force
+        run: clasp push --force --user "$CLASP_USER"
 
       - name: Deployment summary
         if: always()
