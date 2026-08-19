@@ -4,12 +4,12 @@ Last updated: 2026-08-19
 
 ## Target
 
-- Release: `1.3.6`
-- Regression suite: `p0-regression-v17`
+- Release: `1.3.7`
+- Regression suite: `p0-regression-v18`
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
 - CI credential state: `JANU_CLASPRC_JSON confirmed; JANU_CLASP_JSON confirmed; Apps Script API enabled`
-- Deployment state: `ENABLE PHASE RUNTIME DIAGNOSTIC TRIGGERED`
+- Deployment state: `V18 TRIGGERED — BOUNDED ENABLE REPAIR`
 
 ## Current P0 defects being closed
 
@@ -20,8 +20,9 @@ Last updated: 2026-08-19
 - FL-031 — closure lock collision did not guarantee a fresh future continuation
 - FL-032 — deployment workflow registration/observability gap
 - FL-033 — PREPARE release phase repeatedly exceeded the Apps Script runtime ceiling
+- FL-034 — ENABLE reran the full strict live preflight immediately after a successful dedicated PREFLIGHT phase and repeatedly exceeded the runtime ceiling
 
-v17 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract and CONTROL-002. It adds `BOOTSTRAP-006` and a bounded PREPARE contract: expensive legacy migration is not rerun inside closure; current-release regression and strict live preflight remain the fail-closed validation gates before enablement.
+v18 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract, CONTROL-002, and bounded PREPARE. `BOOTSTRAP-007` makes closure ENABLE bounded by reusing only the immediately preceding durable strict preflight PASS while preserving the full preflight for every standalone/non-closure enable path.
 
 ## Strict P0 closure gate
 
