@@ -28,8 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      EXPECTED_VERSION: '1.3.6'
-      EXPECTED_SUITE: 'p0-regression-v17'
+      EXPECTED_VERSION: '1.3.7'
+      EXPECTED_SUITE: 'p0-regression-v18'
       PROJECT_DIR: startup-track/projects/2-janu-job-copilot
       LIVE_DIR: .janu-live
       CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
@@ -63,23 +63,8 @@ jobs:
       - name: Pull current production Apps Script
         working-directory: .janu-live
         run: clasp pull --user "$CLASP_USER"
-      - name: Diagnose enable call graph
-        shell: bash
-        run: |
-          node - <<'NODE'
-          const fs=require('fs'),p='.janu-live/TrackerWorkflow.js',s=fs.readFileSync(p,'utf8');
-          function body(name){const a=s.indexOf('function '+name+'(');if(a<0)return'';let depth=0,start=s.indexOf('{',a);for(let i=start;i<s.length;i++){if(s[i]==='{')depth++;else if(s[i]==='}'&&--depth===0)return s.slice(start+1,i);}return'';}
-          for(const name of ['enablePhase1_2Worker','runP0ClosureStep_']){const b=body(name);const calls=[...new Set([...b.matchAll(/\b([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g)].map(m=>m[1]).filter(x=>!['if','for','while','switch','catch','function'].includes(x)))].sort();console.log(name+': '+calls.join(','));console.log(name+'_chars='+b.length);}
-          NODE
-      - name: Apply deterministic v17 release patch
+      - name: Apply deterministic v18 release patch
         run: node "$PROJECT_DIR/scripts/patch-live-source.mjs" "$LIVE_DIR"
-      - name: Enable deploying-user-only API execution
-        working-directory: .janu-live
-        shell: bash
-        run: |
-          node -e "const fs=require('fs');const p='appsscript.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.executionApi={access:'MYSELF'};fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n');"
-          grep -q '"executionApi"' appsscript.json
-          grep -q '"MYSELF"' appsscript.json
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -91,29 +76,21 @@ jobs:
         run: |
           set -o pipefail
           node "$PROJECT_DIR/scripts/validate-release.mjs" "$LIVE_DIR" | tee /tmp/janu-release-validation.json
-          grep -q "BOOTSTRAP-006" /tmp/janu-job-copilot-combined.js || { echo 'BOOTSTRAP-006 missing'; exit 3; }
+          grep -q "BOOTSTRAP-007" /tmp/janu-job-copilot-combined.js || { echo 'BOOTSTRAP-007 missing'; exit 3; }
           grep -q "SCHEDULE_REPLACEMENT" /tmp/janu-job-copilot-combined.js || { echo 'FL-031 replacement contract missing'; exit 4; }
           grep -q "CONTROL-002" /tmp/janu-job-copilot-combined.js || { echo 'CONTROL-002 missing'; exit 5; }
           grep -q "DEFER_TO_STRICT_GATES" /tmp/janu-job-copilot-combined.js || { echo 'FL-033 bounded PREPARE contract missing'; exit 6; }
+          grep -q "REUSE_STRICT_PREFLIGHT" /tmp/janu-job-copilot-combined.js || { echo 'FL-034 bounded ENABLE contract missing'; exit 7; }
       - name: Push validated source to Apps Script production project
         working-directory: .janu-live
         run: clasp push --force --user "$CLASP_USER"
-      - name: Publish API executable for control plane
-        working-directory: .janu-live
-        run: clasp create-deployment --description "Job Copilot control API v17" --user "$CLASP_USER"
-      - name: Execute release-control health tick
-        working-directory: .janu-live
-        run: |
-          set -o pipefail
-          clasp run-function phase1HealthTick --user "$CLASP_USER" | tee /tmp/janu-control-run.txt
-          ! grep -q "Script function not found" /tmp/janu-control-run.txt
       - name: Deployment summary
         if: always()
         shell: bash
         run: |
           echo '## Janu Job Copilot Apps Script deployment' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Target release: 1.3.6 / p0-regression-v17' >> "$GITHUB_STEP_SUMMARY"
-          echo '- FL-031: live watchdog retry already proved closure continuation survives runtime termination.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- FL-033: PREPARE is bounded; expensive legacy migration is deferred to strict regression/preflight gates.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- CONTROL-002: release commands remain reachable from the scheduled health trigger while broad worker is gated.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Target release: 1.3.7 / p0-regression-v18' >> "$GITHUB_STEP_SUMMARY"
+          echo '- FL-031: closure lock collisions always create a fresh continuation.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- FL-033: PREPARE is bounded and defers expensive validation to strict gates.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- FL-034: closure ENABLE reuses only the immediately prior durable strict preflight PASS; standalone enable still runs full preflight.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"
