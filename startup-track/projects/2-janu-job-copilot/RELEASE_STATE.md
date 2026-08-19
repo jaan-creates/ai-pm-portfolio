@@ -9,7 +9,7 @@ Last updated: 2026-08-19
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
 - CI credential state: `JANU_CLASPRC_JSON confirmed; JANU_CLASP_JSON confirmed; Apps Script API enabled`
-- Deployment state: `V18 TRIGGERED — BOUNDED ENABLE REPAIR`
+- Deployment state: `V18 LIVE — CLOSURE STATE DIAGNOSTIC`
 
 ## Current P0 defects being closed
 
@@ -22,7 +22,7 @@ Last updated: 2026-08-19
 - FL-033 — PREPARE release phase repeatedly exceeded the Apps Script runtime ceiling
 - FL-034 — ENABLE reran the full strict live preflight immediately after a successful dedicated PREFLIGHT phase and repeatedly exceeded the runtime ceiling
 
-v18 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract, CONTROL-002, and bounded PREPARE. `BOOTSTRAP-007` makes closure ENABLE bounded by reusing only the immediately preceding durable strict preflight PASS while preserving the full preflight for every standalone/non-closure enable path.
+v18 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract, CONTROL-002, and bounded PREPARE. `BOOTSTRAP-007` makes closure ENABLE bounded by reusing only the immediately preceding durable strict preflight PASS while preserving the full preflight for every standalone/non-closure enable path. Current diagnostic is resolving why durable Worker State reports REGRESSION while repeated closure attempts still enter PREPARE.
 
 ## Strict P0 closure gate
 
