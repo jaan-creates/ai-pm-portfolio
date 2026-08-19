@@ -7,6 +7,12 @@ on:
     paths:
       - 'startup-track/projects/2-janu-job-copilot/**'
       - '.github/workflows/janu-job-copilot.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/**'
+      - '.github/workflows/janu-job-copilot.yml'
   workflow_dispatch:
 
 permissions:
@@ -18,6 +24,7 @@ concurrency:
 
 jobs:
   deploy-production:
+    if: github.event_name != 'pull_request' || github.head_ref == 'janu-job-copilot/apps-script-ci'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
