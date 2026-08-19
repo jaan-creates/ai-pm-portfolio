@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.argv[2] || '.janu-live';
-const files = fs.readdirSync(root).filter(f => f.endsWith('.gs'));
-if (!files.length) throw new Error(`No .gs files found in ${root}`);
+const files = fs.readdirSync(root).filter(f => f.endsWith('.gs') || f.endsWith('.js'));
+if (!files.length) throw new Error(`No .gs/.js Apps Script files found in ${root}`);
 
 const target = files.find(f => {
   const t = fs.readFileSync(path.join(root, f), 'utf8');
