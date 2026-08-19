@@ -4,12 +4,12 @@ Last updated: 2026-08-19
 
 ## Target
 
-- Release: `1.3.7`
-- Regression suite: `p0-regression-v18`
+- Release: `1.3.8`
+- Regression suite: `p0-regression-v19`
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
 - CI credential state: `JANU_CLASPRC_JSON confirmed; JANU_CLASP_JSON confirmed; Apps Script API enabled`
-- Deployment state: `V18 LIVE — CLOSURE STATE DIAGNOSTIC`
+- Deployment state: `V19 TRIGGERED — LIVE VERIFY PENDING`
 
 ## Current P0 defects being closed
 
@@ -21,8 +21,9 @@ Last updated: 2026-08-19
 - FL-032 — deployment workflow registration/observability gap
 - FL-033 — PREPARE release phase repeatedly exceeded the Apps Script runtime ceiling
 - FL-034 — ENABLE reran the full strict live preflight immediately after a successful dedicated PREFLIGHT phase and repeatedly exceeded the runtime ceiling
+- FL-035 — PREPARE updated only tracker telemetry to REGRESSION while the durable ScriptProperties closure state remained PREPARE; ENABLE also misused the phase setter as a getter
 
-v18 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract, CONTROL-002, and bounded PREPARE. `BOOTSTRAP-007` makes closure ENABLE bounded by reusing only the immediately preceding durable strict preflight PASS while preserving the full preflight for every standalone/non-closure enable path. Current diagnostic is resolving why durable Worker State reports REGRESSION while repeated closure attempts still enter PREPARE.
+v19 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract, CONTROL-002, bounded PREPARE, and bounded ENABLE. `BOOTSTRAP-008` explicitly verifies durable closure transitions. PREPARE now advances the ScriptProperties closure phase through `p0ClosureState_`, and closure ENABLE reads the durable phase directly rather than calling the setter as a getter.
 
 ## Strict P0 closure gate
 
