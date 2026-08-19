@@ -93,6 +93,13 @@ jobs:
       - name: Push validated source to Apps Script production project
         working-directory: .janu-live
         run: clasp push --force --user "$CLASP_USER"
+      - name: Attempt immediate control-plane tick
+        continue-on-error: true
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          echo 'Attempting Apps Script execution API control-plane tick...'
+          clasp run phase1HealthTick --nondev --user "$CLASP_USER"
       - name: Deployment summary
         if: always()
         shell: bash
@@ -103,4 +110,5 @@ jobs:
           echo '- FL-033: PREPARE is bounded and defers expensive validation to strict gates.' >> "$GITHUB_STEP_SUMMARY"
           echo '- FL-034: closure ENABLE reuses only the immediately prior durable strict preflight PASS; standalone enable still runs full preflight.' >> "$GITHUB_STEP_SUMMARY"
           echo '- FL-035: PREPARE advances the durable ScriptProperties closure state and ENABLE reads that durable state without setter misuse.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Post-deploy CI also attempts one allow-listed control-plane tick through the Apps Script Execution API; failure of that optional endpoint does not invalidate deployment.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"
