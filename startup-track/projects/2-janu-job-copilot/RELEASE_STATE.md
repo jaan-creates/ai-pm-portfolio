@@ -9,7 +9,7 @@ Last updated: 2026-08-19
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
 - CI credential state: `JANU_CLASPRC_JSON confirmed; JANU_CLASP_JSON confirmed; Apps Script API enabled`
-- Deployment state: `RETRIGGER_AFTER_DEFAULT_BRANCH_WORKFLOW_REGISTRATION`
+- Deployment state: `TRIGGERED_PENDING_LIVE_VERIFY`
 
 ## Current P0 defects being closed
 
@@ -20,7 +20,7 @@ Last updated: 2026-08-19
 - FL-031 — closure lock collision did not guarantee a fresh future continuation
 - FL-032 — deployment workflow existed only on the deployment branch, not the repository default branch, so GitHub did not register/instantiate the expected push workflow. Prevention: deployment workflows must first be registered on the default branch and verified there before relying on branch push triggers.
 
-v15 contains/retains the required controls including `PACK-SAN-001`, `QA-REPAIR-001`, `BOOTSTRAP-003`, `BOOTSTRAP-004`, `BOOTSTRAP-005`, `CONTROL-001`, and `RELEASE-001`. FL-031 requires the `SCHEDULE_REPLACEMENT` continuation contract.
+v15 contains/retains the required controls including `PACK-SAN-001`, `QA-REPAIR-001`, `BOOTSTRAP-003`, `BOOTSTRAP-004`, `BOOTSTRAP-005`, `CONTROL-001`, and `RELEASE-001`. FL-031 now requires the conservative `SCHEDULE_REPLACEMENT` continuation contract: every closure lock collision schedules a fresh bounded future continuation; the next successful closure entry clears duplicate closure triggers.
 
 ## Strict P0 closure gate
 
@@ -66,4 +66,4 @@ Approved runtime actions are requested through the allow-listed `__Worker State`
 
 ## Trigger note
 
-The deployment workflow is now registered on `main`. This state mutation on `janu-job-copilot/apps-script-ci` is the clean retrigger after fixing FL-032. Only the isolated Job Copilot project path is modified.
+The deployment workflow is registered on `main`. This Job-Copilot-only state mutation is the clean push trigger for the v15 FL-031 deployment. Only the isolated Job Copilot project path is modified.
