@@ -4,12 +4,12 @@ Last updated: 2026-08-19
 
 ## Target
 
-- Release: `1.3.4`
-- Regression suite: `p0-regression-v15`
+- Release: `1.3.5`
+- Regression suite: `p0-regression-v16`
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
 - CI credential state: `JANU_CLASPRC_JSON confirmed; JANU_CLASP_JSON confirmed; Apps Script API enabled`
-- Deployment state: `TRIGGERED_PENDING_LIVE_VERIFY`
+- Deployment state: `DEPLOYED; OPERATOR_BOOTSTRAP_QUEUED`
 
 ## Current P0 defects being closed
 
@@ -18,9 +18,9 @@ Last updated: 2026-08-19
 - FL-029 — release identity packaging mismatch in the first 1.3.2/v13 handoff
 - FL-030 — closure watchdog could be consumed by a script-lock collision
 - FL-031 — closure lock collision did not guarantee a fresh future continuation
-- FL-032 — deployment workflow existed only on the deployment branch, not the repository default branch, so GitHub did not register/instantiate the expected push workflow. Prevention: deployment workflows must first be registered on the default branch and verified there before relying on branch push triggers.
+- FL-032 — deployment workflow registration/observability gap
 
-v15 contains/retains the required controls including `PACK-SAN-001`, `QA-REPAIR-001`, `BOOTSTRAP-003`, `BOOTSTRAP-004`, `BOOTSTRAP-005`, `CONTROL-001`, and `RELEASE-001`. FL-031 now requires the conservative `SCHEDULE_REPLACEMENT` continuation contract: every closure lock collision schedules a fresh bounded future continuation; the next successful closure entry clears duplicate closure triggers.
+v16 retains the v15 FL-031 `SCHEDULE_REPLACEMENT` contract and adds `CONTROL-002`: the scheduled health trigger dispatches allow-listed operator commands while the broad worker is gated. This prevents release control from depending on the very worker that release gating intentionally disables.
 
 ## Strict P0 closure gate
 
@@ -63,7 +63,3 @@ Required evidence:
 ## Automation boundary
 
 Approved runtime actions are requested through the allow-listed `__Worker State` operator-command channel. ChatGPT owns command issuance, tracker verification, regression/preflight inspection, defect triage, iterative GitHub patch updates, deployment triggering through the isolated branch, and evidence-based state progression. Human intervention is reserved for OAuth/security setup and true user approval/authenticated external submission boundaries.
-
-## Trigger note
-
-The deployment workflow is registered on `main`. This Job-Copilot-only state mutation is the clean push trigger for the v15 FL-031 deployment. Only the isolated Job Copilot project path is modified.
