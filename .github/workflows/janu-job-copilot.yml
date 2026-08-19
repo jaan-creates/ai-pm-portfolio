@@ -28,8 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      EXPECTED_VERSION: '1.3.5'
-      EXPECTED_SUITE: 'p0-regression-v16'
+      EXPECTED_VERSION: '1.3.6'
+      EXPECTED_SUITE: 'p0-regression-v17'
       PROJECT_DIR: startup-track/projects/2-janu-job-copilot
       LIVE_DIR: .janu-live
       CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
@@ -63,7 +63,7 @@ jobs:
       - name: Pull current production Apps Script
         working-directory: .janu-live
         run: clasp pull --user "$CLASP_USER"
-      - name: Apply deterministic v16 release patch
+      - name: Apply deterministic v17 release patch
         run: node "$PROJECT_DIR/scripts/patch-live-source.mjs" "$LIVE_DIR"
       - name: Enable deploying-user-only API execution
         working-directory: .janu-live
@@ -83,16 +83,17 @@ jobs:
         run: |
           set -o pipefail
           node "$PROJECT_DIR/scripts/validate-release.mjs" "$LIVE_DIR" | tee /tmp/janu-release-validation.json
-          grep -q "BOOTSTRAP-005" /tmp/janu-job-copilot-combined.js || { echo 'BOOTSTRAP-005 missing'; exit 3; }
+          grep -q "BOOTSTRAP-006" /tmp/janu-job-copilot-combined.js || { echo 'BOOTSTRAP-006 missing'; exit 3; }
           grep -q "SCHEDULE_REPLACEMENT" /tmp/janu-job-copilot-combined.js || { echo 'FL-031 replacement contract missing'; exit 4; }
           grep -q "CONTROL-002" /tmp/janu-job-copilot-combined.js || { echo 'CONTROL-002 missing'; exit 5; }
+          grep -q "DEFER_TO_STRICT_GATES" /tmp/janu-job-copilot-combined.js || { echo 'FL-033 bounded PREPARE contract missing'; exit 6; }
       - name: Push validated source to Apps Script production project
         working-directory: .janu-live
         run: clasp push --force --user "$CLASP_USER"
       - name: Publish API executable for control plane
         working-directory: .janu-live
-        run: clasp create-deployment --description "Job Copilot control API v16" --user "$CLASP_USER"
-      - name: Execute queued release-control command
+        run: clasp create-deployment --description "Job Copilot control API v17" --user "$CLASP_USER"
+      - name: Execute release-control health tick
         working-directory: .janu-live
         run: |
           set -o pipefail
@@ -103,8 +104,8 @@ jobs:
         shell: bash
         run: |
           echo '## Janu Job Copilot Apps Script deployment' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Target release: 1.3.5 / p0-regression-v16' >> "$GITHUB_STEP_SUMMARY"
-          echo '- FL-031: every closure lock collision schedules a fresh future continuation.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Target release: 1.3.6 / p0-regression-v17' >> "$GITHUB_STEP_SUMMARY"
+          echo '- FL-031: live watchdog retry already proved closure continuation survives runtime termination.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- FL-033: PREPARE is bounded; expensive legacy migration is deferred to strict regression/preflight gates.' >> "$GITHUB_STEP_SUMMARY"
           echo '- CONTROL-002: release commands remain reachable from the scheduled health trigger while broad worker is gated.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Control API access is MYSELF-only and is used to execute the queued allow-listed release command from CI.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"
