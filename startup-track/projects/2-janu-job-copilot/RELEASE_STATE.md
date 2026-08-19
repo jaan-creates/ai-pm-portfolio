@@ -9,7 +9,7 @@ Last updated: 2026-08-19
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
 - CI credential state: `JANU_CLASPRC_JSON confirmed; JANU_CLASP_JSON confirmed; Apps Script API enabled`
-- Deployment state: `V19 TRIGGERED — LIVE VERIFY PENDING`
+- Deployment state: `V19 RETRIGGERED WITH IMMEDIATE CONTROL-TICK ATTEMPT`
 
 ## Current P0 defects being closed
 
@@ -23,7 +23,7 @@ Last updated: 2026-08-19
 - FL-034 — ENABLE reran the full strict live preflight immediately after a successful dedicated PREFLIGHT phase and repeatedly exceeded the runtime ceiling
 - FL-035 — PREPARE updated only tracker telemetry to REGRESSION while the durable ScriptProperties closure state remained PREPARE; ENABLE also misused the phase setter as a getter
 
-v19 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract, CONTROL-002, bounded PREPARE, and bounded ENABLE. `BOOTSTRAP-008` explicitly verifies durable closure transitions. PREPARE now advances the ScriptProperties closure phase through `p0ClosureState_`, and closure ENABLE reads the durable phase directly rather than calling the setter as a getter.
+v19 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract, CONTROL-002, bounded PREPARE, and bounded ENABLE. `BOOTSTRAP-008` explicitly verifies durable closure transitions. PREPARE now advances the ScriptProperties closure phase through `p0ClosureState_`, and closure ENABLE reads the durable phase directly rather than calling the setter as a getter. CI now also makes one best-effort post-deploy `phase1HealthTick` execution attempt through the Apps Script Execution API to reduce control-plane latency when that endpoint is available.
 
 ## Strict P0 closure gate
 
