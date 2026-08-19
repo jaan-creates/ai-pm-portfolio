@@ -4,12 +4,12 @@ Last updated: 2026-08-19
 
 ## Target
 
-- Release: `1.3.5`
-- Regression suite: `p0-regression-v16`
+- Release: `1.3.6`
+- Regression suite: `p0-regression-v17`
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
 - CI credential state: `JANU_CLASPRC_JSON confirmed; JANU_CLASP_JSON confirmed; Apps Script API enabled`
-- Deployment state: `DEPLOYED; DIRECT_CONTROL_EXECUTION_PROBE_TRIGGERED`
+- Deployment state: `TRIGGERED; FL-033 BOUNDED PREPARE PATCH`
 
 ## Current P0 defects being closed
 
@@ -19,8 +19,9 @@ Last updated: 2026-08-19
 - FL-030 — closure watchdog could be consumed by a script-lock collision
 - FL-031 — closure lock collision did not guarantee a fresh future continuation
 - FL-032 — deployment workflow registration/observability gap
+- FL-033 — PREPARE release phase repeatedly exceeded the Apps Script runtime ceiling
 
-v16 retains the v15 FL-031 `SCHEDULE_REPLACEMENT` contract and adds `CONTROL-002`: the scheduled health trigger dispatches allow-listed operator commands while the broad worker is gated. This prevents release control from depending on the very worker that release gating intentionally disables.
+v17 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract and CONTROL-002. It adds `BOOTSTRAP-006` and a bounded PREPARE contract: expensive legacy migration is not rerun inside closure; current-release regression and strict live preflight remain the fail-closed validation gates before enablement.
 
 ## Strict P0 closure gate
 
