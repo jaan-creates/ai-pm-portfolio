@@ -1,47 +1,55 @@
-# Janu Job Copilot — Apps Script automation foundation
+# Janu Job Copilot — isolated automation project
 
-Goal: make GitHub the source of truth so release packaging, deployment, and test execution stop depending on manual copy/paste in the Apps Script editor.
+This folder is the dedicated engineering/control-plane project for the Janu Job Copilot. Job Copilot work must remain inside this folder plus its single path-scoped GitHub Actions workflow at `.github/workflows/janu-job-copilot.yml`. No other existing `ai-pm-portfolio` project directory is part of this system.
 
-## Current live release
+## Current target release
 
-- Version: `1.3.2`
-- Regression suite: `p0-regression-v13`
-- Corrected release artifact has been statically verified outside GitHub.
+- Apps Script release: `1.3.3`
+- Regression suite: `p0-regression-v14`
+- Apps Script project identity is held only in GitHub Actions secrets, not committed to this public repository.
+- Live tracker and document identifiers remain runtime concerns; the repository automation does not copy the live Apps Script source into GitHub.
 
-The canonical full source is **not yet committed here**. The first connector write was intentionally removed because it was incomplete; this branch must not be merged until the full source import is complete.
+## Why the source is pulled ephemerally
 
-## Release-contract validator
+`ai-pm-portfolio` is public. The production Apps Script contains operational Drive/Sheet identifiers, so the CD job pulls the current production source into an ephemeral GitHub runner, applies a deterministic release patch, validates it, and pushes it back with `clasp`. The production source is not committed to the public repo.
 
-`scripts/validate-release.mjs` is prepared to fail CI when any of these drift:
+This gives us repeatable deployment while keeping Job Copilot operational source out of repository history.
 
-- release header
-- `P12.VERSION`
-- `P12.SUITE`
-- `verifyReleaseIdentity()` expected version/suite
-- `RELEASE-001`
-- stale prior-release identity literals
-- duplicate top-level functions
-- required regression IDs such as `PACK-SAN-001`, `QA-REPAIR-001`, and `BOOTSTRAP-003`
+## Pipeline
 
-This directly prevents the packaging error that escaped in the first 1.3.2 handoff.
+`.github/workflows/janu-job-copilot.yml` runs only for this project path. It:
 
-## One-time setup needed for full deployment takeover
+1. authenticates to Apps Script using Job-Copilot-specific GitHub secrets;
+2. runs `clasp pull` against the existing production Apps Script project;
+3. applies `scripts/patch-live-source.mjs`;
+4. runs JavaScript syntax validation;
+5. runs `scripts/validate-release.mjs` against the full pulled source;
+6. pushes only if all release contracts pass.
 
-Google's supported CI/CD path uses `clasp` with GitHub Actions. The Apps Script API must be enabled, and CI needs two protected GitHub secrets:
+The validator checks the complete release identity surface (`header`, `P12.VERSION`, `P12.SUITE`, `verifyReleaseIdentity`, `RELEASE-001`), stale-release literals, duplicate top-level functions, and mandatory P0 regression/control IDs.
 
-- `CLASPRC_JSON` — the OAuth credentials produced by an authorized `clasp login`
-- `CLASP_JSON` — the `.clasp.json` mapping containing the existing Apps Script Script ID
+## Function execution takeover
 
-For remote function execution (`verifyReleaseIdentity`, `runP0ClosureBootstrap`, etc.), the Apps Script project must also be deployed as an **API executable** and share the same standard Google Cloud project as the OAuth client. The Apps Script API does not support service-account execution for `scripts.run`, so the credential is an authorized user OAuth credential and must be handled as a secret.
+The Apps Script runtime has an allow-listed operator command channel in `__Worker State`. The production `phase1OneJobTick` trigger checks it before ordinary queue work. This lets the connected Sheet tooling request only approved commands such as:
 
-## Intended automated flow
+- `P0_BOOTSTRAP`
+- `RUN_REGRESSION`
+- `RUN_PREFLIGHT`
+- `ENABLE_WORKER`
+- `DISABLE_WORKER`
+- `ONE_JOB_TICK`
 
-1. ChatGPT updates the GitHub source/PR.
-2. GitHub Actions runs syntax + release-contract validation.
-3. On approved merge, CI runs `clasp push` to the existing Apps Script project.
-4. CI remotely runs `verifyReleaseIdentity`.
-5. If identity passes, CI runs `runP0ClosureBootstrap`.
-6. ChatGPT inspects tracker state, regression results, Failure Learning, and live acceptance through the connected Google Drive/Sheets tools.
-7. Human intervention remains only for true user approvals/authenticated application submissions or Google OAuth/security setup.
+Arbitrary code execution is rejected. After v14 is deployed, ChatGPT can write an operator command to the tracker, inspect its durable result, and continue the release/test loop without asking the user to select and run Apps Script functions manually.
 
-Do not commit `.clasprc.json`, OAuth tokens, API keys, or other secrets to this repository.
+## One-time secrets
+
+The GitHub Actions deployment job requires exactly these repository secrets:
+
+- `JANU_CLASPRC_JSON` — contents of `~/.clasprc.json` created by an authorized `clasp login` for the Google account that owns/has edit access to the Apps Script project.
+- `JANU_CLASP_JSON` — the `.clasp.json` project mapping for the production Apps Script project.
+
+Never commit `.clasprc.json`, `.clasp.json`, OAuth refresh tokens, API keys, or other credentials. These names are intentionally Job-Copilot-specific so other repository projects cannot accidentally reuse them.
+
+## P0 ownership rule
+
+A green infrastructure dashboard is not sufficient for P0 closure. `P0 CLOSED → P1 READY` requires current-release regression PASS, current live preflight PASS, no unresolved system-owned Worker Error, healthy runtime/circuits, live unattended Apply progression proofs, scheduled sourcing telemetry, artifact hygiene, durable Failure Learning closure evidence, and the human-gated Motive approval/submission step where applicable.
