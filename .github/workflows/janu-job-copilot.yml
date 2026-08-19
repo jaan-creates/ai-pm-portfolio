@@ -65,6 +65,13 @@ jobs:
         run: clasp pull --user "$CLASP_USER"
       - name: Apply deterministic v16 release patch
         run: node "$PROJECT_DIR/scripts/patch-live-source.mjs" "$LIVE_DIR"
+      - name: Enable deploying-user-only API execution
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          node -e "const fs=require('fs');const p='appsscript.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.executionApi={access:'MYSELF'};fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n');"
+          grep -q '"executionApi"' appsscript.json
+          grep -q '"MYSELF"' appsscript.json
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -82,9 +89,15 @@ jobs:
       - name: Push validated source to Apps Script production project
         working-directory: .janu-live
         run: clasp push --force --user "$CLASP_USER"
+      - name: Publish API executable for control plane
+        working-directory: .janu-live
+        run: clasp create-deployment --description "Job Copilot control API v16" --user "$CLASP_USER"
       - name: Execute queued release-control command
         working-directory: .janu-live
-        run: clasp run-function phase1HealthTick --user "$CLASP_USER"
+        run: |
+          set -o pipefail
+          clasp run-function phase1HealthTick --user "$CLASP_USER" | tee /tmp/janu-control-run.txt
+          ! grep -q "Script function not found" /tmp/janu-control-run.txt
       - name: Deployment summary
         if: always()
         shell: bash
@@ -93,5 +106,5 @@ jobs:
           echo '- Target release: 1.3.5 / p0-regression-v16' >> "$GITHUB_STEP_SUMMARY"
           echo '- FL-031: every closure lock collision schedules a fresh future continuation.' >> "$GITHUB_STEP_SUMMARY"
           echo '- CONTROL-002: release commands remain reachable from the scheduled health trigger while broad worker is gated.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- CI post-deploy probe executes phase1HealthTick to consume a queued allow-listed release command when API execution is available.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Control API access is MYSELF-only and is used to execute the queued allow-listed release command from CI.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"
