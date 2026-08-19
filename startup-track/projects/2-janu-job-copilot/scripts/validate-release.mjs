@@ -8,11 +8,11 @@ const expectedSuite = process.env.EXPECTED_SUITE || 'p0-regression-v14';
 
 let files = [];
 if (fs.existsSync(input) && fs.statSync(input).isDirectory()) {
-  files = fs.readdirSync(input).filter(f => f.endsWith('.gs')).sort().map(f => path.join(input, f));
+  files = fs.readdirSync(input).filter(f => f.endsWith('.gs') || f.endsWith('.js')).sort().map(f => path.join(input, f));
 } else if (fs.existsSync(input)) {
   files = [input];
 }
-if (!files.length) throw new Error(`No Apps Script .gs source found at ${input}`);
+if (!files.length) throw new Error(`No Apps Script .gs/.js source found at ${input}`);
 
 const text = files.map(f => fs.readFileSync(f, 'utf8')).join('\n');
 function fail(msg) { console.error(`FAIL: ${msg}`); process.exitCode = 1; }
