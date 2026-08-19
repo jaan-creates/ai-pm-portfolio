@@ -1,6 +1,6 @@
 # Janu Job Copilot — Release State
 
-Last updated: 2026-08-19 IST
+Last updated: 2026-08-19 14:51 IST
 
 ## Target
 
@@ -8,6 +8,7 @@ Last updated: 2026-08-19 IST
 - Regression suite: `p0-regression-v14`
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
+- CI credential state: `JANU_CLASPRC_JSON confirmed; deployment trigger issued`
 
 ## Current P0 defects being closed
 
