@@ -9,7 +9,7 @@ Last updated: 2026-08-19
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
 - CI credential state: `JANU_CLASPRC_JSON confirmed; JANU_CLASP_JSON confirmed; Apps Script API enabled`
-- Deployment state: `V19 LIVE — FL-036 REGRESSION RUNTIME DIAGNOSTIC`
+- Deployment state: `V19 LIVE — FL-036 REGRESSION RUNTIME DIAGNOSTIC REGISTERED`
 
 ## Current P0 defects being closed
 
@@ -24,7 +24,7 @@ Last updated: 2026-08-19
 - FL-035 — PREPARE updated only tracker telemetry to REGRESSION while the durable ScriptProperties closure state remained PREPARE; ENABLE also misused the phase setter as a getter
 - FL-036 — the current full regression gate is monolithic and repeated v19 runs reach the Apps Script runtime ceiling before all required regression rows and final gate telemetry are committed
 
-v19 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract, CONTROL-002, bounded PREPARE, and bounded ENABLE. `BOOTSTRAP-008` explicitly verifies durable closure transitions. PREPARE now advances the ScriptProperties closure phase through `p0ClosureState_`, and closure ENABLE reads the durable phase directly rather than calling the setter as a getter. The current diagnostic is inspecting the exact regression runner so FL-036 can be converted to a bounded, resumable current-suite gate without weakening any test.
+v19 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract, CONTROL-002, bounded PREPARE, and bounded ENABLE. `BOOTSTRAP-008` explicitly verifies durable closure transitions. PREPARE now advances the ScriptProperties closure phase through `p0ClosureState_`, and closure ENABLE reads the durable phase directly rather than calling the setter as a getter. The FL-036 diagnostic workflow is registered on the default branch and will print the exact live regression runner so it can be converted to a bounded, resumable current-suite gate without weakening any test.
 
 ## Strict P0 closure gate
 
