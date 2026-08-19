@@ -7,6 +7,12 @@ on:
     paths:
       - 'startup-track/projects/2-janu-job-copilot/**'
       - '.github/workflows/janu-job-copilot.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/**'
+      - '.github/workflows/janu-job-copilot.yml'
   workflow_dispatch:
 
 permissions:
@@ -18,6 +24,7 @@ concurrency:
 
 jobs:
   deploy-production:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.head_ref == 'janu-job-copilot/apps-script-ci'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -56,10 +63,8 @@ jobs:
       - name: Pull current production Apps Script
         working-directory: .janu-live
         run: clasp pull --user "$CLASP_USER"
-      - name: Normalize live source to v14 baseline
+      - name: Apply deterministic v15 FL-031 release patch
         run: node "$PROJECT_DIR/scripts/patch-live-source.mjs" "$LIVE_DIR"
-      - name: Apply FL-031 v15 lifecycle fix
-        run: node "$PROJECT_DIR/scripts/patch-fl031-v15.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
