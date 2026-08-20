@@ -36,3 +36,6 @@ console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,workstr
 // FL-042 follow-on: after the evidence writer exists, add lifecycle convergence and
 // obsolete-work cancellation in the same controlled transformation.
 await import('./patch-p1a-vacancy-lifecycle.mjs');
+
+// E2E continuation: scoring-to-tailoring must not stall without resume queue work.
+await import('./patch-e2e-downstream-continuation.mjs');
