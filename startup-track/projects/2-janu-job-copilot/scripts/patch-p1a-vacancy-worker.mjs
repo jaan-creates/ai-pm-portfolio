@@ -5,12 +5,16 @@ const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'))
 const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function verifyReleaseIdentity()')&&t.includes('const P12');});
 if(!target)throw new Error('TrackerWorkflow source not found');
 const file=path.join(root,target);let s=fs.readFileSync(file,'utf8'),before=s;
-const anchor='function verifyReleaseIdentity()';const i=s.indexOf(anchor);if(i<0)throw new Error('release identity anchor missing');
+const anchor='function verifyReleaseIdentity()';
 
 // Health-tick vacancy verification must never spend money. Paid fallback is reserved for
 // explicitly budget-gated call sites once P1-B runtime enforcement is wired.
 s=s.replace(/if\(q&&cfg\.tavilyKey\)/g,'if(ctx.allowPaid!==false&&q&&cfg.tavilyKey)');
 s=s.replace(/if\(q&&cfg\.serpApiKey\)/g,'if(ctx.allowPaid!==false&&q&&cfg.serpApiKey)');
+
+// Re-resolve the insertion anchor after any source-length mutation above. Using an index
+// captured before those replacements can splice the worker into the middle of live code.
+const i=s.indexOf(anchor);if(i<0)throw new Error('release identity anchor missing');
 
 const defs=[
 ['function p1aHeaderMap_(',`function p1aHeaderMap_(headers){const m={};(headers||[]).forEach((h,i)=>m[String(h||'').trim()]=i);return m;}`],
