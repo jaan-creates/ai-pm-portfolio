@@ -19,12 +19,13 @@ The A/B/C self-tests prove the helper contracts execute safely in production. Th
 - Safe public-URL guard before direct HTTP retrieval.
 - Runtime adapter telemetry on the scheduled health path.
 - Applications schema columns added for vacancy verification timestamp/status/source/hash/URL/confidence.
+- Bounded vacancy worker implemented and promoted through the controlled pipeline: scans at most 250 rows, verifies at most one stale active Apply row per health tick, writes only the six vacancy evidence fields, and disallows paid fallback on this health path.
+- Revalidation policy is encoded as >72h before tailoring and >24h when Submission Ready is Yes.
 
-### P1-A remaining wiring
-- Existing JD/source-intake worker routed through the retrieval gateway.
-- Deterministic JobPosting extraction before LLM fallback in the real worker path.
-- Persist vacancy/provenance values during actual JD processing.
-- Reverify stale vacancies before tailoring (>72h) and submission (>24h).
+### P1-A live acceptance pending
+- Await `p1a_vacancy_self_test = PASS` / `P1-A-VACANCY-1` from scheduled health telemetry.
+- Confirm at least one eligible live application receives vacancy evidence without changing Decision/Status fields.
+- Then connect the same retrieval/provenance path directly into JD/source-intake processing so deterministic extraction can prevent avoidable JD-upload blockers and LLM calls.
 
 ### P1-B remaining wiring
 - Enforce budget decision before every paid call.
