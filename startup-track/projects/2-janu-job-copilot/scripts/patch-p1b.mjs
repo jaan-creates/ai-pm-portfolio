@@ -1,0 +1,25 @@
+import fs from 'node:fs';
+import path from 'node:path';
+const root=process.argv[2]||'.janu-live';
+const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
+const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function verifyReleaseIdentity()')&&t.includes('const P12');});
+if(!target)throw new Error('TrackerWorkflow source not found');
+const file=path.join(root,target);let s=fs.readFileSync(file,'utf8'),before=s;
+const anchor='function verifyReleaseIdentity()';const i=s.indexOf(anchor);if(i<0)throw new Error('release identity anchor missing');
+const defs=[
+["function budgetDecision_(ctx)",`function budgetDecision_(ctx){ctx=ctx||{};const monthly=Number(ctx.monthlySpent||0),monthlyCap=Number(ctx.monthlyCap||0),app=Number(ctx.appSpent||0),appCap=Number(ctx.appCap||0),cost=Number(ctx.nextCost||0),mandatory=ctx.mandatory===true;if(monthlyCap>0&&monthly+cost>monthlyCap)return{allow:false,reason:'MONTHLY_HARD_CAP'};if(appCap>0&&app+cost>appCap)return{allow:false,reason:'APPLICATION_HARD_CAP'};if(ctx.optionalDisabled===true&&!mandatory)return{allow:false,reason:'OPTIONAL_DISABLED'};return{allow:true,reason:'WITHIN_BUDGET'};}`],
+["function outputCacheKey_(parts)",`function outputCacheKey_(parts){parts=parts||{};return hash_([parts.contentHash||'',parts.evidenceVersion||'',parts.promptVersion||'',parts.schemaVersion||'',parts.policyVersion||''].join('|'));}`],
+["function outputCacheDecision_(entry,key)",`function outputCacheDecision_(entry,key){if(!entry)return'MISS';if(String(entry.key||'')!==String(key||''))return'STALE_KEY';if(entry.invalid===true)return'INVALID';return'HIT';}`],
+["function companyCacheFresh_(entry,field,nowMs)",`function companyCacheFresh_(entry,field,nowMs){entry=entry||{};const f=entry[field];if(!f||!f.updatedAt||!f.ttlHours)return false;const age=(Number(nowMs||Date.now())-new Date(f.updatedAt).getTime())/3600000;return isFinite(age)&&age>=0&&age<=Number(f.ttlHours);}`],
+["function dlqDecision_(job,nowMs)",`function dlqDecision_(job,nowMs){job=job||{};if(job.obsolete===true)return'REJECT_OBSOLETE';if(job.semanticFresh===false)return'REJECT_STALE';if(Number(job.attempts||0)>=Number(job.maxAttempts||3))return'DEAD_LETTER';if(job.retryable===true)return'REPLAY';return'FAIL_TERMINAL';}`],
+["function gcQueueDecision_(job,nowMs)",`function gcQueueDecision_(job,nowMs){job=job||{};if(job.status==='RUNNING'&&job.leaseUntil&&new Date(job.leaseUntil).getTime()<Number(nowMs||Date.now()))return'RECOVER_STALE_LEASE';if(job.status==='CANCELLED'||job.obsolete===true)return'PURGEABLE';return'KEEP';}`],
+["function p1bContractSelfTest_()",`function p1bContractSelfTest_(){const now=Date.now(),c=[];c.push(budgetDecision_({monthlySpent:9,monthlyCap:10,nextCost:2}).reason==='MONTHLY_HARD_CAP');c.push(budgetDecision_({appSpent:4,appCap:5,nextCost:2}).reason==='APPLICATION_HARD_CAP');c.push(budgetDecision_({optionalDisabled:true,mandatory:false}).reason==='OPTIONAL_DISABLED');const k=outputCacheKey_({contentHash:'a',evidenceVersion:'b',promptVersion:'c',schemaVersion:'d',policyVersion:'e'});c.push(outputCacheDecision_({key:k},k)==='HIT');c.push(companyCacheFresh_({domain:{updatedAt:new Date(now-2*3600000).toISOString(),ttlHours:24}},'domain',now));c.push(dlqDecision_({obsolete:true},now)==='REJECT_OBSOLETE');c.push(dlqDecision_({retryable:true,attempts:1,maxAttempts:3},now)==='REPLAY');c.push(gcQueueDecision_({status:'RUNNING',leaseUntil:new Date(now-1000).toISOString()},now)==='RECOVER_STALE_LEASE');if(c.some(x=>!x))throw new Error('P1-B contract self-test failed '+JSON.stringify(c));return{pass:true,total:c.length,contract:'P1-B-1'};}`],
+["function runP1BContractSelfTest()",`function runP1BContractSelfTest(){const x=p1bContractSelfTest_();upsertWorkerState_('p1b_self_test',x.pass?'PASS':'FAIL',JSON.stringify(x));upsertWorkerState_('p1b_contract_version','P1-B-1','Cost/cache/queue contract telemetry');return x;}`]
+];
+let block='// P1-B Cost / Cache / Queue lifecycle contracts\n';for(const [token,code] of defs)if(!s.includes(token))block+=code+'\n';if(block.trim()!=='// P1-B Cost / Cache / Queue lifecycle contracts')s=s.slice(0,i)+block+'\n'+s.slice(i);
+const oldHealth="function phase1HealthTick(){const op=processOperatorCommand_();if(op)return op;try{runP1AContractSelfTest();}catch(e){upsertWorkerState_('p1a_self_test','FAIL',String((e&&e.stack)||e).slice(0,1500));}";
+const newHealth=oldHealth+"try{runP1BContractSelfTest();}catch(e){upsertWorkerState_('p1b_self_test','FAIL',String((e&&e.stack)||e).slice(0,1500));}";
+if(s.includes(oldHealth)&&!s.includes('try{runP1BContractSelfTest();}'))s=s.replace(oldHealth,newHealth);
+for(const token of defs.map(x=>x[0]).concat(['p1b_self_test']))if(!s.includes(token))throw new Error('P1-B contract missing '+token);
+if(s!==before)fs.writeFileSync(file,s);
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,workstream:'P1-B',telemetry:'p1b_self_test'},null,2));
