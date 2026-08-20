@@ -32,3 +32,7 @@ if(s.includes(healthNeedle)&&!s.includes('try{runP1AVacancyWorkerSelfTest();}'))
 for(const token of defs.map(x=>x[0]).concat(['allowPaid!==false','p1a_vacancy_self_test','p1a_vacancy_last_result']))if(!s.includes(token))throw new Error('P1-A vacancy wiring missing '+token);
 if(s!==before)fs.writeFileSync(file,s);
 console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,workstream:'P1-A-vacancy-worker',boundedRows:250,maxExternalCallsPerTick:1,paidFallbackAllowed:false},null,2));
+
+// FL-042 follow-on: after the evidence writer exists, add lifecycle convergence and
+// obsolete-work cancellation in the same controlled transformation.
+await import('./patch-p1a-vacancy-lifecycle.mjs');
