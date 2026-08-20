@@ -90,6 +90,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-p1c.mjs" "$LIVE_DIR"
       - name: Wire bounded vacancy verification worker
         run: node "$PROJECT_DIR/scripts/patch-p1a-vacancy-worker.mjs" "$LIVE_DIR"
+      - name: Wire RetrievalProvider into JD worker
+        run: node "$PROJECT_DIR/scripts/patch-p1a-jd-worker.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -101,15 +103,16 @@ jobs:
         run: |
           set -o pipefail
           node "$PROJECT_DIR/scripts/validate-release.mjs" "$LIVE_DIR" | tee /tmp/janu-release-validation.json
-      - name: Validate P1-A contracts, runtime adapters and vacancy worker
+      - name: Validate P1-A contracts, runtime adapters, vacancy and JD workers
         shell: bash
         run: |
-          for token in retrievalProviderRoute_ retrievalProvenance_ parseJobPostingJsonLd_ deterministicJobParse_ vacancyRevalidationRequired_ vacancyStateDecision_ sourcePromotionKey_ sourcePromotionDecision_ p1aContractSelfTest_ runP1AContractSelfTest p1a_self_test publicHttpUrl_ retrievalProviderConfig_ directOfficialFetch_ tavilySearch_ serpApiSearch_ retrievalGatewayFetch_ p1aRuntimeContractSelfTest_ p1aVacancyCandidate_ p1aVacancyFromRetrieval_ p1aWriteVacancyEvidence_ p1aVacancyMaintenanceTick_ p1aVacancyWorkerSelfTest_ runP1AVacancyWorkerSelfTest p1a_vacancy_self_test p1a_vacancy_last_result; do
+          for token in retrievalProviderRoute_ retrievalProvenance_ parseJobPostingJsonLd_ deterministicJobParse_ vacancyRevalidationRequired_ vacancyStateDecision_ sourcePromotionKey_ sourcePromotionDecision_ p1aContractSelfTest_ runP1AContractSelfTest p1a_self_test publicHttpUrl_ retrievalProviderConfig_ directOfficialFetch_ tavilySearch_ serpApiSearch_ retrievalGatewayFetch_ p1aRuntimeContractSelfTest_ p1aVacancyCandidate_ p1aVacancyFromRetrieval_ p1aWriteVacancyEvidence_ p1aVacancyMaintenanceTick_ p1aVacancyWorkerSelfTest_ runP1AVacancyWorkerSelfTest p1a_vacancy_self_test p1a_vacancy_last_result ashbyPublicPostingCoordinates_ ashbyPublicPostingFetch_ p1aJdTextFromRetrieval_ p1aJdRetrieveForApp_ p1aRecordJdRetrieval_ p1aJdRecoveryCandidate_ p1aJdRecoveryMaintenanceTick_ p1aJdWorkerSelfTest_ runP1AJdWorkerSelfTest p1a_jd_worker_self_test p1a_jd_recovery_last_result P1-A-JD-WORKER-1; do
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "P1-A contract/runtime/wiring missing: $token"; exit 9; }
           done
           grep -q "TAVILY_API_KEY" /tmp/janu-job-copilot-combined.js
           grep -q "SERPAPI_API_KEY" /tmp/janu-job-copilot-combined.js
           grep -q "allowPaid!==false" /tmp/janu-job-copilot-combined.js
+          grep -q "p1aJdRetrieveForApp_(a,false)" /tmp/janu-job-copilot-combined.js
       - name: Validate P1-B contracts
         shell: bash
         run: |
@@ -148,8 +151,11 @@ jobs:
           echo '## Janu Job Copilot P1 deployment' >> "$GITHUB_STEP_SUMMARY"
           echo '- Base: live 1.3.8 / p0-regression-v19 only.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1 contract telemetry is not treated as end-to-end feature completion.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- P1-A includes runtime retrieval adapters plus a bounded direct-official vacancy verification worker.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- P1-A includes runtime retrieval adapters, a bounded direct-official vacancy worker, and a RetrievalProvider-backed JD worker.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- JD recovery uses an official Ashby public posting adapter before generic page retrieval; paid search fallback remains disabled until P1-B runtime enforcement is complete.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Successful JD recovery requires canonical artifact/application readback and then queues the scoring stage.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Health-driven vacancy verification is limited to one stale active application per tick and cannot use paid provider fallback.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Stale official-Ashby JD blockers are retried at most one application per health tick; OpenAI parsing remains covered by existing budget/cost guards.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Applications vacancy/provenance columns are an explicit tracker schema migration.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Existing P0 release validator remains mandatory before push.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"
