@@ -70,10 +70,11 @@ jobs:
         run: |
           node - <<'NODE'
           const fs=require('fs'),s=fs.readFileSync('.janu-live/TrackerWorkflow.js','utf8');
-          const v=s.match(/VERSION\s*:\s*['"]([^'"]+)['"]/),q=s.match(/SUITE\s*:\s*['"]([^'"]+)['"]/);
-          if(!v||!q) throw new Error('Unable to read live release identity');
-          if(v[1]!=='1.3.8'||q[1]!=='p0-regression-v19') throw new Error(`P1-A blocked: expected live 1.3.8 / p0-regression-v19, found ${v[1]} / ${q[1]}`);
-          console.log(JSON.stringify({baseline:'PASS',version:v[1],suite:q[1]}));
+          const p=s.match(/P12\s*=\s*Object\.freeze\(\{[\s\S]*?VERSION\s*:\s*['"]([^'"]+)['"][\s\S]*?SUITE\s*:\s*['"]([^'"]+)['"]/);
+          if(!p) throw new Error('Unable to read live P12 release identity');
+          const version=p[1],suite=p[2];
+          if(version!=='1.3.8'||suite!=='p0-regression-v19') throw new Error(`P1-A blocked: expected live 1.3.8 / p0-regression-v19, found ${version} / ${suite}`);
+          console.log(JSON.stringify({baseline:'PASS',version,suite}));
           NODE
       - name: Apply additive P1-A patch
         run: node "$PROJECT_DIR/scripts/patch-p1a.mjs" "$LIVE_DIR"
