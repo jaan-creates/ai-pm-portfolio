@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - janu-job-copilot/apps-script-ci
+      - janu-job-copilot/p1a-release
     paths:
       - 'startup-track/projects/2-janu-job-copilot/**'
       - '.github/workflows/janu-job-copilot.yml'
@@ -24,7 +25,7 @@ concurrency:
 
 jobs:
   deploy-production:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.head_ref == 'janu-job-copilot/apps-script-ci'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.head_ref == 'janu-job-copilot/apps-script-ci' || github.head_ref == 'janu-job-copilot/p1a-release'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
