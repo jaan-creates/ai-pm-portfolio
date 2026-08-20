@@ -94,6 +94,15 @@ Verify outreach, follow-up, Gmail outcome classification/matching, interview-roo
 ### E2E-6 — Failure and idempotency suite
 Repeat duplicate, closed, stale, provider-error, ambiguous-email and replay/GC cases. Convert every new systemic failure into `__Failure Learning` plus a regression guard.
 
+## E2E-1 implementation checkpoint
+The controlled deployment now includes a dedicated `patch-p1a-jd-worker.mjs` contract. It replaces the old page-shell-only JD retrieval behavior with an ATS-aware path: for Ashby URLs it calls the official job-board posting feed using the board slug + posting UUID, then falls back to the existing RetrievalProvider gateway. Paid search fallback remains disabled in this worker until P1-B runtime enforcement is complete.
+
+The JD worker contract requires canonical JD artifact/application readback before the old `full_jd_unavailable` user blocker is cleared. A successful recovery queues `JD_PARSE_SCORE_MAP`; a posting no longer present on the official Ashby board closes the vacancy; insufficient evidence keeps the existing user blocker fail-closed.
+
+A bounded recovery hook scans at most 250 application rows and attempts at most one stale official-Ashby JD blocker per health tick. This is intended to self-heal Metaforms first rather than requiring a manual PDF or manual tracker edit. OpenAI JD parsing remains behind the existing paid-call budget guard and Cost Ledger path.
+
+Release patchers themselves are now syntax-checked before credentials/live pull/production mutation. This guard was added after FL-040 exposed that patch machinery must be validated as production code independently of transformed-source validation.
+
 ## Release gate
 P1 release candidate may be declared only after:
 - one live source-to-Ready-to-Submit golden path is clean;
