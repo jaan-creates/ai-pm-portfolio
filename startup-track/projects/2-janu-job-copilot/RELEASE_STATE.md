@@ -1,69 +1,41 @@
 # Janu Job Copilot — Release State
 
-Last updated: 2026-08-19
+Last updated: 2026-08-20
 
-## Target
+## Frozen production baseline
 
-- Release: `1.3.8`
+- Production release: `1.3.8`
 - Regression suite: `p0-regression-v19`
+- P0 closure: `COMPLETE`
+- Live preflight: `PASS`
+- Production worker: `enabled`
 - Master spec: `0.19.0`
 - Deployment branch: `janu-job-copilot/apps-script-ci`
-- CI credential state: `JANU_CLASPRC_JSON confirmed; JANU_CLASP_JSON confirmed; Apps Script API enabled`
-- Deployment state: `V19 LIVE — FL-036 REGRESSION RUNTIME DIAGNOSTIC REGISTERED`
 
-## Current P0 defects being closed
+## P1-A gate
 
-- FL-027 — fresh application-pack EV-* hygiene failure
-- FL-028 — QA rejection did not self-heal via fresh evidence-grounded resume generation
-- FL-029 — release identity packaging mismatch in the first 1.3.2/v13 handoff
-- FL-030 — closure watchdog could be consumed by a script-lock collision
-- FL-031 — closure lock collision did not guarantee a fresh future continuation; live collision now records `SCHEDULE_REPLACEMENT`
-- FL-032 — deployment workflow registration/observability gap
-- FL-033 — PREPARE release phase repeatedly exceeded the Apps Script runtime ceiling
-- FL-034 — ENABLE reran the full strict live preflight immediately after a successful dedicated PREFLIGHT phase and repeatedly exceeded the runtime ceiling
-- FL-035 — PREPARE updated only tracker telemetry to REGRESSION while the durable ScriptProperties closure state remained PREPARE; ENABLE also misused the phase setter as a getter
-- FL-036 — the current full regression gate is monolithic and repeated v19 runs reach the Apps Script runtime ceiling before all required regression rows and final gate telemetry are committed
+Status: `CONTROLLED DEPLOYMENT IN PROGRESS`
 
-v19 retains the live-proven FL-031 `SCHEDULE_REPLACEMENT` contract, CONTROL-002, bounded PREPARE, and bounded ENABLE. `BOOTSTRAP-008` explicitly verifies durable closure transitions. PREPARE now advances the ScriptProperties closure phase through `p0ClosureState_`, and closure ENABLE reads the durable phase directly rather than calling the setter as a getter. The FL-036 diagnostic workflow is registered on the default branch and will print the exact live regression runner so it can be converted to a bounded, resumable current-suite gate without weakening any test.
+P1-A is additive over the frozen P0 source. The deployment path now pulls production first, requires exact live `1.3.8 / p0-regression-v19`, adds the P1-A contracts, runs JavaScript syntax validation and the complete existing P0 release validator, then pushes only on PASS.
 
-## Strict P0 closure gate
+P1-A contracts currently included:
 
-Do not mark `P0 CLOSED → P1 READY` until all current-release evidence is present:
+- retrieval routing: cache -> direct official -> Tavily -> SerpAPI -> unavailable
+- retrieval provenance: provider, URL, retrieval timestamp, content hash, confidence
+- deterministic JobPosting JSON-LD extraction and ATS host classification
+- vacancy revalidation after 72h before tailoring and 24h before submission
+- fail-closed OPEN/CLOSED/UNKNOWN vacancy state
+- stable source-promotion key and duplicate/closed-vacancy rejection
+- deterministic P1-A self-test
 
-- current release identity verified
-- full current regression suite PASS
-- live preflight PASS
-- Worker Runtime / Regression Gate / Trigger Topology healthy and closed
-- production worker enabled exactly once after gate
-- queue has no stale/invalid running work
-- zero unresolved system-owned Worker Error applications
-- artifact hygiene clean and no external EV-* leakage
-- Target/Keka/ClickPost recovery confirmed on the final release
-- at least two additional Apply applications reach Resume Review unattended without source changes/manual continuation
-- one-heavy-job execution remains below the 240-second hard guard and does not duplicate/requeue obsolete work
-- real scheduled Daily Sourcing cycle writes durable `__Sourcing Runs` telemetry and tracker candidates autonomously
-- Failure Learning rows for release defects are closed with live evidence
-- Motive human approval/submission gate is completed when the user elects to submit; exact submitted resume version and Applied Date become immutable
+The previously prepared `1.3.9 / p0-regression-v20` patch is not part of this P1-A deployment. Its prior CI attempt failed release validation before `clasp push`; production remained on the verified v19 baseline.
 
-## Execution-control contract
+## Evidence progression
 
-A release transition advances only on evidence, not intent:
+`PATCHED -> TRIGGERED -> VALIDATED -> DEPLOYED -> LIVE -> TESTED -> P1-A CLOSED`
 
-`PATCHED -> TRIGGERED -> VALIDATED -> DEPLOYED -> LIVE -> TESTED -> CLOSED -> P1_READY`
-
-A state without its required evidence is not complete. A stalled state must become `STALLED`, then `AUTO_DIAGNOSE`, then `AUTO_REPAIR_RETRY`; `USER_BLOCKED` is permitted only when the remaining boundary genuinely requires user/OAuth/security/external-submission action.
-
-Required evidence:
-
-- `PATCHED`: commit SHA exists
-- `TRIGGERED`: workflow run evidence exists
-- `VALIDATED`: release-contract validation passes
-- `DEPLOYED`: clasp push passes
-- `LIVE`: production reports expected release identity
-- `TESTED`: live regression and preflight evidence pass
-- `CLOSED`: every strict P0 closure invariant passes
-- `P1_READY`: closure audit has no unresolved P0 blocker
+Do not mark P1-A closed until the workflow push succeeds, the production source exposes the P1-A contracts, P0 regression/preflight remain green, and limited live intake/vacancy acceptance is proven.
 
 ## Automation boundary
 
-Approved runtime actions are requested through the allow-listed `__Worker State` operator-command channel. ChatGPT owns command issuance, tracker verification, regression/preflight inspection, defect triage, iterative GitHub patch updates, deployment triggering through the isolated branch, and evidence-based state progression. Human intervention is reserved for OAuth/security setup and true user approval/authenticated external submission boundaries.
+ChatGPT owns repository changes, deployment inspection, tracker verification, regression/preflight inspection, defect triage and iterative repair. Human intervention is reserved for genuine OAuth/security or authenticated external-action boundaries.
