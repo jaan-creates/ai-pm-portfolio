@@ -19,11 +19,12 @@ The A/B/C self-tests prove the helper contracts execute safely in production. Th
 - Safe public-URL guard before direct HTTP retrieval.
 - Runtime adapter telemetry on the scheduled health path.
 - Applications schema columns added for vacancy verification timestamp/status/source/hash/URL/confidence.
-- Bounded vacancy worker implemented and promoted through the controlled pipeline: scans at most 250 rows, verifies at most one stale active Apply row per health tick, writes only the six vacancy evidence fields, and disallows paid fallback on this health path.
+- Bounded vacancy worker deployed through the controlled pipeline on 2026-08-20 in workflow run 32400455590: syntax validation PASS, full P0 validator PASS, P1-A/B/C validation PASS, Apps Script push PASS.
+- Bounded vacancy worker scans at most 250 rows, verifies at most one stale active Apply row per health tick, writes only the six vacancy evidence fields, and disallows paid fallback on this health path.
 - Revalidation policy is encoded as >72h before tailoring and >24h when Submission Ready is Yes.
 
 ### P1-A live acceptance pending
-- Await `p1a_vacancy_self_test = PASS` / `P1-A-VACANCY-1` from scheduled health telemetry.
+- Await `p1a_vacancy_self_test = PASS` / `P1-A-VACANCY-1` from the next scheduled health execution. GitHub `clasp run` remains non-authoritative because the script is not deployed as an API executable.
 - Confirm at least one eligible live application receives vacancy evidence without changing Decision/Status fields.
 - Then connect the same retrieval/provenance path directly into JD/source-intake processing so deterministic extraction can prevent avoidable JD-upload blockers and LLM calls.
 
