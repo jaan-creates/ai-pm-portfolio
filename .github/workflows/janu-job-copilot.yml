@@ -76,11 +76,15 @@ jobs:
           if(version!=='1.3.8'||suite!=='p0-regression-v19') throw new Error(`P1 blocked: expected live 1.3.8 / p0-regression-v19, found ${version} / ${suite}`);
           console.log(JSON.stringify({baseline:'PASS',version,suite}));
           NODE
-      - name: Apply additive P1-A patch
+      - name: Inspect safe live integration manifest
+        run: node "$PROJECT_DIR/scripts/live-source-manifest.mjs" "$LIVE_DIR"
+      - name: Apply additive P1-A contracts
         run: node "$PROJECT_DIR/scripts/patch-p1a.mjs" "$LIVE_DIR"
-      - name: Apply additive P1-B patch
+      - name: Apply P1-A runtime provider adapters
+        run: node "$PROJECT_DIR/scripts/patch-p1a-runtime.mjs" "$LIVE_DIR"
+      - name: Apply additive P1-B contracts
         run: node "$PROJECT_DIR/scripts/patch-p1b.mjs" "$LIVE_DIR"
-      - name: Apply additive P1-C patch
+      - name: Apply additive P1-C contracts
         run: node "$PROJECT_DIR/scripts/patch-p1c.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
@@ -93,12 +97,14 @@ jobs:
         run: |
           set -o pipefail
           node "$PROJECT_DIR/scripts/validate-release.mjs" "$LIVE_DIR" | tee /tmp/janu-release-validation.json
-      - name: Validate P1-A contracts
+      - name: Validate P1-A contracts and runtime adapters
         shell: bash
         run: |
-          for token in retrievalProviderRoute_ retrievalProvenance_ parseJobPostingJsonLd_ deterministicJobParse_ vacancyRevalidationRequired_ vacancyStateDecision_ sourcePromotionKey_ sourcePromotionDecision_ p1aContractSelfTest_ runP1AContractSelfTest p1a_self_test; do
-            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "P1-A contract missing: $token"; exit 9; }
+          for token in retrievalProviderRoute_ retrievalProvenance_ parseJobPostingJsonLd_ deterministicJobParse_ vacancyRevalidationRequired_ vacancyStateDecision_ sourcePromotionKey_ sourcePromotionDecision_ p1aContractSelfTest_ runP1AContractSelfTest p1a_self_test publicHttpUrl_ retrievalProviderConfig_ directOfficialFetch_ tavilySearch_ serpApiSearch_ retrievalGatewayFetch_ p1aRuntimeContractSelfTest_; do
+            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "P1-A contract/runtime missing: $token"; exit 9; }
           done
+          grep -q "TAVILY_API_KEY" /tmp/janu-job-copilot-combined.js
+          grep -q "SERPAPI_API_KEY" /tmp/janu-job-copilot-combined.js
       - name: Validate P1-B contracts
         shell: bash
         run: |
@@ -136,8 +142,8 @@ jobs:
         run: |
           echo '## Janu Job Copilot P1 deployment' >> "$GITHUB_STEP_SUMMARY"
           echo '- Base: live 1.3.8 / p0-regression-v19 only.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- P1-A and P1-B are live-accepted before P1-C promotion.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- P1-C adds immutable resume revisions, Gmail outcome classification/matching and public contact discovery contracts.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- P1 contract telemetry is not treated as end-to-end feature completion.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- P1-A now includes direct official/Tavily/SerpAPI runtime adapters; provider keys are read only from Script Properties.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Safe live-source function manifest is emitted to support deterministic worker wiring without committing production source.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Existing P0 release validator remains mandatory before push.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- P1-A/B/C self-tests are wired into scheduled health telemetry.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"
