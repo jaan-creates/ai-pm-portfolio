@@ -9,6 +9,7 @@ on:
       - 'startup-track/projects/2-janu-job-copilot/**'
       - '.github/workflows/janu-job-copilot.yml'
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches:
       - main
     paths:
