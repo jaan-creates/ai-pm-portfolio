@@ -45,6 +45,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validate patch machinery syntax
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=("$PROJECT_DIR"/scripts/*.mjs)
+          test ${#files[@]} -gt 0 || { echo 'No Job Copilot patch/validation scripts found'; exit 2; }
+          for f in "${files[@]}"; do
+            echo "Checking $f"
+            node --check "$f"
+          done
       - name: Verify deployment credentials exist
         shell: bash
         run: |
