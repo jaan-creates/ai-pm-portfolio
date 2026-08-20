@@ -73,11 +73,13 @@ jobs:
           const p=s.match(/P12\s*=\s*Object\.freeze\(\{[\s\S]*?VERSION\s*:\s*['"]([^'"]+)['"][\s\S]*?SUITE\s*:\s*['"]([^'"]+)['"]/);
           if(!p) throw new Error('Unable to read live P12 release identity');
           const version=p[1],suite=p[2];
-          if(version!=='1.3.8'||suite!=='p0-regression-v19') throw new Error(`P1-A blocked: expected live 1.3.8 / p0-regression-v19, found ${version} / ${suite}`);
+          if(version!=='1.3.8'||suite!=='p0-regression-v19') throw new Error(`P1 blocked: expected live 1.3.8 / p0-regression-v19, found ${version} / ${suite}`);
           console.log(JSON.stringify({baseline:'PASS',version,suite}));
           NODE
       - name: Apply additive P1-A patch
         run: node "$PROJECT_DIR/scripts/patch-p1a.mjs" "$LIVE_DIR"
+      - name: Apply additive P1-B patch
+        run: node "$PROJECT_DIR/scripts/patch-p1b.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -95,13 +97,23 @@ jobs:
           for token in retrievalProviderRoute_ retrievalProvenance_ parseJobPostingJsonLd_ deterministicJobParse_ vacancyRevalidationRequired_ vacancyStateDecision_ sourcePromotionKey_ sourcePromotionDecision_ p1aContractSelfTest_ runP1AContractSelfTest p1a_self_test; do
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "P1-A contract missing: $token"; exit 9; }
           done
-      - name: Push validated P1-A source to Apps Script production project
+      - name: Validate P1-B contracts
+        shell: bash
+        run: |
+          for token in budgetDecision_ outputCacheKey_ outputCacheDecision_ companyCacheFresh_ dlqDecision_ gcQueueDecision_ p1bContractSelfTest_ runP1BContractSelfTest p1b_self_test; do
+            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "P1-B contract missing: $token"; exit 10; }
+          done
+      - name: Push validated P1 source to Apps Script production project
         working-directory: .janu-live
         run: clasp push --force --user "$CLASP_USER"
       - name: Attempt P1-A self-test immediately
         continue-on-error: true
         working-directory: .janu-live
         run: clasp run runP1AContractSelfTest --nondev --user "$CLASP_USER"
+      - name: Attempt P1-B self-test immediately
+        continue-on-error: true
+        working-directory: .janu-live
+        run: clasp run runP1BContractSelfTest --nondev --user "$CLASP_USER"
       - name: Attempt bounded health/control tick
         continue-on-error: true
         working-directory: .janu-live
@@ -110,10 +122,10 @@ jobs:
         if: always()
         shell: bash
         run: |
-          echo '## Janu Job Copilot P1-A deployment' >> "$GITHUB_STEP_SUMMARY"
+          echo '## Janu Job Copilot P1 deployment' >> "$GITHUB_STEP_SUMMARY"
           echo '- Base: live 1.3.8 / p0-regression-v19 only.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- No release-identity migration patch is run.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Added: retrieval routing/provenance, deterministic job parsing, vacancy revalidation and promotion idempotency.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- P1-A accepted live before P1-B promotion.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- P1-B adds hard budget, versioned output cache, company TTL, DLQ/replay and queue-GC contracts.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Existing P0 release validator remains mandatory before push.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- P1-A self-test is also wired into the scheduled health trigger for durable live evidence.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- P1-A and P1-B self-tests are wired into scheduled health telemetry.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"
