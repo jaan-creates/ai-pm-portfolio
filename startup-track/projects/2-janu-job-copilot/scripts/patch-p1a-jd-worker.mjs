@@ -13,15 +13,19 @@ for(const token of ['function retrievalGatewayFetch_(','function parseSaveJD_(',
 }
 
 function functionRange_(name){
-  const re=new RegExp('function\\s+'+name.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'\\s*\\([^)]*\\)\\s*\\{','m');
-  const m=re.exec(s);if(!m)return null;
-  const open=s.indexOf('{',m.index);let depth=0,inS=false,inD=false,inT=false,esc=false;
+  const marker='function '+name+'(';
+  const start=s.indexOf(marker);if(start<0)return null;
+  const open=s.indexOf('{',start+marker.length);if(open<0)throw new Error('Function body missing '+name);
+  let depth=0,inS=false,inD=false,inT=false,esc=false,lineComment=false,blockComment=false;
   for(let i=open;i<s.length;i++){
-    const c=s[i];
-    if(esc){esc=false;continue;}if(c==='\\\\'){esc=true;continue;}
+    const c=s[i],n=s[i+1]||'';
+    if(lineComment){if(c==='\n')lineComment=false;continue;}
+    if(blockComment){if(c==='*'&&n==='/'){blockComment=false;i++;}continue;}
+    if(esc){esc=false;continue;}if((inS||inD||inT)&&c==='\\'){esc=true;continue;}
     if(inS){if(c==="'")inS=false;continue;}if(inD){if(c==='"')inD=false;continue;}if(inT){if(c==='`')inT=false;continue;}
+    if(c==='/'&&n==='/'){lineComment=true;i++;continue;}if(c==='/'&&n==='*'){blockComment=true;i++;continue;}
     if(c==="'"){inS=true;continue;}if(c==='"'){inD=true;continue;}if(c==='`'){inT=true;continue;}
-    if(c==='{')depth++;else if(c==='}'&&--depth===0)return{start:m.index,end:i+1};
+    if(c==='{')depth++;else if(c==='}'&&--depth===0)return{start:start,end:i+1};
   }
   throw new Error('Unterminated function '+name);
 }
