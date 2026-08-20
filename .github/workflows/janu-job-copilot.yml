@@ -78,6 +78,8 @@ jobs:
           NODE
       - name: Inspect safe live integration manifest
         run: node "$PROJECT_DIR/scripts/live-source-manifest.mjs" "$LIVE_DIR"
+      - name: Inspect safe target worker structure
+        run: node "$PROJECT_DIR/scripts/live-target-structure.mjs" "$LIVE_DIR"
       - name: Apply additive P1-A contracts
         run: node "$PROJECT_DIR/scripts/patch-p1a.mjs" "$LIVE_DIR"
       - name: Apply P1-A runtime provider adapters
@@ -144,6 +146,6 @@ jobs:
           echo '- Base: live 1.3.8 / p0-regression-v19 only.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1 contract telemetry is not treated as end-to-end feature completion.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1-A now includes direct official/Tavily/SerpAPI runtime adapters; provider keys are read only from Script Properties.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Safe live-source function manifest is emitted to support deterministic worker wiring without committing production source.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Safe live-source and target-worker structure are emitted to support deterministic worker wiring without committing production source.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Existing P0 release validator remains mandatory before push.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"
