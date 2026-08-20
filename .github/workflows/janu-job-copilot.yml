@@ -3,6 +3,7 @@ name: Janu Job Copilot Apps Script CD
 on:
   push:
     branches:
+      - main
       - janu-job-copilot/apps-script-ci
       - janu-job-copilot/p1a-release
     paths:
@@ -90,12 +91,16 @@ jobs:
       - name: Validate P1-A contracts
         shell: bash
         run: |
-          for token in retrievalProviderRoute_ retrievalProvenance_ parseJobPostingJsonLd_ deterministicJobParse_ vacancyRevalidationRequired_ vacancyStateDecision_ sourcePromotionKey_ sourcePromotionDecision_ p1aContractSelfTest_; do
+          for token in retrievalProviderRoute_ retrievalProvenance_ parseJobPostingJsonLd_ deterministicJobParse_ vacancyRevalidationRequired_ vacancyStateDecision_ sourcePromotionKey_ sourcePromotionDecision_ p1aContractSelfTest_ runP1AContractSelfTest p1a_self_test; do
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "P1-A contract missing: $token"; exit 9; }
           done
       - name: Push validated P1-A source to Apps Script production project
         working-directory: .janu-live
         run: clasp push --force --user "$CLASP_USER"
+      - name: Attempt P1-A self-test immediately
+        continue-on-error: true
+        working-directory: .janu-live
+        run: clasp run runP1AContractSelfTest --nondev --user "$CLASP_USER"
       - name: Attempt bounded health/control tick
         continue-on-error: true
         working-directory: .janu-live
@@ -109,4 +114,5 @@ jobs:
           echo '- No release-identity migration patch is run.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Added: retrieval routing/provenance, deterministic job parsing, vacancy revalidation and promotion idempotency.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Existing P0 release validator remains mandatory before push.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- P1-A self-test is also wired into the scheduled health trigger for durable live evidence.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"
