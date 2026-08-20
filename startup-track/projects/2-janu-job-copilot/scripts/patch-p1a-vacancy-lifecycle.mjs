@@ -25,3 +25,5 @@ for(const token of ['function p1aCancelObsoleteQueuedWork_(','function p1aPropag
 if(!s.includes("p1aPropagateClosedVacancy_(id,'Orchestrator closed-vacancy guard')"))throw new Error('orchestrator closed-vacancy guard missing');
 if(s!==before)fs.writeFileSync(file,s);
 console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:'P1-A-VACANCY-LIFECYCLE-1',queuedObsoleteWorkCancelled:true,runningWorkNotForceKilled:true},null,2));
+
+await import('./patch-p1a-e2e-continuation.mjs');
