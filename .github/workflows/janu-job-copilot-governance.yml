@@ -48,3 +48,33 @@ jobs:
 
       - name: Validate public governance-document privacy
         run: node "$PROJECT_DIR/scripts/validate-public-doc-privacy.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test privacy guard
+        shell: bash
+        run: |
+          tmp="$(mktemp -d)"
+          printf '# Product\nPrivate contact: person@example.com\n' > "$tmp/PRODUCT.md"
+          if node "$PROJECT_DIR/scripts/validate-public-doc-privacy.mjs" "$tmp" >/tmp/privacy-negative.out 2>&1; then
+            echo 'Privacy guard failed to reject a known email fixture'
+            cat /tmp/privacy-negative.out
+            exit 20
+          fi
+          grep -q 'PUBLIC-DOC-PRIVACY-1' /tmp/privacy-negative.out
+
+      - name: Behavior-test deployment manifest
+        shell: bash
+        run: |
+          tmp="$(mktemp -d)"
+          printf 'function alpha(){return 1;}\n' > "$tmp/A.js"
+          printf 'function beta(){return 2;}\n' > "$tmp/B.gs"
+          h1="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" --hash-only)"
+          node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" > /tmp/deployment-manifest-test.json
+          grep -q 'JANU-DEPLOYMENT-MANIFEST-1' /tmp/deployment-manifest-test.json
+          grep -q "$h1" /tmp/deployment-manifest-test.json
+          if grep -q 'function alpha' /tmp/deployment-manifest-test.json; then
+            echo 'Deployment manifest leaked source text'
+            exit 21
+          fi
+          printf 'function beta(){return 3;}\n' > "$tmp/B.gs"
+          h2="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" --hash-only)"
+          test "$h1" != "$h2" || { echo 'Deployment hash did not change with source change'; exit 22; }
