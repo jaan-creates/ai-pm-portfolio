@@ -109,6 +109,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-p1a-vacancy-worker.mjs" "$LIVE_DIR"
       - name: Wire RetrievalProvider into JD worker
         run: node "$PROJECT_DIR/scripts/patch-p1a-jd-worker.mjs" "$LIVE_DIR"
+      - name: Add connected release provenance writeback
+        run: node "$PROJECT_DIR/scripts/patch-release-provenance.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -142,6 +144,12 @@ jobs:
           for token in nextResumeRevision_ revisionDecision_ classifyJobOutcomeEmail_ outcomeMatchScore_ outcomeMatchDecision_ contactDiscoveryRoute_ contactCandidateDecision_ p1cContractSelfTest_ runP1CContractSelfTest p1c_self_test; do
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "P1-C contract missing: $token"; exit 11; }
           done
+      - name: Validate release provenance contract
+        shell: bash
+        run: |
+          for token in releaseProvenanceValidate_ releaseProvenanceContractSelfTest_ recordDeploymentProvenance runReleaseProvenanceContractSelfTest deployment_provenance_status deployment_git_commit deployment_source_sha256 REL-PROV-1; do
+            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Release provenance contract missing: $token"; exit 13; }
+          done
       - name: Build privacy-safe transformed-source manifest
         shell: bash
         run: |
@@ -173,6 +181,14 @@ jobs:
           fi
           echo "DEPLOYED_SOURCE_HASH=$ACTUAL_SOURCE_HASH" >> "$GITHUB_ENV"
           echo "Verified deployed source hash: $ACTUAL_SOURCE_HASH"
+      - name: Persist and verify connected deployment provenance
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          clasp run runReleaseProvenanceContractSelfTest --nondev --user "$CLASP_USER"
+          PARAMS="$(node -e 'console.log(JSON.stringify([process.env.GITHUB_SHA,process.env.GITHUB_RUN_ID,process.env.GITHUB_RUN_ATTEMPT,process.env.DEPLOYED_SOURCE_HASH,process.env.EXPECTED_VERSION,process.env.EXPECTED_SUITE]))')"
+          echo 'Persisting privacy-safe deployment provenance to connected product state.'
+          clasp run recordDeploymentProvenance --nondev --params "$PARAMS" --user "$CLASP_USER"
       - name: Attempt P1-A self-test immediately
         continue-on-error: true
         working-directory: .janu-live
@@ -196,7 +212,9 @@ jobs:
           echo '## Janu Job Copilot P1 deployment' >> "$GITHUB_STEP_SUMMARY"
           echo '- Base: live 1.3.8 / p0-regression-v19 only.' >> "$GITHUB_STEP_SUMMARY"
           echo "- Git commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "- GitHub Actions run: $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
           echo "- Verified transformed-source SHA-256: ${DEPLOYED_SOURCE_HASH:-not verified}" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Verified deployment identity is persisted to connected Job Copilot Worker State only after post-push source-hash verification.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Privacy-safe source manifest uploaded; source text is not published as an artifact.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1 contract telemetry is not treated as end-to-end feature completion.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1-A includes runtime retrieval adapters, a bounded direct-official vacancy worker, and a RetrievalProvider-backed JD worker.' >> "$GITHUB_STEP_SUMMARY"
