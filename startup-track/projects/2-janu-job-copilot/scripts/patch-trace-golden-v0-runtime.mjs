@@ -4,14 +4,18 @@ import {spawnSync} from 'node:child_process';
 
 const root=process.argv[2]||'.janu-live';
 const base=path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-trace-golden-v0.mjs');
-const run=spawnSync(process.execPath,[base,root],{encoding:'utf8'});
-if(run.status!==0)throw new Error(run.stderr||run.stdout||'base TRACE patch failed');
-const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
+let files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
+const hasTrace=files.some(f=>fs.readFileSync(path.join(root,f),'utf8').includes('function traceGoldenTick_('));
+if(!hasTrace){
+  const run=spawnSync(process.execPath,[base,root],{encoding:'utf8'});
+  if(run.status!==0)throw new Error(run.stderr||run.stdout||'base TRACE patch failed');
+  files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
+}
 const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function traceGoldenTick_(')&&t.includes('const P12');});
 if(!target)throw new Error('TRACE patched TrackerWorkflow source not found');
 const file=path.join(root,target);let s=fs.readFileSync(file,'utf8');
 
-function rangeOf(name){const sig='function '+name+'(';const start=s.indexOf(sig);if(start<0)return null;const open=s.indexOf('{',start);if(open<0)throw new Error('Malformed '+name);let depth=0,quote=null,esc=false,line=false,block=false;for(let i=open;i<s.length;i++){const c=s[i],n=s[i+1]||'';if(line){if(c==='\n')line=false;continue;}if(block){if(c==='*'&&n==='/'){block=false;i++;}continue;}if(quote){if(esc){esc=false;continue;}if(c==='\\'){esc=true;continue;}if(c===quote)quote=null;continue;}if(c==='/'&&n==='/'){line=true;i++;continue;}if(c==='/'&&n==='*'){block=true;i++;continue;}if(c==='"'||c==="'"||c==='`'){quote=c;continue;}if(c==='{')depth++;else if(c==='}'&&--depth===0)return{start,end:i+1};}throw new Error('Unterminated '+name);}
+function rangeOf(name){const sig='function '+name+'(';const start=s.indexOf(sig);if(start<0)return null;const open=s.indexOf('{',start);if(open<0)throw new Error('Malformed '+name);let depth=0,quote=null,esc=false,line=false,block=false;for(let i=open;i<s.length;i++){const c=s[i],n=s[i+1]||'';if(line){if(c==='\n')line=false;continue;}if(block){if(c==='*'&&n==='/'){block=false;i++;continue;}if(quote){if(esc){esc=false;continue;}if(c==='\\'){esc=true;continue;}if(c===quote)quote=null;continue;}if(c==='/'&&n==='/'){line=true;i++;continue;}if(c==='/'&&n==='*'){block=true;i++;continue;}if(c==='"'||c==="'"||c==='`'){quote=c;continue;}if(c==='{')depth++;else if(c==='}'&&--depth===0)return{start,end:i+1};}throw new Error('Unterminated '+name);}
 function replaceFunction(name,code){const r=rangeOf(name);if(!r)throw new Error('TRACE repair target missing '+name);s=s.slice(0,r.start)+code+s.slice(r.end);}
 function addBefore(anchor,token,code){if(s.includes(token))return;const i=s.indexOf(anchor);if(i<0)throw new Error('TRACE repair anchor missing '+anchor);s=s.slice(0,i)+code+'\n'+s.slice(i);}
 
@@ -35,4 +39,4 @@ for(const token of ['function traceUrlIdentityMatch_(','function traceNextAppIdF
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
 if(syntax.status!==0){const head=s.split('\n').slice(0,16).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');throw new Error('TRACE transformed source remains invalid: '+syntax.stderr+'\n--- transformed head ---\n'+head);}
-console.log(JSON.stringify({status:'PASS',file:target,contract:'TRACE-GOLDEN-V0-2',generatedEscapeRepairs:count,generatedSyntax:true,verifiedArtifact:file,dedupeNegativeGuard:true,uniqueIdGuard:true,duplicateEvidence:true},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,contract:'TRACE-GOLDEN-V0-2',baseInstallerSkipped:hasTrace,generatedEscapeRepairs:count,generatedSyntax:true,verifiedArtifact:file,dedupeNegativeGuard:true,uniqueIdGuard:true,duplicateEvidence:true},null,2));
