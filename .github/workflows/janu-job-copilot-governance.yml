@@ -45,3 +45,6 @@ jobs:
 
       - name: Validate AI Systems Lab product baseline
         run: node "$PROJECT_DIR/scripts/validate-ai-systems-baseline.mjs" "$PROJECT_DIR"
+
+      - name: Validate public governance-document privacy
+        run: node "$PROJECT_DIR/scripts/validate-public-doc-privacy.mjs" "$PROJECT_DIR"
