@@ -185,10 +185,12 @@ jobs:
         working-directory: .janu-live
         shell: bash
         run: |
-          clasp run runReleaseProvenanceContractSelfTest --nondev --user "$CLASP_USER"
+          # These functions were just pushed in this workflow. Execute against current HEAD/dev source;
+          # --nondev targets the previously deployed executable and can hide newly pushed functions.
+          clasp run runReleaseProvenanceContractSelfTest --user "$CLASP_USER"
           PARAMS="$(node -e 'console.log(JSON.stringify([process.env.GITHUB_SHA,process.env.GITHUB_RUN_ID,process.env.GITHUB_RUN_ATTEMPT,process.env.DEPLOYED_SOURCE_HASH,process.env.EXPECTED_VERSION,process.env.EXPECTED_SUITE]))')"
           echo 'Persisting privacy-safe deployment provenance to connected product state.'
-          clasp run recordDeploymentProvenance --nondev --params "$PARAMS" --user "$CLASP_USER"
+          clasp run recordDeploymentProvenance --params "$PARAMS" --user "$CLASP_USER"
       - name: Attempt P1-A self-test immediately
         continue-on-error: true
         working-directory: .janu-live
