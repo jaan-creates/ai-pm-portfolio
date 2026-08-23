@@ -50,29 +50,7 @@ What is not yet proven:
 
 The current Trace Explorer is mainly a **human-readable reconstruction/projection** from existing Applications, Processing Queue and Cost Ledger state. That is useful observability, but it is not yet a full causal distributed trace. Runtime operations still need a stable trace/group identity propagated through asynchronous enqueue/worker/model/tool/persistence boundaries, with real parent/child or causal links.
 
-## 4. Current high-priority defects and prevention status
-
-Private Failure Learning / Verification Ledger currently show these material open items:
-
-- `FL-045` — deterministic renderer bullet loss **recurred live**; previous prevention is ineffective and must be reopened/fixed before broad resume replay.
-- `FL-049` — CLI/process success was once mistaken for semantic release-write success; automatic semantic-output plus durable-readback gating remains incomplete.
-- `FL-050` — the user-action projection can drift from canonical human-boundary state; executable exactly-one/zero reconciliation tests remain pending.
-- `FL-051` — golden-path dedupe/identity produced a false duplicate and exposed an internal Application-ID collision; source repair exists, live proof remains pending.
-- `FL-052` — a verifier inspected a stale pre-repair artifact; source prevention now verifies the exact transformed artifact, but production promotion evidence is still required.
-- `FL-053` — patch idempotency failed across version/partial-install states; version-aware convergence source repair exists, live proof remains pending.
-- `FL-055` — an early terminal row could starve later actionable applications in a recurring continuation scan; v3 source repair exists, live runtime still reports v2.
-- `FL-056` — historical queue success could mask a newer failure; latest-meaningful-event semantics are specified in v3 but not yet proven live.
-
-The product must distinguish prevention lifecycle states such as **proposed -> source verified -> deployed -> environment verified -> monitoring -> effective / ineffective**. A recurrence automatically demotes/reopens a prevention claim.
-
-## 5. Current product-state conclusions
-
-- The private tracker contains legitimate non-terminal applications with system-owned work that is currently stalled or failed; user intervention is not the right repair for these cases.
-- The tracker currently contains an internal Application-ID uniqueness violation in historical/current state. Canonical business identity and internal row/object identity need explicit, concurrency-safe rules before the golden fixture can rely on Application ID as its sole grouping key.
-- The human-action surface currently contains a genuine Resume Review action, but the projection invariant still needs executable reconciliation coverage.
-- One complete current-release fresh source -> Resume Review -> Ready -> real submission -> employer outcome journey has not yet been accepted.
-
-## 6. Demonstrated capabilities
+## 4. Demonstrated capabilities
 
 Verified examples still include:
 - durable queued workers with retry/error evidence,
@@ -90,25 +68,35 @@ Verified examples still include:
 
 These are component capabilities, not proof of a healthy full journey.
 
-## 7. Current architecture/deployment risk
+## 5. Current known gaps
+
+### High-priority defects and prevention status
+
+Private Failure Learning / Verification Ledger currently show these material open items:
+
+- `FL-045` — deterministic renderer bullet loss **recurred live**; previous prevention is ineffective and must be reopened/fixed before broad resume replay.
+- `FL-049` — CLI/process success was once mistaken for semantic release-write success; automatic semantic-output plus durable-readback gating remains incomplete.
+- `FL-050` — the user-action projection can drift from canonical human-boundary state; executable exactly-one/zero reconciliation tests remain pending.
+- `FL-051` — golden-path dedupe/identity produced a false duplicate and exposed an internal Application-ID collision; source repair exists, live proof remains pending.
+- `FL-052` — a verifier inspected a stale pre-repair artifact; source prevention now verifies the exact transformed artifact, but production promotion evidence is still required.
+- `FL-053` — patch idempotency failed across version/partial-install states; version-aware convergence source repair exists, live proof remains pending.
+- `FL-055` — an early terminal row could starve later actionable applications in a recurring continuation scan; v3 source repair exists, live runtime still reports v2.
+- `FL-056` — historical queue success could mask a newer failure; latest-meaningful-event semantics are specified in v3 but not yet proven live.
+
+The product must distinguish prevention lifecycle states such as **proposed -> source verified -> deployed -> environment verified -> monitoring -> effective / ineffective**. A recurrence automatically demotes/reopens a prevention claim.
+
+### Current product-state gaps
+
+- The private tracker contains legitimate non-terminal applications with system-owned work that is currently stalled or failed; user intervention is not the right repair for these cases.
+- The tracker currently contains an internal Application-ID uniqueness violation in historical/current state. Canonical business identity and internal row/object identity need explicit, concurrency-safe rules before the golden fixture can rely on Application ID as its sole grouping key.
+- The human-action surface currently contains a genuine Resume Review action, but the projection invariant still needs executable reconciliation coverage.
+- One complete current-release fresh source -> Resume Review -> Ready -> real submission -> employer outcome journey has not yet been accepted.
+
+### Architecture/deployment gap
 
 The pull-live -> apply-many-patches -> push model is now producing measurable complexity: version convergence, partial installs, source/live drift and transformed-artifact verification defects. This is becoming a builder/deployment bottleneck. `DEPLOY-SOURCE-01` tracks a bounded move toward a private canonical full runtime source/reproducible release artifact; this is not a portal rewrite.
 
-## 8. Current priority
-
-Do **not** broaden P1 feature work yet. Stabilize the P0/TRACE path in this order:
-
-1. deploy and independently verify one source revision containing TRACE V0-2 + continuation v3;
-2. repair/migrate the internal Application-ID collision and validate cross-sheet references;
-3. fix the recurrent renderer loss and prove the prevention on held-out + live evidence;
-4. prove continuation fairness/latest-event semantics and recover eligible stalled work without user relay;
-5. propagate native trace context through queue/worker/model/tool/persistence while retaining Trace Explorer as the human-readable view;
-6. make My Actions reconciliation executable;
-7. resume the locked fresh fixture and require Intake -> JD -> Score/Decision -> Tailor -> QA -> Resume Review plus idempotent rerun;
-8. then continue P0 through immutable revision, Ready-to-Submit and real submission provenance;
-9. only after that, complete the P1 employer-outcome/Gmail/outreach/interview loop.
-
-## 9. Do not infer as current truth
+## 6. Do not infer as current truth
 
 Do not infer that:
 - source or CI PASS means the change is deployed,
@@ -124,6 +112,20 @@ Do not infer that:
 - Ready to Submit means actually submitted,
 - portal/agent/memory complexity is justified before the present value loop is stable.
 
-## 10. Required state-maintenance rule
+## 7. Current priority
+
+Do **not** broaden P1 feature work yet. Stabilize the P0/TRACE path in this order:
+
+1. deploy and independently verify one source revision containing TRACE V0-2 + continuation v3;
+2. repair/migrate the internal Application-ID collision and validate cross-sheet references;
+3. fix the recurrent renderer loss and prove the prevention on held-out + live evidence;
+4. prove continuation fairness/latest-event semantics and recover eligible stalled work without user relay;
+5. propagate native trace context through queue/worker/model/tool/persistence while retaining Trace Explorer as the human-readable view;
+6. make My Actions reconciliation executable;
+7. resume the locked fresh fixture and require Intake -> JD -> Score/Decision -> Tailor -> QA -> Resume Review plus idempotent rerun;
+8. then continue P0 through immutable revision, Ready-to-Submit and real submission provenance;
+9. only after that, complete the P1 employer-outcome/Gmail/outreach/interview loop.
+
+## 8. Required state-maintenance rule
 
 Update this file after a material release, architecture change, capability promotion/demotion, prevention recurrence, changed autonomy boundary, or when environment evidence contradicts this snapshot. Product docs should distinguish **source state, deployed state, environment-verified state and prevention effectiveness** rather than collapsing them into one status.
