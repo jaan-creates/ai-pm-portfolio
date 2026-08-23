@@ -4,8 +4,8 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 
 const projectDir=process.argv[2]||path.resolve('startup-track/projects/2-janu-job-copilot');
-const patcher=path.join(projectDir,'scripts','patch-trace-golden-v0.mjs');
-if(!fs.existsSync(patcher))throw new Error('patch-trace-golden-v0.mjs missing');
+const patcher=path.join(projectDir,'scripts','patch-trace-golden-v0-runtime.mjs');
+if(!fs.existsSync(patcher))throw new Error('patch-trace-golden-v0-runtime.mjs missing');
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'janu-trace-golden-'));
 const target=path.join(tmp,'TrackerWorkflow.js');
 fs.writeFileSync(target,`
@@ -31,11 +31,13 @@ run();const twice=fs.readFileSync(target,'utf8');
 if(once!==twice)throw new Error('trace patch is not idempotent');
 const syntax=spawnSync(process.execPath,['--check',target],{encoding:'utf8'});
 if(syntax.status!==0){
-  const numbered=twice.split('\n').slice(0,20).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');
+  const numbered=twice.split('\n').slice(0,24).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');
   throw new Error('patched source syntax invalid:\n'+syntax.stderr+'\n--- transformed source head ---\n'+numbered);
 }
 for(const token of ['function traceGoldenTick_(','function traceRefreshGolden_(','function traceGoldenCompleteness_(','function runTraceGoldenSelfTest()','Trace Explorer','TRACE-GOLDEN-V0-1'])if(!twice.includes(token))throw new Error('missing '+token);
 if(!twice.includes("'Decision':'New'"))throw new Error('fresh system intake must begin Decision=New');
+if(!twice.includes(".replace(/[/]$/,'')"))throw new Error('safe generated slash matcher missing');
+if(twice.includes(".replace(//$/,'')"))throw new Error('malformed generated slash matcher survived');
 if(/UrlFetchApp\.fetch|OpenAI|TAVILY_API_KEY|SERPAPI_API_KEY/.test(twice.slice(twice.indexOf('function traceStateValue_('),twice.indexOf('function verifyReleaseIdentity()'))))throw new Error('trace layer must not introduce its own paid/network retrieval path');
 const occurrences=(twice.match(/function traceGoldenTick_\(/g)||[]).length;if(occurrences!==1)throw new Error('traceGoldenTick_ duplicated');
-console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-1',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true},null,2));
+console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-1',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true},null,2));
