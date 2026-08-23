@@ -1,7 +1,7 @@
 # Janu Job Copilot — Current State
 
 **Status:** Verified snapshot; update when material runtime truth changes  
-**Last verified:** 2026-08-24 00:35 IST  
+**Last verified:** 2026-08-24  
 **Evidence window:** repository `main`, private live tracker, live System Health/Failure Learning/Verification Ledger, Master Product & Engineering Specification 0.24.0
 
 ## Public/private evidence boundary
