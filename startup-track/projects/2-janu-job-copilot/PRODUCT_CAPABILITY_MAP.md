@@ -1,7 +1,7 @@
 # Janu Job Copilot — Product Capability Map
 
 **Status:** Current scope/maturity map  
-**Last verified:** 2026-08-24 00:35 IST
+**Last verified:** 2026-08-24
 
 ## Purpose
 
