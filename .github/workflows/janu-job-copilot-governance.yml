@@ -1,0 +1,80 @@
+name: Janu Job Copilot Governance
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/**'
+      - '.github/workflows/janu-job-copilot-governance.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/**'
+      - '.github/workflows/janu-job-copilot-governance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-product-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PROJECT_DIR: startup-track/projects/2-janu-job-copilot
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate Job Copilot patch and governance script syntax
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=("$PROJECT_DIR"/scripts/*.mjs)
+          test ${#files[@]} -gt 0 || { echo 'No Job Copilot scripts found'; exit 2; }
+          for f in "${files[@]}"; do
+            node --check "$f"
+          done
+
+      - name: Validate AI Systems Lab product baseline
+        run: node "$PROJECT_DIR/scripts/validate-ai-systems-baseline.mjs" "$PROJECT_DIR"
+
+      - name: Validate public governance-document privacy
+        run: node "$PROJECT_DIR/scripts/validate-public-doc-privacy.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test privacy guard
+        shell: bash
+        run: |
+          tmp="$(mktemp -d)"
+          printf '# Product\nPrivate contact: person@example.com\n' > "$tmp/PRODUCT.md"
+          if node "$PROJECT_DIR/scripts/validate-public-doc-privacy.mjs" "$tmp" >/tmp/privacy-negative.out 2>&1; then
+            echo 'Privacy guard failed to reject a known email fixture'
+            cat /tmp/privacy-negative.out
+            exit 20
+          fi
+          grep -q 'PUBLIC-DOC-PRIVACY-1' /tmp/privacy-negative.out
+
+      - name: Behavior-test deployment manifest
+        shell: bash
+        run: |
+          tmp="$(mktemp -d)"
+          printf 'function alpha(){return 1;}\n' > "$tmp/A.js"
+          printf 'function beta(){return 2;}\n' > "$tmp/B.gs"
+          h1="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" --hash-only)"
+          node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" > /tmp/deployment-manifest-test.json
+          grep -q 'JANU-DEPLOYMENT-MANIFEST-1' /tmp/deployment-manifest-test.json
+          grep -q "$h1" /tmp/deployment-manifest-test.json
+          if grep -q 'function alpha' /tmp/deployment-manifest-test.json; then
+            echo 'Deployment manifest leaked source text'
+            exit 21
+          fi
+          printf 'function beta(){return 3;}\n' > "$tmp/B.gs"
+          h2="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" --hash-only)"
+          test "$h1" != "$h2" || { echo 'Deployment hash did not change with source change'; exit 22; }
