@@ -78,3 +78,6 @@ jobs:
           printf 'function beta(){return 3;}\n' > "$tmp/B.gs"
           h2="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" --hash-only)"
           test "$h1" != "$h2" || { echo 'Deployment hash did not change with source change'; exit 22; }
+
+      - name: Behavior-test release provenance patch
+        run: node "$PROJECT_DIR/scripts/test-release-provenance-patch.mjs" "$PROJECT_DIR"
