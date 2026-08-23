@@ -32,8 +32,10 @@ const checks = [
     allow: new Set([])
   },
   {
+    // Require at least ten digits while allowing common separators. This avoids
+    // flagging ordinary ISO dates such as 2026-08-23.
     name: 'phone-like-number',
-    re: /(?:\+?\d[\d\s().-]{8,}\d)/g,
+    re: /\+?\d(?:[\s().-]*\d){9,}/g,
     allow: new Set([])
   },
   {
