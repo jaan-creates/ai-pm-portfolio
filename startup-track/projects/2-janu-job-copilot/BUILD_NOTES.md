@@ -104,3 +104,77 @@ A second lesson emerged immediately: source-of-truth selection must check **visi
 **Infrastructure candidate requiring additional secure authorization:** establish a private canonical runtime-source/version store so complete Apps Script versions can be preserved and restored after a workflow has ended without exposing source in the public repository.
 
 **Not justified yet:** multi-agent orchestration or vector-memory infrastructure.
+
+---
+
+## 2026-08-23 — Re-anchor Job Copilot to the whole career JTBD
+
+### What changed
+
+A scope review compared the AI Systems Lab operating plan with the current Master Product & Engineering Specification and found that the first product-level Git summary was too narrow: it treated Resume Review / Ready to Submit as the primary product outcome even though the actual product vision extends from discovery through submission, employer engagement, interview learning and offers.
+
+The branch now adds:
+- `OUTCOME_MODEL.md` — the whole JTBD, north star and causal outcome ladder,
+- `PRODUCT_CAPABILITY_MAP.md` — current capability proof status across discovery -> outcome/learning,
+- `EXECUTION_ROADMAP.md` — P0/P1/P2/P3/P4 dependency order and acceptance exits,
+- `JC-LAB-002` — a measured Lab intervention for the outcome-first re-architecture.
+
+`PRODUCT.md`, `CURRENT_STATE.md`, `SYSTEM_MAP.md`, `EVAL_PLAN.md`, `BASELINE_SCORECARD.md`, `AUTONOMY_CONTRACT.md`, `MEMORY_POLICY.md` and `MONITORING_ALERTS.md` were re-aligned to the same product outcome.
+
+### Why this mattered
+
+A reliable application-preparation engine can still fail the real job to be done. If the system stops its measurement at a polished resume, it cannot tell whether:
+- the right opportunities were selected,
+- applications became real submissions,
+- employers responded,
+- interviews converted,
+- sourcing/positioning/outreach decisions helped,
+- recurring interview/skill gaps should change future strategy.
+
+Without those downstream events, "self-improvement" risks optimizing internal proxies instead of the user's actual job-search outcome.
+
+### New product priority
+
+The priority is now explicitly:
+
+```text
+P0: fresh source -> trustworthy prep/revision -> real submission
+P1: submission -> employer outcome / outreach / interview continuation
+P2: outcome data -> sourcing / priority / positioning / skill learning
+P3: gated capture / offer support / selective memory or new autonomy where earned
+P4: portal migration of proven contracts
+```
+
+The immediate runtime package after governance promotion is `TRACE-GOLDEN-01`: add minimal trace correlation while driving one fresh URL through the current application-preparation path, fixing blocking system-owned defects instead of skipping ahead.
+
+### Alternatives considered
+
+- **Keep reliability/tracing as the next standalone program:** rejected as the primary sequence; trace v0 should be built alongside the next real value journey so it has immediate diagnostic/product use.
+- **Prioritize portal migration now:** rejected because the portal should inherit proven semantics rather than define them.
+- **Build outcome-learning memory now:** rejected because reliable submission/outcome events and cohorts do not yet exist.
+- **Use hiring outcomes to modify JD Fit directly:** rejected; factual fit must stay separate from learned desirability/opportunity-priority hypotheses.
+
+### What was verified
+
+- The live Master Specification explicitly defines the broader career-operating-system scope and qualified interview conversion per unit user effort as the intended north star.
+- Existing repository E2E acceptance already says portal migration must wait until source -> submission -> post-submission behavior is proven.
+- Current branch/runtime evidence still lacks a clean fresh-source -> real submission -> attributable employer outcome -> interview-learning journey.
+- `JC-LAB-002` was written to the private `__Lab Improvements` sheet and read back successfully.
+
+### Risks / limitations
+
+- Qualified interview conversion is a lagging, sparse metric; early product decisions must use a balanced ladder of leading and lagging indicators rather than overfit a tiny sample.
+- Employer outcomes are not fully controllable by the product. Outcome data should calibrate hypotheses, not fabricate certainty or overwrite candidate facts.
+- The broader roadmap could become scope bloat unless capability proof and dependency order remain explicit.
+
+### Learning
+
+A self-improving AI product needs to close the **user outcome feedback loop**, not only the engineering improvement loop. Observability, memory and builder sophistication are useful when they make that loop more reliable/measurable; they are not the product goal themselves.
+
+### Next
+
+**Committed next:** reconcile the Master Specification/version identity and safely promote the governance baseline; then execute `TRACE-GOLDEN-01`.
+
+**After P0:** wire employer-outcome monitoring before optimizing sourcing with outcome feedback.
+
+**Deferred:** portal migration, vector memory and multi-agent architecture until the product loop provides evidence that they solve a real bottleneck.
