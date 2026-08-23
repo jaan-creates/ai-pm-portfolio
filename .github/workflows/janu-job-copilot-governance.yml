@@ -82,5 +82,8 @@ jobs:
       - name: Behavior-test release provenance patch
         run: node "$PROJECT_DIR/scripts/test-release-provenance-patch.mjs" "$PROJECT_DIR"
 
+      - name: Guard vacancy lifecycle partial-install convergence
+        run: node "$PROJECT_DIR/scripts/test-vacancy-lifecycle-convergence.mjs" "$PROJECT_DIR"
+
       - name: Behavior-test TRACE-GOLDEN-01 patch
         run: node "$PROJECT_DIR/scripts/test-trace-golden-v0-patch.mjs" "$PROJECT_DIR"
