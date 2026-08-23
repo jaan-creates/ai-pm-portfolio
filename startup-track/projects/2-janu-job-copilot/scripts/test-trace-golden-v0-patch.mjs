@@ -31,13 +31,18 @@ run();const twice=fs.readFileSync(target,'utf8');
 if(once!==twice)throw new Error('trace patch is not idempotent');
 const syntax=spawnSync(process.execPath,['--check',target],{encoding:'utf8'});
 if(syntax.status!==0){
-  const numbered=twice.split('\n').slice(0,24).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');
+  const numbered=twice.split('\n').slice(0,40).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');
   throw new Error('patched source syntax invalid:\n'+syntax.stderr+'\n--- transformed source head ---\n'+numbered);
 }
-for(const token of ['function traceGoldenTick_(','function traceRefreshGolden_(','function traceGoldenCompleteness_(','function runTraceGoldenSelfTest()','Trace Explorer','TRACE-GOLDEN-V0-1'])if(!twice.includes(token))throw new Error('missing '+token);
+for(const token of ['function traceGoldenTick_(','function traceRefreshGolden_(','function traceGoldenCompleteness_(','function runTraceGoldenSelfTest()','Trace Explorer','TRACE-GOLDEN-V0-2','function traceUrlIdentityMatch_(','function traceNextAppIdFromValues_(','function traceFindAppByUrlDetail_(','golden_trace_duplicate_evidence','DETERMINISTIC:TRACE_GOLDEN_ID_COLLISION'])if(!twice.includes(token))throw new Error('missing '+token);
 if(!twice.includes("'Decision':'New'"))throw new Error('fresh system intake must begin Decision=New');
 if(!twice.includes(".replace(/[/]$/,'')"))throw new Error('safe generated slash matcher missing');
 if(twice.includes(".replace(//$/,'')"))throw new Error('malformed generated slash matcher survived');
 if(/UrlFetchApp\.fetch|OpenAI|TAVILY_API_KEY|SERPAPI_API_KEY/.test(twice.slice(twice.indexOf('function traceStateValue_('),twice.indexOf('function verifyReleaseIdentity()'))))throw new Error('trace layer must not introduce its own paid/network retrieval path');
 const occurrences=(twice.match(/function traceGoldenTick_\(/g)||[]).length;if(occurrences!==1)throw new Error('traceGoldenTick_ duplicated');
-console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-1',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true},null,2));
+const neg="traceUrlIdentityMatch_('https://jobs.ashbyhq.com/tekion/e0956a72-ce85-4e10-a34d-f5c4d630d8e0','https://job-boards.greenhouse.io/easyship/jobs/4706111006?gh_jid=4706111006')===false";
+if(!twice.includes(neg))throw new Error('TRACE-DEDUPE-001 Tekion/Easyship negative fixture missing');
+if(!twice.includes("traceNextAppIdFromValues_('2026-08-23',['2026-08-23-001'])==='2026-08-23-002'"))throw new Error('TRACE-ID-001 collision fixture missing');
+if(!twice.includes("if(!raw)continue"))throw new Error('empty existing URLs must never dedupe');
+if(!twice.includes("if(!requested||last<2)"))throw new Error('empty requested URL must never dedupe');
+console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true},null,2));
