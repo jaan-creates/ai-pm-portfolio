@@ -5,6 +5,9 @@ const projectDir = process.argv[2] || path.resolve('startup-track/projects/2-jan
 
 const governedDocs = [
   'PRODUCT.md',
+  'OUTCOME_MODEL.md',
+  'PRODUCT_CAPABILITY_MAP.md',
+  'EXECUTION_ROADMAP.md',
   'CURRENT_STATE.md',
   'SYSTEM_MAP.md',
   'AUTONOMY_CONTRACT.md',
