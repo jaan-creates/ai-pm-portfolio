@@ -9,6 +9,7 @@ const governedDocs = [
   'SYSTEM_MAP.md',
   'AUTONOMY_CONTRACT.md',
   'BUILD_NOTES.md',
+  'RELEASE_NOTES.md',
   'TRACE_SCHEMA.md',
   'TELEMETRY_PRIVACY.md',
   'EVAL_PLAN.md',
@@ -16,7 +17,12 @@ const governedDocs = [
   'FAILURE_TAXONOMY.md',
   'ITERATION_EVIDENCE_GATE.md',
   'MEMORY_POLICY.md',
-  'LAB_IMPROVEMENT_LEDGER.md'
+  'LAB_IMPROVEMENT_LEDGER.md',
+  'TOOLS_AND_ENVIRONMENTS.md',
+  'SECURITY_THREAT_MODEL.md',
+  'RUNBOOK.md',
+  'ROLLBACK_POLICY.md',
+  'MONITORING_ALERTS.md'
 ];
 
 const checks = [
