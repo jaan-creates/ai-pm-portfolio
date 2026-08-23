@@ -7,14 +7,14 @@ on:
       - janu-job-copilot/apps-script-ci
       - janu-job-copilot/p1a-release
     paths:
-      - 'startup-track/projects/2-janu-job-copilot/**'
+      - 'startup-track/projects/2-janu-job-copilot/scripts/**'
       - '.github/workflows/janu-job-copilot.yml'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     branches:
       - main
     paths:
-      - 'startup-track/projects/2-janu-job-copilot/**'
+      - 'startup-track/projects/2-janu-job-copilot/scripts/**'
       - '.github/workflows/janu-job-copilot.yml'
   workflow_dispatch:
 
