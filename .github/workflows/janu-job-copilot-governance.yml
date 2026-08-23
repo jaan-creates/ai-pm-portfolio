@@ -1,0 +1,47 @@
+name: Janu Job Copilot Governance
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/**'
+      - '.github/workflows/janu-job-copilot-governance.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/**'
+      - '.github/workflows/janu-job-copilot-governance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-product-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PROJECT_DIR: startup-track/projects/2-janu-job-copilot
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate Job Copilot patch and governance script syntax
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=("$PROJECT_DIR"/scripts/*.mjs)
+          test ${#files[@]} -gt 0 || { echo 'No Job Copilot scripts found'; exit 2; }
+          for f in "${files[@]}"; do
+            node --check "$f"
+          done
+
+      - name: Validate AI Systems Lab product baseline
+        run: node "$PROJECT_DIR/scripts/validate-ai-systems-baseline.mjs" "$PROJECT_DIR"
