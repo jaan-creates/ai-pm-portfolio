@@ -111,6 +111,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-p1a-jd-worker.mjs" "$LIVE_DIR"
       - name: Add connected release provenance writeback
         run: node "$PROJECT_DIR/scripts/patch-release-provenance.mjs" "$LIVE_DIR"
+      - name: Add TRACE-GOLDEN-01 trace and same-fixture runner
+        run: node "$PROJECT_DIR/scripts/patch-trace-golden-v0-runtime.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -150,6 +152,13 @@ jobs:
           for token in releaseProvenanceValidate_ releaseProvenanceContractSelfTest_ recordDeploymentProvenance runReleaseProvenanceContractSelfTest deployment_provenance_status deployment_git_commit deployment_source_sha256 REL-PROV-1; do
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Release provenance contract missing: $token"; exit 13; }
           done
+      - name: Validate TRACE-GOLDEN-01 contract
+        shell: bash
+        run: |
+          for token in traceGoldenTick_ traceRefreshGolden_ traceGoldenCompleteness_ runTraceGoldenSelfTest TRACE-GOLDEN-V0-1 'Trace Explorer' golden_trace_status; do
+            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "TRACE-GOLDEN-01 contract missing: $token"; exit 14; }
+          done
+          grep -q "'Decision':'New'" /tmp/janu-job-copilot-combined.js
       - name: Build privacy-safe transformed-source manifest
         shell: bash
         run: |
@@ -219,6 +228,7 @@ jobs:
           echo '- Verified deployment identity is persisted to connected Job Copilot Worker State only after post-push source-hash verification.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Privacy-safe source manifest uploaded; source text is not published as an artifact.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1 contract telemetry is not treated as end-to-end feature completion.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- TRACE-GOLDEN-01 adds bounded same-fixture trace reconstruction and does not create an independent retrieval/provider path.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1-A includes runtime retrieval adapters, a bounded direct-official vacancy worker, and a RetrievalProvider-backed JD worker.' >> "$GITHUB_STEP_SUMMARY"
           echo '- JD recovery uses an official Ashby public posting adapter before generic page retrieval; paid search fallback remains disabled until P1-B runtime enforcement is complete.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Successful JD recovery requires canonical artifact/application readback and then queues the scoring stage.' >> "$GITHUB_STEP_SUMMARY"
