@@ -3,6 +3,10 @@
 **Status:** Baseline evaluation contract  
 **Last verified:** 2026-08-23
 
+## Public/private eval boundary
+
+This public repository stores eval definitions and privacy-safe fixture classes. Exact live application/company identities, candidate content and private tracker rows remain in the authorized private product evidence surface. A test may refer to an opaque fixture/failure ID when reproducibility needs linkage without publishing user-specific state.
+
 ## 1. Evaluation principle
 
 A change is an improvement only when it improves a defined outcome on representative evidence without unacceptable regression in reliability, safety, autonomy, latency or cost.
@@ -61,7 +65,7 @@ Maintain targeted cases for:
 
 ## 4. Historical failure conversion
 
-`__Failure Learning` is the incident source. Every repeatable material defect should map to one of:
+The private Failure Learning store is the incident source. Every repeatable material defect should map to one of:
 - deterministic regression,
 - representative fixture/eval,
 - release/live preflight invariant,
@@ -70,17 +74,17 @@ Maintain targeted cases for:
 
 The failure record should name the prevention/eval. The eval should be able to fail again if the defect is reintroduced.
 
-## 5. Initial representative fixtures
+## 5. Initial representative fixture classes
 
-Use existing historical evidence as seeds, without assuming those exact cases are the whole benchmark:
-- **Motive** — prior successful resume-review acceptance path,
-- **Metaforms** — official Ashby JD recovery + later render failure,
-- **HackerRank** — verified CLOSED lifecycle propagation class,
-- **ClickPost/Keka** — artifact hygiene/QA provenance classes,
-- source-intake PDF fixtures — source writeback/schema/replay classes,
+Use existing private historical evidence as seeds without publishing the live user's application state and without assuming those exact cases are the whole benchmark:
+- a prior successful resume-review acceptance fixture,
+- an official-ATS JD-recovery fixture with a later deterministic render-integrity failure,
+- a verified-CLOSED lifecycle-propagation fixture,
+- historical artifact-hygiene / QA-provenance fixtures,
+- source-intake PDF writeback/schema/replay fixtures,
 - a new clean fresh URL — required held-out golden path.
 
-Do not tune exclusively to named historical fixtures; add held-out fresh roles and negative/adversarial cases.
+Do not tune exclusively to historical fixtures. Add held-out fresh roles, negative cases and adversarial/boundary cases. Store sensitive fixture inputs in the private evidence surface, with public tests using opaque IDs or synthetic equivalents where possible.
 
 ## 6. Metrics/eval connection
 
