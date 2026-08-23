@@ -59,7 +59,7 @@ A source/helper/self-test PASS never promotes a capability to PROVEN by itself.
 | Portal migration | DEFERRED | migration contract | only after current-stack behavior becomes accepted semantic baseline | P4 |
 | Multi-agent orchestration | NOT JUSTIFIED | none required | measured simpler-workflow failure + verifier + held-out gain required | Deferred |
 
-## Critical path
+## Critical path interpretation
 
 ```text
 verified source/runtime identity
@@ -76,7 +76,7 @@ verified source/runtime identity
 
 Do not broaden downstream P1 while the current P0/TRACE stabilization invariants are unresolved.
 
-## Capability-promotion lifecycle
+## Capability-promotion rule
 
 For consequential behavior, track separate states rather than one vague `done`:
 
