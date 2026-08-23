@@ -10,9 +10,15 @@ Plain-English narrative companion to the technical product truth.
 
 ### What changed
 
-Job Copilot is being given a small set of product-level operating documents that make the system easier to understand, evaluate and improve: product outcome, current-state snapshot, system map, autonomy contract, tracing/eval baseline, failure taxonomy, memory policy and an iteration evidence gate.
+Job Copilot is being given a product-level operating baseline that makes the system easier to understand, evaluate and improve. It now has explicit product/current-state/system/autonomy documentation; tracing/eval/metrics/failure/memory contracts; operational/security/rollback/monitoring rules; separate user-facing release notes and reader-facing build notes; and an Iteration Evidence Gate for material changes.
 
-The change also proposes separating governance/documentation validation from production deployment so editing a Markdown file does not unnecessarily redeploy Apps Script.
+The repository also gains two machine-enforced governance checks:
+- validate that the required baseline structure is present,
+- prevent likely private application/user identifiers from being copied into the public governance documents.
+
+The production deployment proposal is also tightened so documentation/governance-only changes do not trigger Apps Script deployment. Runtime deployments gain a privacy-safe transformed-source hash/manifest plus post-push hash verification and in-run rollback if the pushed source does not match the validated transformed source.
+
+A private hidden `__Lab Improvements` sheet has been added to the live tracker and seeded with `JC-LAB-001`, the first experiment measuring whether the AI Systems Lab operating baseline actually improves Job Copilot.
 
 ### Why this was needed
 
@@ -24,13 +30,17 @@ Job Copilot already contains strong low-level reliability mechanisms: a durable 
 - how one run should be traced,
 - how improvement is measured against a baseline,
 - which learning deserves durable memory or executable prevention,
-- when a change needs a customer/release note, audit entry, build note or regression.
+- when a change needs a customer/release note, audit entry, build note or regression,
+- how a release proves which exact transformed source reached production,
+- how private tracker evidence stays private even though the code repository is public.
 
 Without that connective layer, individual fixes can be good while the overall product remains hard to measure or reason about.
 
 ### What this enables for the user
 
-The goal is fewer repeated manual repair cycles and clearer evidence that Job Copilot is improving rather than merely changing. A future product change should be attributable to an explicit hypothesis and checked against outcome/reliability/autonomy/cost metrics before it is considered an improvement.
+The goal is fewer repeated manual repair cycles and clearer evidence that Job Copilot is improving rather than merely changing. A future product change should be attributable to an explicit hypothesis and checked against outcome/reliability/autonomy/cost/privacy metrics before it is considered an improvement.
+
+The Lab itself is also accountable: a Lab suggestion is now an experiment with a baseline and later Keep/Revise/Reject/Insufficient-evidence decision, not a rule that proves itself by being implemented.
 
 ### How it works at a high level
 
@@ -38,6 +48,7 @@ For each material product iteration:
 
 ```text
 change/hypothesis
+  -> verify control surface + data boundary
   -> run/evidence
   -> verify real environment result
   -> eval/regression
@@ -46,9 +57,10 @@ change/hypothesis
   -> failure/learning decision
   -> memory/executable-prevention decision
   -> promote, revise or reject
+  -> monitor recurrence/outcome
 ```
 
-A `LAB_IMPROVEMENT_LEDGER.md` links Lab-sourced suggestions to Job Copilot changes and later outcomes so we can see whether the parent Lab actually improves the product.
+`LAB_IMPROVEMENT_LEDGER.md` holds the public, non-sensitive experiment contract. The private tracker stores the detailed Lab intervention baseline/observed result.
 
 ### Alternatives considered
 
@@ -56,33 +68,39 @@ A `LAB_IMPROVEMENT_LEDGER.md` links Lab-sourced suggestions to Job Copilot chang
 - **Store every trace as memory:** rejected because raw execution evidence is not automatically reusable knowledge.
 - **Build a vector database now:** rejected; retrieval should be introduced only after useful memory types and retrieval evals exist.
 - **Replace the current deterministic orchestration with an agent:** rejected; current workflow control is more inspectable and no eval yet shows an agentic orchestrator would improve reliability.
+- **Publish full runtime source/trace artifacts in the public repo for reproducibility:** rejected because exact private runtime/candidate evidence has a stricter data boundary. We use hashes/references now and leave a private canonical runtime-source store as a later infrastructure improvement.
 
 ### Risks / limitations
 
 - Documentation can become stale if not tied to change gates.
-- Runtime tracing is not yet fully implemented; current Queue/Audit/Worker State/Health/Failure Learning are partial observability surfaces.
-- The production source is currently generated by pulling live Apps Script and applying repository patch scripts, so exact deployed-source provenance still needs a stronger manifest/hash control.
+- Runtime trace/span instrumentation is not yet fully implemented; current Queue/Audit/Worker State/Health/Failure Learning are partial observability surfaces.
+- The production source is still generated by pulling live Apps Script and applying repository patch scripts. The new hash/manifest proves the transformed source identity for a deployment, but a durable private canonical copy of every full runtime source version is still a gap.
+- Post-deploy self-test steps in the existing workflow remain best-effort/`continue-on-error`; release hardening should decide which post-push checks must become rollback-triggering after their runtime reliability is verified.
 - Production-changing merges remain approval-gated while recent release/runtime failure classes are still being worked through.
 
 ### What was actually verified
 
-Before this baseline was drafted:
-- the current GitHub deployment workflow was inspected,
-- the current live Tracker structure and selected Application/Queue rows were read,
-- live `__System Health` was read,
-- `__Failure Learning` was read through `FL-046`,
-- the current repository did not yet contain the Stage-1/2/3 Lab product artifacts added by this change.
+During this baseline work:
+- the current GitHub deployment workflow and exact Job Copilot repository control surface were inspected,
+- the private live tracker structure, selected runtime/queue state, System Health and Failure Learning were read,
+- the private tracker received a hidden `__Lab Improvements` sheet and `JC-LAB-001`, and the row was read back successfully,
+- a new builder-process defect was caught: unnecessary private live-state detail had initially been copied into public draft docs; the current branch tip was scrubbed and the incident was recorded privately as `FL-047`,
+- `PUBLIC-DOC-PRIVACY-1` was added as executable prevention in governance CI,
+- the baseline branch now contains structural validation and proposed release-provenance/rollback controls,
+- no production Apps Script deployment or runtime capability release has been performed by this baseline work yet.
 
-No claim is made that the new documents alone improve runtime performance. Improvement will be judged through the Lab intervention ledger and later trace/eval metrics.
+No claim is made that these structural changes alone improve runtime performance. Improvement will be judged through the private Lab intervention ledger and later trace/eval metrics.
 
 ### What was learned
 
 Job Copilot already embodies many strong AI-system practices, but they exist at different layers. The immediate leverage is not another model/agent; it is making those layers measurable and linking failures, releases, traces, decisions and product outcomes into one improvement loop.
 
+A second lesson emerged immediately: source-of-truth selection must check **visibility/data classification as well as read/write/version control**. A public repository may be the right code surface and the wrong place for private product evidence. That lesson has already been promoted into the reusable Lab baseline and skill.
+
 ### Next
 
-**Committed:** validate the baseline docs in CI, add clean runtime trace instrumentation, create normalized scorecard metrics and close the known clean golden-path gaps.
+**Committed:** validate the baseline/governance branch in CI, implement trace v0 in the runtime, derive normalized private scorecard metrics, and close the clean held-out golden-path gaps.
 
-**Candidate:** make final deployed-source hashing and release manifests first-class deployment evidence.
+**Infrastructure candidate requiring additional secure authorization:** establish a private canonical runtime-source/version store so complete Apps Script versions can be preserved and restored after a workflow has ended without exposing source in the public repository.
 
 **Not justified yet:** multi-agent orchestration or vector-memory infrastructure.
