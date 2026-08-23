@@ -29,7 +29,11 @@ function run(){const r=spawnSync(process.execPath,[patcher,tmp],{encoding:'utf8'
 run();const once=fs.readFileSync(target,'utf8');
 run();const twice=fs.readFileSync(target,'utf8');
 if(once!==twice)throw new Error('trace patch is not idempotent');
-const syntax=spawnSync(process.execPath,['--check',target],{encoding:'utf8'});if(syntax.status!==0)throw new Error('patched source syntax invalid: '+syntax.stderr);
+const syntax=spawnSync(process.execPath,['--check',target],{encoding:'utf8'});
+if(syntax.status!==0){
+  const numbered=twice.split('\n').slice(0,20).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');
+  throw new Error('patched source syntax invalid:\n'+syntax.stderr+'\n--- transformed source head ---\n'+numbered);
+}
 for(const token of ['function traceGoldenTick_(','function traceRefreshGolden_(','function traceGoldenCompleteness_(','function runTraceGoldenSelfTest()','Trace Explorer','TRACE-GOLDEN-V0-1'])if(!twice.includes(token))throw new Error('missing '+token);
 if(!twice.includes("'Decision':'New'"))throw new Error('fresh system intake must begin Decision=New');
 if(/UrlFetchApp\.fetch|OpenAI|TAVILY_API_KEY|SERPAPI_API_KEY/.test(twice.slice(twice.indexOf('function traceStateValue_('),twice.indexOf('function verifyReleaseIdentity()'))))throw new Error('trace layer must not introduce its own paid/network retrieval path');
