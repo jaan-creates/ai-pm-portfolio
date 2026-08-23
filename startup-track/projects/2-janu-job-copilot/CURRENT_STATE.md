@@ -2,7 +2,11 @@
 
 **Status:** Verified snapshot; update when material runtime truth changes  
 **Last verified:** 2026-08-23  
-**Evidence window:** repository `main`, live tracker, live system-health/failure-learning state
+**Evidence window:** repository `main`, private live tracker, live system-health/failure-learning state
+
+## Public/private evidence boundary
+
+This repository is public. Therefore this file records product architecture/capability truth and privacy-safe summaries only. Exact live application rows, candidate content, private tracker values, detailed traces and user-specific operating metrics remain in the authorized private tracker/telemetry surface. Public docs may reference opaque failure/change IDs or non-sensitive aggregate conclusions when needed.
 
 ## 1. Current executable/control-plane state
 
@@ -23,42 +27,27 @@ live Apps Script baseline
 = final deployed Apps Script
 ```
 
-This makes release provenance and reproducibility weaker than a normal source-controlled build. Until this is improved, the exact deployed runtime must be verified from live pull/release identity plus workflow evidence. A deployment-manifest/source-hash control is therefore a required next infrastructure improvement.
+This makes release provenance and reproducibility weaker than a normal source-controlled build. The baseline branch therefore adds a privacy-safe deployment manifest/hash so a release can identify the exact transformed source without publishing its contents.
 
-## 2. Live system health snapshot
+## 2. Live system-health conclusion
 
-As of the 2026-08-23 tracker read:
+A private live read on 2026-08-23 showed the major control-plane components reporting healthy/closed state, including sourcing, model/API access, Drive/Docs, regression gate and budget. Some components had older last-success timestamps than others, so component health must not be interpreted as proof of a complete current end-to-end application journey.
 
-| Component | Reported status | Last success evidence |
-|---|---|---|
-| Worker Runtime | HEALTHY / circuit CLOSED | 2026-08-21 |
-| Daily Sourcing | HEALTHY / circuit CLOSED | 2026-08-23 |
-| OpenAI | HEALTHY / circuit CLOSED | 2026-08-23 |
-| Google Drive / Docs | HEALTHY / circuit CLOSED | 2026-08-23 |
-| Regression Gate | HEALTHY / circuit CLOSED | 2026-08-23 |
-| Trigger Topology | HEALTHY / circuit CLOSED | 2026-08-19 |
-| Budget | HEALTHY / circuit CLOSED | 2026-08-23 |
+The latest sourcing-health failure-learning class showed why this distinction matters: a coarse health rule had previously remained healthy despite a missed expected sourcing cycle. The corrected design treats expected outcome/cadence evidence as stronger than a generic freshness flag.
 
-`FL-046` recorded that a missed weekday sourcing cycle had incorrectly remained healthy; the scheduler/health outcome was corrected and the current tracker now shows Daily Sourcing healthy with a 2026-08-23 success.
+Exact private timestamps and tracker values are intentionally not reproduced here.
 
-## 3. Current application snapshot
+## 3. Current application-state conclusion
 
-The latest bounded tracker inspection found 13 rows explicitly in `Decision = Apply`:
-- 3 Closed,
-- 3 Scoring,
-- 2 Tailoring,
-- 2 QA,
-- 1 Verifying JD,
-- 1 Resume Review,
-- 1 Worker Error.
+The private tracker contains applications across multiple non-terminal and terminal lifecycle stages, including at least one current system-owned worker error. Exact companies, counts, application IDs and user-specific status distribution remain private.
 
-This is a state snapshot, not an outcome-rate metric. Historical rows include multiple releases, retries, migrations and containment events, so aggregate reliability claims must wait for normalized traces/eval cohorts.
+This state is not a clean outcome-rate baseline because historical rows span multiple releases, migrations, retries and containment events. Aggregate reliability/autonomy claims should be calculated from versioned/cohortized traces rather than copied from mixed historical tracker rows.
 
 ## 4. Demonstrated capabilities
 
 Verified examples include:
 - durable queued workers with idempotency keys, retries, terminal failure state and error detail,
-- official vacancy/JD retrieval and provenance for supported sources, including Ashby recovery,
+- official vacancy/JD retrieval and provenance for supported sources,
 - persisted JD snapshots and completeness gates,
 - evidence-grounded requirement mapping and scoring,
 - company/contact enrichment,
@@ -66,14 +55,14 @@ Verified examples include:
 - deterministic and model-assisted artifact QA,
 - human resume-review boundary,
 - regression/health telemetry,
-- structured `__Failure Learning` records; current history reaches at least `FL-046`,
+- structured private Failure Learning with many concrete historical defects/prevention controls,
 - controlled GitHub -> Apps Script deployment with syntax and release-contract gates.
 
 ## 5. Current known gaps
 
 ### Product/E2E
-- A clean fresh-source -> Ready to Submit -> real submission -> post-submission golden path is not yet fully accepted end to end.
-- `FL-045` remains visible in live state: Metaforms resume generation hit deterministic `RENDER_BULLET_LOSS` and the application is in Worker Error.
+- A clean fresh-source -> Ready to Submit -> real submission -> post-submission golden path is not yet fully accepted end to end under the complete current contract.
+- A current deterministic resume-render integrity failure remains system-owned and unresolved in live state; exact application details stay in the private tracker.
 - P1-B/P1-C capabilities remain only partially runtime-integrated; helper/contract presence must not be confused with end-to-end completion.
 
 ### Observability
@@ -81,14 +70,14 @@ Verified examples include:
 - Model/tool cost and latency cannot yet be reliably attributed to one logical application journey from current product-level telemetry alone.
 
 ### Release provenance
-- Exact final production source is patch-transformed from a live pull rather than represented as a normal immutable source build.
-- Documentation-only changes currently fall under the same broad workflow path filter as runtime patch changes, creating avoidable deployment coupling.
+- Exact final production source is patch-transformed from a live pull rather than represented as a normal immutable checked-in source build.
+- The baseline branch narrows production deployment triggers away from documentation-only changes and adds a transformed-source manifest/hash, but this is not production truth until promoted and verified.
 
 ### Memory/learning
-- Failure Learning is strong incident evidence, but memory types, promotion rules, supersession and retrieval-usefulness evaluation are not yet formalized product-wide.
+- Failure Learning is strong incident evidence, but memory types, promotion rules, supersession and retrieval-usefulness evaluation are not yet formalized in runtime behavior.
 
 ### Metrics
-- Existing sheets can produce point-in-time operational signals, but no canonical baseline scorecard yet binds definitions, denominators, cohort/version and target thresholds.
+- Existing private sheets can produce point-in-time operational signals, but normalized metric definitions/cohorts and complete trace attribution are still required before claiming quantitative product improvement.
 
 ## 6. Do not infer as current truth
 
@@ -97,8 +86,9 @@ Do not infer that:
 - a healthy component row proves an entire product journey works,
 - an application `Status` implies a corresponding active worker exists,
 - a model output proves the related Drive/Sheet/external side effect occurred,
-- an old `TrackerWorkflow` copy is the exact deployed source after patch transforms.
+- an old `TrackerWorkflow` copy is the exact deployed source after patch transforms,
+- a public repository file is an appropriate place for private live tracker evidence merely because the repository is the product code source.
 
 ## 7. Required state-maintenance rule
 
-Update this file after a material release, architecture change, verified new capability, important failure-class fix, changed autonomy boundary, or when environment evidence contradicts this snapshot. Routine low-level commits do not require an update.
+Update this file after a material release, architecture change, verified new capability, important failure-class fix, changed autonomy boundary, or when environment evidence contradicts this snapshot. Keep private evidence in the private product surface and publish only the minimum non-sensitive conclusion/reference needed for reproducibility.
