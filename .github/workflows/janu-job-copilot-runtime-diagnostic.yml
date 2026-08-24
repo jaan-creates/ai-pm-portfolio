@@ -1,0 +1,117 @@
+name: Janu Job Copilot Read-Only Runtime Diagnostic
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - janu-job-copilot/apps-script-ci
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/diagnostics/runtime-diagnostic-request.md'
+      - '.github/workflows/janu-job-copilot-runtime-diagnostic.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: janu-job-copilot-runtime-diagnostic-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  inspect-production-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LIVE_DIR: .janu-live
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate credentials exist
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON" || { echo 'Missing JANU_CLASPRC_JSON'; exit 2; }
+          test -n "$CLASP_JSON" || { echo 'Missing JANU_CLASP_JSON'; exit 2; }
+      - name: Install clasp
+        run: npm install --global @google/clasp
+      - name: Prepare read-only pull workspace
+        shell: bash
+        run: |
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+      - name: Pull current production Apps Script read-only
+        working-directory: .janu-live
+        run: clasp pull --user "$CLASP_USER"
+      - name: Emit privacy-safe queue/runtime structure
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const dir = '.janu-live';
+          const files = fs.readdirSync(dir).filter(f => /\.(?:js|gs)$/.test(f)).sort();
+          const source = files.map(f => fs.readFileSync(path.join(dir,f),'utf8')).join('\n');
+
+          function extractFunction(name){
+            const re = new RegExp('function\\s+'+name.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'\\s*\\([^)]*\\)\\s*\\{','m');
+            const m = re.exec(source);
+            if(!m) return null;
+            const start = m.index;
+            const brace = source.indexOf('{', m.index);
+            let depth = 0, quote = null, esc = false;
+            for(let i=brace;i<source.length;i++){
+              const c=source[i], n=source[i+1];
+              if(quote){
+                if(esc){ esc=false; continue; }
+                if(c==='\\\\'){ esc=true; continue; }
+                if(c===quote){ quote=null; }
+                continue;
+              }
+              if(c==='"'||c==="'"||c==='`'){ quote=c; continue; }
+              if(c==='/'&&n==='/'){ i=source.indexOf('\n',i); if(i<0) return source.slice(start); continue; }
+              if(c==='/'&&n==='*'){ const e=source.indexOf('*/',i+2); if(e<0) return source.slice(start); i=e+1; continue; }
+              if(c==='{') depth++;
+              if(c==='}') { depth--; if(depth===0) return source.slice(start,i+1); }
+            }
+            return null;
+          }
+
+          function summarize(name){
+            const body=extractFunction(name);
+            if(!body) return {name,found:false};
+            const calls=[...body.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1])
+              .filter(x=>!['if','for','while','switch','catch','function'].includes(x));
+            const unique=[...new Set(calls)].sort();
+            const token = t => body.includes(t);
+            return {
+              name, found:true, bodyLength:body.length,
+              loops:(body.match(/\b(?:for|while)\s*\(/g)||[]).length,
+              calls:unique,
+              signals:{
+                getDataRange:token('getDataRange'), getValues:token('getValues'), getRange:token('getRange'),
+                queueJobFresh:token('queueJobFresh_'), queueSelectPure:token('queueSelectPure_'),
+                find:token('find_'), obj:token('obj_'), hm:token('hm_'), SH:token('SH_'),
+                sort:token('.sort('), filter:token('.filter('), map:token('.map('),
+                activeResumeRegistry:token('activeResumeRegistryRow_'), loadJDArtifact:token('loadJDArtifact_'),
+                resumeInputHash:token('resumeInputHash_'), vacancy:token('vacancy'),
+                runtimeBudget:token('runtimeBudgetOk_')||token('JOB_RUNTIME')||token('runtime')
+              }
+            };
+          }
+
+          const names=['nextQ_','queueJobFresh_','queueSelectPure_','processQ_','phase1OneJobTickCore_','runtimeBudgetOk_','maintenanceStage_'];
+          const out={schema:'JANU-RUNTIME-DIAGNOSTIC-1',files:files.length,functions:names.map(summarize)};
+          console.log(JSON.stringify(out,null,2));
+          NODE
+      - name: Assert diagnostic is read-only
+        shell: bash
+        run: |
+          ! grep -q "clasp push" .github/workflows/janu-job-copilot-runtime-diagnostic.yml
+          ! grep -q "clasp run" .github/workflows/janu-job-copilot-runtime-diagnostic.yml
+          echo 'PASS: read-only pull + structural summary only.'
