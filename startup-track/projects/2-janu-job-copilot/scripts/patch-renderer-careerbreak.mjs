@@ -26,7 +26,7 @@ function rangeOf(name){
   throw new Error('Unterminated '+name);
 }
 function addBefore(anchor,token,code){if(s.includes(token))return;const i=s.indexOf(anchor);if(i<0)throw new Error('anchor missing '+anchor);s=s.slice(0,i)+code+'\n'+s.slice(i);}
-function replaceRange(name,fn){const r=rangeOf(name);if(!r)throw new Error(name+' missing');const old=s.slice(r.start,r.end),neu=fn(old);if(neu===old)throw new Error(name+' patch made no change');s=s.slice(0,r.start)+neu+s.slice(r.end);}
+function replaceRange(name,fn){const r=rangeOf(name);if(!r)throw new Error(name+' missing');const old=s.slice(r.start,r.end),neu=fn(old);if(neu===old)return false;s=s.slice(0,r.start)+neu+s.slice(r.end);return true;}
 function appendTo(name,marker,code){if(s.includes(marker))return;const r=rangeOf(name);if(!r)throw new Error(name+' missing');s=s.slice(0,r.end-1)+code+s.slice(r.end-1);}
 
 addBefore('function verifyReleaseIdentity()','function rendererCareerBreakLines_(',`function rendererWorkerStateValue_(key){const sh=SH_('__Worker State'),m=hm_(sh);if(sh.getLastRow()<2||!m['Key']||!m['Value'])return'';const f=sh.getRange(2,m['Key'],sh.getLastRow()-1,1).createTextFinder(String(key)).matchEntireCell(true).findNext();return f?String(sh.getRange(f.getRow(),m['Value']).getDisplayValue()||''):'';}
@@ -50,6 +50,7 @@ replaceRange('render_',old=>{
 
 if(rangeOf('p1aE2EContinuationTick_')){
   replaceRange('p1aE2EContinuationTick_',old=>{
+    if(old.includes('BLOCKED_SAME_POLICY_FAILURE')&&old.includes("rendererPolicy:'"+POLICY+"'"))return old;
     if(!old.includes("source:'p1a-e2e-continuation-v3'"))throw new Error('continuation v3 metadata anchor missing');
     old=old.replace(/\{source:'p1a-e2e-continuation-v3',reason:'([^']+)'\}/g,"{source:'p1a-e2e-continuation-v3',reason:'$1',rendererPolicy:'"+POLICY+"'}");
     old=old.replace("{source:'p1a-e2e-continuation-v3'}","{source:'p1a-e2e-continuation-v3',rendererPolicy:'"+POLICY+"'}");
@@ -68,4 +69,4 @@ appendTo('phase1HealthTick','runRendererCareerBreakSelfTest();',`try{runRenderer
 for(const token of ['function rendererCareerBreakLines_(','function rendererReplayBlocked_(','function rendererQuarantineBlocks_(','function enforceReleaseBlockerHealth_(','function runRendererCareerBreakSelfTest()','RENDER-CAREERBREAK-001',POLICY,"delete scalar['{{CAREER_BREAK}}']","textBlock('{{CAREER_BREAK}}'",'rendererPolicy','RENDERER_QUARANTINE_ACTIVE','REGRESSION-HEALTH-CYCLE-LOCK-001',"includes('open / release blocker')"])if(!s.includes(token))throw new Error('renderer recurrence prevention missing '+token);
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('renderer transformed source invalid: '+syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:POLICY,regression:'RENDER-CAREERBREAK-001',replayGuard:'PREVENTION-RECURRENCE-001',quarantine:'RENDER-QUARANTINE-001',healthPrecedence:'REGRESSION-HEALTH-CYCLE-LOCK-001',literalStatusMatch:'escape-safe-string-includes',liveCanaryRequired:true,verifiedArtifact:file},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:POLICY,regression:'RENDER-CAREERBREAK-001',replayGuard:'PREVENTION-RECURRENCE-001',quarantine:'RENDER-QUARANTINE-001',healthPrecedence:'REGRESSION-HEALTH-CYCLE-LOCK-001',literalStatusMatch:'escape-safe-string-includes',idempotentNoOpAllowed:true,liveCanaryRequired:true,verifiedArtifact:file},null,2));
