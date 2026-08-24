@@ -18,7 +18,7 @@ function verifyReleaseIdentity(){return true;}
 function enqueue_(){return 'Q-1';}
 function upsertWorkerState_(){}
 function hash_(x){return String(x);}
-function SH_(){return {getLastRow(){return 1;},getLastColumn(){return 41;},getRange(){return {getDisplayValues(){return [[]];},getDisplayValue(){return'';},getValue(){return'';},setValues(){}};},appendRow(){}};}
+function SH_(){return {getLastRow(){return 1;},getLastColumn(){return 41;},getRange(){return {getDisplayValues(){return [[]];},getDisplayValue(){return'';},getValue(){return'';},setValue(){return this;},setValues(){}};},appendRow(){}};}
 function hm_(){return {'Application ID':1,'Job URL':5,'Canonical Apply URL':26};}
 function obj_(){return {};}
 function set_(){}
@@ -27,6 +27,8 @@ function now_(){return new Date();}
 function iso_(){return new Date().toISOString();}
 function p1aPropagateClosedVacancy_(){return {status:'CLOSED_PROPAGATED'};}
 function p1aQueueWorkerState_(){return {state:'NONE'};}
+function nextQ_(onlyApp){const v=[['Q','A','RESUME_GENERATE','queued','','',0,4,new Date(),'','','','',JSON.stringify({source:'trace-fixture'})]],t=Date.now();let best=null;for(let i=0;i<v.length;i++){const app=String(v[i][1]||''),nx=0;if(onlyApp&&app!==onlyApp)continue;if(v[i][3]==='queued'&&(!nx||nx<=t))best=i+2;}return best;}
+function runQ_(r){const s=SH_();const qid='Q',app='A',type='RESUME_GENERATE',payload={},attempt=1,max=4,started=now_();s.getRange(r,4).setValue('running');return 1;}
 function render_(v,d){const b={setFontFamily(){}};const scalar={'{{CAREER_BREAK}}':stripInternalEvidenceTags_(d&&d.career_break||'')};Object.keys(scalar).forEach(k=>{});function block(token,items){}block('{{GLOROOTS_BULLETS}}',[]);return b;}
 function phase1HealthTick(){return true;}
 `);
@@ -39,7 +41,7 @@ if(syntax.status!==0){
   const numbered=twice.split('\n').slice(0,60).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');
   throw new Error('patched source syntax invalid:\n'+syntax.stderr+'\n--- transformed source head ---\n'+numbered);
 }
-for(const token of ['function traceGoldenTick_(','function traceRefreshGolden_(','function traceGoldenCompleteness_(','function runTraceGoldenSelfTest()','Trace Explorer','TRACE-GOLDEN-V0-2','function traceUrlIdentityMatch_(','function traceNextAppIdFromValues_(','function traceFindAppByUrlDetail_(','golden_trace_duplicate_evidence','DETERMINISTIC:TRACE_GOLDEN_ID_COLLISION','P1-A-E2E-CONTINUATION-3','RENDER-CAREERBREAK-V2','ATOMIC_APPEND_VERIFY_RETIRE'])if(!twice.includes(token))throw new Error('missing '+token);
+for(const token of ['function traceGoldenTick_(','function traceRefreshGolden_(','function traceGoldenCompleteness_(','function runTraceGoldenSelfTest()','Trace Explorer','TRACE-GOLDEN-V0-2','function traceUrlIdentityMatch_(','function traceNextAppIdFromValues_(','function traceFindAppByUrlDetail_(','golden_trace_duplicate_evidence','DETERMINISTIC:TRACE_GOLDEN_ID_COLLISION','P1-A-E2E-CONTINUATION-3','RENDER-CAREERBREAK-V2','ATOMIC_APPEND_VERIFY_RETIRE','RENDERER_QUARANTINE_ACTIVE'])if(!twice.includes(token))throw new Error('missing '+token);
 if(!twice.includes("'Decision':'New'"))throw new Error('fresh system intake must begin Decision=New');
 if(!twice.includes(".replace(/[/]$/,'')"))throw new Error('safe generated slash matcher missing');
 if(twice.includes(".replace(//$/,'')"))throw new Error('malformed generated slash matcher survived');
@@ -50,4 +52,4 @@ if(!twice.includes(neg))throw new Error('TRACE-DEDUPE-001 Tekion/Easyship negati
 if(!twice.includes("traceNextAppIdFromValues_('2026-08-23',['2026-08-23-001'])==='2026-08-23-002'"))throw new Error('TRACE-ID-001 collision fixture missing');
 if(!twice.includes("if(!raw)continue"))throw new Error('empty existing URLs must never dedupe');
 if(!twice.includes("if(!requested||last<2)"))throw new Error('empty requested URL must never dedupe');
-console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true,continuationV3Integration:true,rendererIntegration:true,traceDurabilityIntegration:true},null,2));
+console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true,continuationV3Integration:true,rendererIntegration:true,rendererClaimQuarantineIntegration:true,traceDurabilityIntegration:true},null,2));
