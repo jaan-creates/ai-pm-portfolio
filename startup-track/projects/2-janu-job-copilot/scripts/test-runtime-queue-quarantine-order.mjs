@@ -8,6 +8,8 @@ const projectDir=process.argv[2]||path.resolve('startup-track/projects/2-janu-jo
 const patch=path.join(projectDir,'scripts','patch-runtime-queue-quarantine-order.mjs');
 const patchText=fs.readFileSync(patch,'utf8');
 for(const token of ['QUEUE-NOJOB-QUARANTINE-001','QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001',"if(v[i][3]!=='queued'||(nx&&nx>t))continue;"])if(!patchText.includes(token))throw new Error('FL-080 patch contract missing '+token);
+const chainText=fs.readFileSync(path.join(projectDir,'scripts','patch-trace-durability.mjs'),'utf8');
+for(const token of ['patch-runtime-queue-quarantine-order.mjs','QUEUE-NOJOB-QUARANTINE-001','QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001'])if(!chainText.includes(token))throw new Error('FL-080 production patch-chain wiring missing '+token);
 
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'janu-queue-order-test-'));
 const source=`
@@ -41,4 +43,4 @@ ctx.__test.setRows([mk('E','queued')]);
 if(ctx.__test.next()!==2)throw new Error('due queued row was not selected');
 if(ctx.__test.calls()!==1)throw new Error('QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001 expected one quarantine evaluation, got '+ctx.__test.calls());
 
-console.log(JSON.stringify({status:'PASS',contract:'QUEUE-NOJOB-QUARANTINE-001',candidateGuard:'QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001',terminalRowsQuarantineCalls:0,notDueRowsQuarantineCalls:0,dueCandidateQuarantineCalls:1,transformedArtifactSyntax:true,productionShapedBadOrderingFixture:true},null,2));
+console.log(JSON.stringify({status:'PASS',contract:'QUEUE-NOJOB-QUARANTINE-001',candidateGuard:'QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001',terminalRowsQuarantineCalls:0,notDueRowsQuarantineCalls:0,dueCandidateQuarantineCalls:1,transformedArtifactSyntax:true,productionShapedBadOrderingFixture:true,productionPatchChainWired:true},null,2));
