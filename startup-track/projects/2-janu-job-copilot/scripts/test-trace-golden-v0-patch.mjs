@@ -35,7 +35,7 @@ function phase1HealthTick(){return true;}
 function run(){const r=spawnSync(process.execPath,[patcher,tmp],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout);return r.stdout;}
 run();const once=fs.readFileSync(target,'utf8');
 run();const twice=fs.readFileSync(target,'utf8');
-if(once!==twice)throw new Error('trace patch is not idempotent');
+if(once!==twice){const a=once.split('\n'),b=twice.split('\n'),n=Math.max(a.length,b.length);let i=0;for(;i<n;i++)if(a[i]!==b[i])break;throw new Error('trace patch is not idempotent; firstDiffLine='+(i+1)+'\nonce: '+String(a[i])+'\ntwice: '+String(b[i]));}
 const syntax=spawnSync(process.execPath,['--check',target],{encoding:'utf8'});
 if(syntax.status!==0){
   const numbered=twice.split('\n').slice(0,60).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');
