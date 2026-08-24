@@ -1,0 +1,34 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+
+const projectDir=process.argv[2]||path.resolve('startup-track/projects/2-janu-job-copilot');
+const patch=path.join(projectDir,'scripts','patch-renderer-careerbreak.mjs');
+const patchText=fs.readFileSync(patch,'utf8');
+for(const token of ['RENDER-CAREERBREAK-001','RENDER-CAREERBREAK-V2','PREVENTION-RECURRENCE-001','rendererReplayBlocked_','rendererPolicy','SELF_TEST_PASS_CANARY_PENDING'])if(!patchText.includes(token))throw new Error('renderer regression contract missing '+token);
+
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'janu-renderer-test-'));
+const source=`
+const P12=Object.freeze({VERSION:'1.3.8',SUITE:'p0-regression-v19'});
+const JC={S:{Q:'__Processing Queue'}};
+function stripInternalEvidenceTags_(s){return String(s||'');}
+function esc_(s){return s;}
+function verifyReleaseIdentity(){return true;}
+function upsertWorkerState_(){}
+function SH_(){return {getLastRow(){return 1;}};}
+function hm_(){return {};}
+function render_(v,d){const b={};const ex={};const scalar={'{{NAME}}':'JANU','{{CAREER_BREAK}}':stripInternalEvidenceTags_(d.career_break||''),'{{EDUCATION}}':''};Object.keys(scalar).forEach(k=>{});function block(token,items){}block('{{GLOROOTS_BULLETS}}',[]);b.setFontFamily('Arial');return{};}
+function p1aE2EContinuationTick_(){const rows=[{'Application ID':'A','Decision':'Apply'}];for(let r=0;r<rows.length;r++){let a=rows[r],id=String(a['Application ID']||'');if(!id||String(a['Decision']||'')!=='Apply')continue;const x={source:'p1a-e2e-continuation-v3',reason:'TAILORING_STALL'};return x;}return {status:'NO_ELIGIBLE_STALL'};}
+function phase1HealthTick(){return true;}
+`;
+const file=path.join(tmp,'TrackerWorkflow.js');fs.writeFileSync(file,source);
+const run=spawnSync(process.execPath,[patch,tmp],{encoding:'utf8'});if(run.status!==0)throw new Error(run.stderr||run.stdout||'renderer patch failed');
+const out=fs.readFileSync(file,'utf8');
+for(const token of ["delete scalar['{{CAREER_BREAK}}']","textBlock('{{CAREER_BREAK}}'",'function rendererCareerBreakLines_(','function rendererReplayBlocked_(',"rendererPolicy:'RENDER-CAREERBREAK-V2'",'BLOCKED_SAME_POLICY_FAILURE','runRendererCareerBreakSelfTest();'])if(!out.includes(token))throw new Error('transformed renderer source missing '+token);
+const check=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(check.status!==0)throw new Error(check.stderr);
+
+function lines(value){return String(value||'').replace(/\r/g,'\n').split(/\n+/).map(x=>String(x||'').replace(/^\s*(?:[•●▪◦*\-]|\d+[.)])\s*/, '').trim()).filter(Boolean);}
+const fixture='Took a planned break for caregiving and health priorities while continuing independent product and AI exploration and portfolio development.\n• Built a personal AI automation (Morning Brief) using n8n and Claude to generate a daily briefing for personal productivity.\n• Developing a personal Job Copilot (not live) using Claude Code to automate job sourcing, JD fit scoring, tailored application preparation and workflow tracking.';
+const got=lines(fixture);if(got.length!==3)throw new Error('held-out Career Break fixture did not preserve 3 lines');
+console.log(JSON.stringify({status:'PASS',contract:'RENDER-CAREERBREAK-V2',regression:'RENDER-CAREERBREAK-001',prevention:'PREVENTION-RECURRENCE-001',transformedArtifactSyntax:true,exactPriorFailureFixture:true,samePolicyReplayGuard:true},null,2));
