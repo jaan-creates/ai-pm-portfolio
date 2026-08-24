@@ -59,7 +59,8 @@ jobs:
           const source = files.map(f => fs.readFileSync(path.join(dir,f),'utf8')).join('\n');
 
           function extractFunction(name){
-            const re = new RegExp('function\\s+'+name.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'\\s*\\([^)]*\\)\\s*\\{','m');
+            const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+            const re = new RegExp('function\\s+'+escaped+'\\s*\\([^)]*\\)\\s*\\{','m');
             const m = re.exec(source);
             if(!m) return null;
             const start = m.index;
@@ -69,7 +70,7 @@ jobs:
               const c=source[i], n=source[i+1];
               if(quote){
                 if(esc){ esc=false; continue; }
-                if(c==='\\\\'){ esc=true; continue; }
+                if(c==='\\'){ esc=true; continue; }
                 if(c===quote){ quote=null; }
                 continue;
               }
@@ -82,31 +83,48 @@ jobs:
             return null;
           }
 
+          function count(body,re){ return (body.match(re)||[]).length; }
+          function positions(body,tokens){
+            const out=[];
+            for(const token of tokens){
+              let at=0;
+              while((at=body.indexOf(token,at))>=0){ out.push({token,pos:at}); at+=token.length; }
+            }
+            return out.sort((a,b)=>a.pos-b.pos);
+          }
           function summarize(name){
             const body=extractFunction(name);
             if(!body) return {name,found:false};
-            const calls=[...body.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1])
+            const withoutDecl=body.replace(/^function\s+[A-Za-z_$][\w$]*\s*\([^)]*\)\s*\{/,'{');
+            const calls=[...withoutDecl.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1])
               .filter(x=>!['if','for','while','switch','catch','function'].includes(x));
-            const unique=[...new Set(calls)].sort();
             const token = t => body.includes(t);
+            const orderTokens=['ensureP12Sheets_','runtimeBudgetOk_','processQ_','nextQ_','qPriority_','rendererQuarantineBlocks_','maintenanceStage_','pre-queue','pre-maintenance','post-maintenance','getLastRow','getRange','getValues'];
             return {
               name, found:true, bodyLength:body.length,
-              loops:(body.match(/\b(?:for|while)\s*\(/g)||[]).length,
-              calls:unique,
+              loops:count(body,/\b(?:for|while)\s*\(/g),
+              conditionals:count(body,/\bif\s*\(/g),
+              calls:[...new Set(calls)].sort(),
+              orderedSignals:positions(body,orderTokens),
               signals:{
-                getDataRange:token('getDataRange'), getValues:token('getValues'), getRange:token('getRange'),
-                queueJobFresh:token('queueJobFresh_'), queueSelectPure:token('queueSelectPure_'),
-                find:token('find_'), obj:token('obj_'), hm:token('hm_'), SH:token('SH_'),
+                getDataRange:token('getDataRange'), getValues:token('getValues'), getRange:token('getRange'), getLastRow:token('getLastRow'),
+                queueJobFresh:token('queueJobFresh_'), queueSelectPure:token('queueSelectPure_'), qPriority:token('qPriority_'),
+                rendererQuarantine:token('rendererQuarantineBlocks_'), rendererReplayBlocked:token('rendererReplayBlocked_'),
+                find:token('find_'), obj:token('obj_'), hm:token('hm_'), SH:token('SH_'), P:token('P_'),
                 sort:token('.sort('), filter:token('.filter('), map:token('.map('),
-                activeResumeRegistry:token('activeResumeRegistryRow_'), loadJDArtifact:token('loadJDArtifact_'),
-                resumeInputHash:token('resumeInputHash_'), vacancy:token('vacancy'),
+                propertyRead:token('getProperty'), propertyWrite:token('setProperty'),
                 runtimeBudget:token('runtimeBudgetOk_')||token('JOB_RUNTIME')||token('runtime')
               }
             };
           }
 
-          const names=['nextQ_','queueJobFresh_','queueSelectPure_','processQ_','phase1OneJobTickCore_','runtimeBudgetOk_','maintenanceStage_'];
-          const out={schema:'JANU-RUNTIME-DIAGNOSTIC-1',files:files.length,functions:names.map(summarize)};
+          const names=[
+            'nextQ_','qPriority_','queueJobFresh_','queueSelectPure_','processQ_',
+            'rendererQuarantineBlocks_','rendererReplayBlocked_','rendererCanaryAuthorized_',
+            'rendererPreventionVerified_','phase1OneJobTickCore_','runtimeBudgetOk_',
+            'ensureP12Sheets_','maintenanceStage_'
+          ];
+          const out={schema:'JANU-RUNTIME-DIAGNOSTIC-2',files:files.length,functions:names.map(summarize)};
           console.log(JSON.stringify(out,null,2));
           NODE
       - name: Assert diagnostic is read-only
