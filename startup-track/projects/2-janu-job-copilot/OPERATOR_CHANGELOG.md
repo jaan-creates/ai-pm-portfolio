@@ -2,6 +2,30 @@
 
 **Purpose:** privacy-safe, turn-level record of material builder/operator work. Exact private application details remain in the Live Tracker; this file records IDs, controls, commits and verification state so Git history can be followed without leaking candidate data.
 
+## 2026-08-24 — Resume approval path + predictive learning retrieval + user release notes
+
+**Findings:** current learning architecture captured failures and executable prevention well, but retrieval of prior learning before a new change was not mandatory. This allowed learned local fixes to miss adjacent enforcement/publisher risks. User-facing release notes also had no durable canonical file.
+
+**Changes authored on `janu-job-copilot/apps-script-ci`:**
+
+- `PRECHANGE_RISK_GATE.md`
+  - requires relevant prior Failure Learning / executable memory retrieval before material runtime changes,
+  - requires exact escaped fixture retrieval,
+  - requires sibling-risk prediction across scheduler/queue/publisher/release/artifact/trace/human-action boundaries,
+  - requires executable enforcement point + rollout containment + unlock/rollback criteria.
+- `ITERATION_EVIDENCE_GATE.md`
+  - now makes pre-change risk retrieval a formal gate,
+  - requires predicted sibling risks in closeout evidence,
+  - points user-facing change decisions to `USER_RELEASE_NOTES.md`.
+- `USER_RELEASE_NOTES.md`
+  - canonical user-facing release-note surface,
+  - separates proven, limited, pending-proof and blocked behavior,
+  - documents Resume Review `Approved` semantics and current pending renderer/TRACE/continuation controls.
+- Live `My Actions`
+  - wording updated so zero-comment / all-comments-resolved review has an explicit `Approved` path without editing the generated artifact.
+
+**Verification state:** documentation/governance changes are committed. Runtime renderer/TRACE/continuation controls still require target-environment deployment/readback and canary evidence; live runtime remained TRACE V0-1 / continuation v2 at the latest readback.
+
 ## 2026-08-24 — Renderer recurrence containment + observability closure
 
 **Finding IDs:** FL-057 through FL-069, with primary prevention family FL-060 / FL-063 / FL-064–069 and TRACE durability FL-059.
@@ -43,4 +67,6 @@ For every material execution turn:
 1. private Live Tracker receives exact Audit / Failure Learning / Verification / Trace evidence where applicable;
 2. Git receives executable prevention/tests and a privacy-safe changelog entry for material engineering changes;
 3. the changelog references stable defect/test/change IDs and commits, not private candidate/application content;
-4. a change remains open until target-environment readback satisfies `ITERATION_EVIDENCE_GATE.md`.
+4. a change remains open until target-environment readback satisfies `ITERATION_EVIDENCE_GATE.md`;
+5. every material production change retrieves relevant prior learning and predicts sibling risks through `PRECHANGE_RISK_GATE.md` before promotion;
+6. meaningful user-visible changes are recorded in `USER_RELEASE_NOTES.md` with an honest proof status.
