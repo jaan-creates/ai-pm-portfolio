@@ -1,0 +1,69 @@
+name: Janu Job Copilot Read-Only Runtime Diagnostic
+
+on:
+  push:
+    branches:
+      - janu-job-copilot/runtime-diagnostic
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/scripts/runtime-diagnostic-manifest.mjs'
+      - '.github/workflows/janu-job-copilot-runtime-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: janu-job-copilot-runtime-diagnostic
+  cancel-in-progress: true
+
+jobs:
+  inspect-production-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PROJECT_DIR: startup-track/projects/2-janu-job-copilot
+      LIVE_DIR: .janu-live
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate credentials exist
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON" || { echo 'Missing JANU_CLASPRC_JSON'; exit 2; }
+          test -n "$CLASP_JSON" || { echo 'Missing JANU_CLASP_JSON'; exit 2; }
+      - name: Install clasp
+        run: npm install --global @google/clasp
+      - name: Prepare read-only pull workspace
+        shell: bash
+        run: |
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+      - name: Confirm CI identity
+        run: clasp show-authorized-user --user "$CLASP_USER"
+      - name: Pull current production Apps Script read-only
+        working-directory: .janu-live
+        run: clasp pull --user "$CLASP_USER"
+      - name: Emit privacy-safe runtime structure only
+        shell: bash
+        run: |
+          node "$PROJECT_DIR/scripts/runtime-diagnostic-manifest.mjs" "$LIVE_DIR" | tee /tmp/janu-runtime-diagnostic.json
+      - name: Upload safe diagnostic manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: janu-runtime-diagnostic-${{ github.sha }}
+          path: /tmp/janu-runtime-diagnostic.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Assert workflow is read-only
+        shell: bash
+        run: |
+          ! grep -R "clasp push\|clasp run" .github/workflows/janu-job-copilot-runtime-diagnostic.yml
+          echo 'Read-only diagnostic complete; no Apps Script mutation or execution performed.'
