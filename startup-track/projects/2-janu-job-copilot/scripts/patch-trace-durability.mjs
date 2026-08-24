@@ -3,6 +3,10 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 
 const root=process.argv[2]||'.janu-live';
+const dir=path.dirname(new URL(import.meta.url).pathname);
+const queueOrderPatch=path.resolve(dir,'patch-runtime-queue-quarantine-order.mjs');
+const queueOrderRun=spawnSync(process.execPath,[queueOrderPatch,root],{encoding:'utf8'});
+if(queueOrderRun.status!==0)throw new Error(queueOrderRun.stderr||queueOrderRun.stdout||'FL-080 queue quarantine ordering patch failed');
 const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
 const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function traceGoldenTick_(')&&t.includes('TRACE-GOLDEN-V0-2');});
 if(!target)throw new Error('TRACE V0-2 source not found');
@@ -14,6 +18,6 @@ replaceFn('traceRefreshGolden_',`function traceRefreshGolden_(appId,traceId){tra
 
 const r=rangeOf('traceGoldenTick_');if(!r)throw new Error('traceGoldenTick_ missing');let tick=s.slice(r.start,r.end);const lockAnchor="let appId=traceStateValue_('golden_trace_application_id');";if(!tick.includes(lockAnchor))throw new Error('golden trace lock anchor missing');if(!tick.includes('golden_trace_lock_reset')){tick=tick.replace(lockAnchor,lockAnchor+`if(appId){const lr=find_(JC.S.A,appId);if(!lr){upsertWorkerState_('golden_trace_lock_reset','MISSING_APPLICATION',appId);upsertWorkerState_('golden_trace_application_id','','Reset invalid golden fixture lock');appId='';}else{const la=obj_(SH_(JC.S.A),lr),lockedUrl=String(la['Canonical Apply URL']||la['Job URL']||'');if(!traceUrlIdentityMatch_(lockedUrl,req.url)){upsertWorkerState_('golden_trace_lock_reset','URL_MISMATCH',JSON.stringify({oldApplicationId:appId,lockedCanonical:traceCanonicalUrl_(lockedUrl),requestedCanonical:traceCanonicalUrl_(req.url)}).slice(0,1500));upsertWorkerState_('golden_trace_application_id','','Reset stale cross-fixture golden lock');appId='';}}}`);s=s.slice(0,r.start)+tick+s.slice(r.end);}
 
-for(const token of ['ATOMIC_APPEND_VERIFY_RETIRE','TRACE_CANDIDATE_READBACK_FAILED','TRACE_FINAL_READBACK_MISMATCH','golden_trace_lock_reset','URL_MISMATCH','Reset stale cross-fixture golden lock'])if(!s.includes(token))throw new Error('TRACE durability control missing '+token);
+for(const token of ['ATOMIC_APPEND_VERIFY_RETIRE','TRACE_CANDIDATE_READBACK_FAILED','TRACE_FINAL_READBACK_MISMATCH','golden_trace_lock_reset','URL_MISMATCH','Reset stale cross-fixture golden lock','QUEUE-NOJOB-QUARANTINE-001','QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001'])if(!s.includes(token))throw new Error('TRACE/runtime durability control missing '+token);
 fs.writeFileSync(file,s);const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('TRACE durability transformed source invalid: '+syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:'TRACE-DURABLE-V1',tests:['TRACE-ATOMIC-001','TRACE-READBACK-001','TRACE-LOCK-001'],nonDestructiveCandidate:true,staleFixtureLockReset:true,idempotent:true,verifiedArtifact:file},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:'TRACE-DURABLE-V1',tests:['TRACE-ATOMIC-001','TRACE-READBACK-001','TRACE-LOCK-001','QUEUE-NOJOB-QUARANTINE-001','QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001'],nonDestructiveCandidate:true,staleFixtureLockReset:true,queueCheapEligibilityBeforeQuarantine:true,idempotent:true,verifiedArtifact:file},null,2));
