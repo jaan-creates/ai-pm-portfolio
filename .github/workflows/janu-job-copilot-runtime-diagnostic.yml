@@ -110,8 +110,10 @@ jobs:
             const token = t => body.includes(t);
             const orderTokens=[
               'ensureP12Sheets_','runtimeBudgetOk_','processQ_','nextQ_','qPriority_',
-              'rendererQuarantineBlocks_','rendererWorkerStateValue_','workNeeded_',
-              'maintenanceStage_','pre-queue','pre-maintenance','post-maintenance',
+              'p1aVacancyMaintenanceTick_','p1aJdRecoveryMaintenanceTick_','p1aE2EContinuationTick_',
+              'p1aClosedVacancyReconcileTick_','traceGoldenTick_','runRendererCareerBreakSelfTest',
+              'enforceReleaseBlockerHealth_','rendererQuarantineBlocks_','rendererWorkerStateValue_',
+              'workNeeded_','maintenanceStage_','pre-queue','pre-maintenance','post-maintenance',
               'queued','RESUME_GENERATE','getLastRow','getRange','getValues','getDisplayValue'
             ];
             return {
@@ -124,6 +126,7 @@ jobs:
                 getDataRange:token('getDataRange'), getValues:token('getValues'), getRange:token('getRange'), getLastRow:token('getLastRow'), getDisplayValue:token('getDisplayValue'),
                 queueJobFresh:token('queueJobFresh_'), queueSelectPure:token('queueSelectPure_'), qPriority:token('qPriority_'), workNeeded:token('workNeeded_'),
                 rendererQuarantine:token('rendererQuarantineBlocks_'), rendererReplayBlocked:token('rendererReplayBlocked_'), rendererWorkerStateValue:token('rendererWorkerStateValue_'),
+                rendererSelfTest:token('runRendererCareerBreakSelfTest'), releaseBlockerHealth:token('enforceReleaseBlockerHealth_'),
                 find:token('find_'), obj:token('obj_'), hm:token('hm_'), SH:token('SH_'), P:token('P_'),
                 sort:token('.sort('), filter:token('.filter('), map:token('.map('),
                 propertyRead:token('getProperty'), propertyWrite:token('setProperty'),
@@ -135,9 +138,10 @@ jobs:
           const names=[
             'nextQ_','qPriority_','queueJobFresh_','queueSelectPure_','workNeeded_','processQ_',
             'rendererQuarantineBlocks_','rendererWorkerStateValue_','rendererReplayBlocked_',
-            'phase1OneJobTickCore_','runtimeBudgetOk_','ensureP12Sheets_','maintenanceStage_'
+            'phase1OneJobTickCore_','phase1HealthTick','p1aJdRecoveryMaintenanceTick_',
+            'p1aVacancyMaintenanceTick_','runtimeBudgetOk_','ensureP12Sheets_','maintenanceStage_'
           ];
-          const out={schema:'JANU-RUNTIME-DIAGNOSTIC-3',files:files.length,functions:names.map(summarize)};
+          const out={schema:'JANU-RUNTIME-DIAGNOSTIC-4',files:files.length,functions:names.map(summarize)};
           console.log(JSON.stringify(out,null,2));
           NODE
       - name: Assert diagnostic is read-only
