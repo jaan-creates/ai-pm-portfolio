@@ -99,7 +99,12 @@ jobs:
             const calls=[...withoutDecl.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1])
               .filter(x=>!['if','for','while','switch','catch','function'].includes(x));
             const token = t => body.includes(t);
-            const orderTokens=['ensureP12Sheets_','runtimeBudgetOk_','processQ_','nextQ_','qPriority_','rendererQuarantineBlocks_','maintenanceStage_','pre-queue','pre-maintenance','post-maintenance','getLastRow','getRange','getValues'];
+            const orderTokens=[
+              'ensureP12Sheets_','runtimeBudgetOk_','processQ_','nextQ_','qPriority_',
+              'rendererQuarantineBlocks_','rendererWorkerStateValue_','workNeeded_',
+              'maintenanceStage_','pre-queue','pre-maintenance','post-maintenance',
+              'queued','RESUME_GENERATE','getLastRow','getRange','getValues','getDisplayValue'
+            ];
             return {
               name, found:true, bodyLength:body.length,
               loops:count(body,/\b(?:for|while)\s*\(/g),
@@ -107,9 +112,9 @@ jobs:
               calls:[...new Set(calls)].sort(),
               orderedSignals:positions(body,orderTokens),
               signals:{
-                getDataRange:token('getDataRange'), getValues:token('getValues'), getRange:token('getRange'), getLastRow:token('getLastRow'),
-                queueJobFresh:token('queueJobFresh_'), queueSelectPure:token('queueSelectPure_'), qPriority:token('qPriority_'),
-                rendererQuarantine:token('rendererQuarantineBlocks_'), rendererReplayBlocked:token('rendererReplayBlocked_'),
+                getDataRange:token('getDataRange'), getValues:token('getValues'), getRange:token('getRange'), getLastRow:token('getLastRow'), getDisplayValue:token('getDisplayValue'),
+                queueJobFresh:token('queueJobFresh_'), queueSelectPure:token('queueSelectPure_'), qPriority:token('qPriority_'), workNeeded:token('workNeeded_'),
+                rendererQuarantine:token('rendererQuarantineBlocks_'), rendererReplayBlocked:token('rendererReplayBlocked_'), rendererWorkerStateValue:token('rendererWorkerStateValue_'),
                 find:token('find_'), obj:token('obj_'), hm:token('hm_'), SH:token('SH_'), P:token('P_'),
                 sort:token('.sort('), filter:token('.filter('), map:token('.map('),
                 propertyRead:token('getProperty'), propertyWrite:token('setProperty'),
@@ -119,12 +124,11 @@ jobs:
           }
 
           const names=[
-            'nextQ_','qPriority_','queueJobFresh_','queueSelectPure_','processQ_',
-            'rendererQuarantineBlocks_','rendererReplayBlocked_','rendererCanaryAuthorized_',
-            'rendererPreventionVerified_','phase1OneJobTickCore_','runtimeBudgetOk_',
-            'ensureP12Sheets_','maintenanceStage_'
+            'nextQ_','qPriority_','queueJobFresh_','queueSelectPure_','workNeeded_','processQ_',
+            'rendererQuarantineBlocks_','rendererWorkerStateValue_','rendererReplayBlocked_',
+            'phase1OneJobTickCore_','runtimeBudgetOk_','ensureP12Sheets_','maintenanceStage_'
           ];
-          const out={schema:'JANU-RUNTIME-DIAGNOSTIC-2',files:files.length,functions:names.map(summarize)};
+          const out={schema:'JANU-RUNTIME-DIAGNOSTIC-3',files:files.length,functions:names.map(summarize)};
           console.log(JSON.stringify(out,null,2));
           NODE
       - name: Assert diagnostic is read-only
