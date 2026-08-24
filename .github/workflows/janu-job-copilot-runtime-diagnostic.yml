@@ -25,11 +25,20 @@ jobs:
       CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
       CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
       CLASP_USER: janu-build
+      PROJECT_DIR: startup-track/projects/2-janu-job-copilot
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Run proposed FL-080 local regression when present
+        shell: bash
+        run: |
+          if [ -f "$PROJECT_DIR/scripts/test-runtime-queue-quarantine-order.mjs" ]; then
+            node "$PROJECT_DIR/scripts/test-runtime-queue-quarantine-order.mjs" "$PROJECT_DIR"
+          else
+            echo 'FL-080 proposed regression not present in this checkout; source diagnostic only.'
+          fi
       - name: Validate credentials exist
         shell: bash
         run: |
