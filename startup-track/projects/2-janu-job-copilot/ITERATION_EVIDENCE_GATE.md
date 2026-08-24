@@ -25,7 +25,7 @@ Before implementation/promotion, material runtime changes must also pass `PRECHA
 | Metrics | Which scorecard metric should move, and what is the baseline/cohort? | `BASELINE_SCORECARD.md` / metrics snapshot |
 | Failure learning | Was an unexpected material defect found? | `__Failure Learning` + failure class/prevention |
 | Release provenance | Does runtime behavior/config change? Which release/commit/suite produced it? | deployment/release evidence |
-| User/customer release note | Did the user gain/lose/change a meaningful capability or behavior? | `USER_RELEASE_NOTES.md` decision/content |
+| User/customer release note | Did the user gain/lose/change a meaningful capability or behavior? | `RELEASE_NOTES.md` decision/content |
 | Build Notes | Is this a meaningful product milestone/architecture/reliability learning? | `BUILD_NOTES.md` |
 | Current state/system map | Did verified current truth or architecture change? | update `CURRENT_STATE.md` / `SYSTEM_MAP.md` |
 | Autonomy/security | Did permissions, stopping, human boundary or sensitive-data handling change? | `AUTONOMY_CONTRACT.md` / security policy |
@@ -66,7 +66,7 @@ FINAL DECISION: promote / revise / reject / hold
 
 ## Release-note rule
 
-A **user/customer release note** describes changed usable behavior, reliability, limitation or workflow that matters to the user. User-facing release notes live in `USER_RELEASE_NOTES.md`. Do not publish internal refactors as customer value, and do not label source-only work as released behavior before target-environment proof.
+A **user/customer release note** describes changed usable behavior, reliability, limitation or workflow that matters to the user. User-facing release notes live in `RELEASE_NOTES.md`. Do not publish internal refactors as customer value, and do not label source-only work as released behavior before target-environment proof.
 
 A **BUILD_NOTES** entry is broader and educational: architecture, tradeoffs, verification and learning. One change may require one, both or neither.
 
