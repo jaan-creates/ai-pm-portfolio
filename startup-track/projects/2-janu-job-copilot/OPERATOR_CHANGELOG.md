@@ -2,9 +2,9 @@
 
 **Purpose:** privacy-safe, turn-level record of material builder/operator work. Exact private application details remain in the Live Tracker; this file records IDs, controls, commits and verification state so Git history can be followed without leaking candidate data.
 
-## 2026-08-24 — Resume approval path + predictive learning retrieval + user release notes
+## 2026-08-24 — Resume approval path + predictive learning retrieval + release-note source-of-truth correction
 
-**Findings:** current learning architecture captured failures and executable prevention well, but retrieval of prior learning before a new change was not mandatory. This allowed learned local fixes to miss adjacent enforcement/publisher risks. User-facing release notes also had no durable canonical file.
+**Findings:** current learning architecture captured failures and executable prevention well, but retrieval of prior learning before a new change was not mandatory. This allowed learned local fixes to miss adjacent enforcement/publisher risks. During the review, a duplicate user-release-note surface was briefly created despite an existing canonical `RELEASE_NOTES.md`; the duplicate was removed immediately and the canonical file updated.
 
 **Changes authored on `janu-job-copilot/apps-script-ci`:**
 
@@ -16,15 +16,19 @@
 - `ITERATION_EVIDENCE_GATE.md`
   - now makes pre-change risk retrieval a formal gate,
   - requires predicted sibling risks in closeout evidence,
-  - points user-facing change decisions to `USER_RELEASE_NOTES.md`.
-- `USER_RELEASE_NOTES.md`
-  - canonical user-facing release-note surface,
+  - points user-facing change decisions to canonical `RELEASE_NOTES.md`.
+- `RELEASE_NOTES.md`
+  - remains the single canonical user-facing release-note surface,
   - separates proven, limited, pending-proof and blocked behavior,
   - documents Resume Review `Approved` semantics and current pending renderer/TRACE/continuation controls.
+- `USER_RELEASE_NOTES.md`
+  - briefly created during the review, then deleted after source-of-truth reconciliation discovered the existing canonical release-note file.
 - Live `My Actions`
   - wording updated so zero-comment / all-comments-resolved review has an explicit `Approved` path without editing the generated artifact.
+- Controlled deployment trigger `5e784aafb29cb1e25e640fc831d14c15841724b6`
+  - uses the new pre-change risk gate and keeps renderer backlog quarantined until exact deployment/readback + one Metaforms canary pass.
 
-**Verification state:** documentation/governance changes are committed. Runtime renderer/TRACE/continuation controls still require target-environment deployment/readback and canary evidence; live runtime remained TRACE V0-1 / continuation v2 at the latest readback.
+**Verification state:** documentation/governance changes are committed. Runtime renderer/TRACE/continuation controls still require target-environment deployment/readback and canary evidence; live runtime remained TRACE V0-1 / continuation v2 at the immediate post-trigger readback.
 
 ## 2026-08-24 — Renderer recurrence containment + observability closure
 
@@ -69,4 +73,4 @@ For every material execution turn:
 3. the changelog references stable defect/test/change IDs and commits, not private candidate/application content;
 4. a change remains open until target-environment readback satisfies `ITERATION_EVIDENCE_GATE.md`;
 5. every material production change retrieves relevant prior learning and predicts sibling risks through `PRECHANGE_RISK_GATE.md` before promotion;
-6. meaningful user-visible changes are recorded in `USER_RELEASE_NOTES.md` with an honest proof status.
+6. meaningful user-visible changes are recorded in canonical `RELEASE_NOTES.md` with an honest proof status.
