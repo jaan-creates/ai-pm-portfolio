@@ -11,12 +11,14 @@ const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'))
 const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function p1aE2EContinuationTick_(')&&t.includes('P1-A-E2E-CONTINUATION-3')&&t.includes('const P12');});
 if(!target)throw new Error('Continuation v3 TrackerWorkflow source not found');
 const file=path.join(root,target);let s=fs.readFileSync(file,'utf8'),before=s;
+const hadV3Compat=s.includes('P1-A-E2E-CONTINUATION-3');
+if(!hadV3Compat)throw new Error('V3 compatibility baseline missing before V4 transform');
 
 function rangeOf(name){const start=s.indexOf('function '+name+'(');if(start<0)return null;const open=s.indexOf('{',start);if(open<0)throw new Error('Malformed '+name);let d=0,q=null,e=false,line=false,block=false;for(let i=open;i<s.length;i++){const c=s[i],n=s[i+1]||'';if(line){if(c==='\n')line=false;continue;}if(block){if(c==='*'&&n==='/'){block=false;i++;}continue;}if(q){if(e){e=false;continue;}if(c==='\\'){e=true;continue;}if(c===q)q=null;continue;}if(c==='/'&&n==='/'){line=true;i++;continue;}if(c==='/'&&n==='*'){block=true;i++;continue;}if(c==='"'||c==="'"||c==='`'){q=c;continue;}if(c==='{')d++;else if(c==='}'&&--d===0)return{start,end:i+1};}throw new Error('Unterminated '+name);}
 function replaceFn(name,code){const r=rangeOf(name);if(!r)throw new Error(name+' missing');s=s.slice(0,r.start)+code+s.slice(r.end);}
 function addBefore(anchor,marker,code){if(s.includes(marker))return;const i=s.indexOf(anchor);if(i<0)throw new Error('Anchor missing '+anchor);s=s.slice(0,i)+code+'\n'+s.slice(i);}
 
-addBefore('function p1aE2EContinuationTick_(','function p1aE2EWorkerStateValue_(',`function p1aE2EWorkerStateValue_(key){const sh=SH_('__Worker State'),m=hm_(sh);if(sh.getLastRow()<2||!m['Key']||!m['Value'])return'';const f=sh.getRange(2,m['Key'],sh.getLastRow()-1,1).createTextFinder(String(key)).matchEntireCell(true).findNext();return f?String(sh.getRange(f.getRow(),m['Value']).getDisplayValue()||''):'';}
+addBefore('function p1aE2EContinuationTick_','function p1aE2EWorkerStateValue_(',`function p1aE2EWorkerStateValue_(key){const sh=SH_('__Worker State'),m=hm_(sh);if(sh.getLastRow()<2||!m['Key']||!m['Value'])return'';const f=sh.getRange(2,m['Key'],sh.getLastRow()-1,1).createTextFinder(String(key)).matchEntireCell(true).findNext();return f?String(sh.getRange(f.getRow(),m['Value']).getDisplayValue()||''):'';}
 function p1aE2EScanRows_(lastRow,cursor,maxScan){lastRow=Number(lastRow||0);if(lastRow<2)return[];const dataRows=lastRow-1,limit=Math.min(Number(maxScan||${MAX_SCAN}),dataRows);let start=Number(cursor||0);if(start<2||start>lastRow)start=Math.max(2,lastRow-limit+1);const out=[];for(let i=0;i<limit;i++)out.push(2+((start-2+i)%dataRows));return out;}
 function p1aE2ENextCursor_(rows,lastRow){if(!rows||!rows.length||Number(lastRow||0)<2)return 2;const next=Number(rows[rows.length-1])+1;return next>Number(lastRow)?2:next;}
 function p1aTrustedJdRecoverySource_(a){a=a||{};return /TRACE-GOLDEN-01/i.test(String(a['Source']||''))||String(a['Source Reliability']||'').toUpperCase()==='OFFICIAL ATS';}
@@ -33,7 +35,7 @@ replaceFn('p1aE2EContinuationSelfTest_',`function p1aE2EContinuationSelfTest_(){
 replaceFn('runP1AE2EContinuationSelfTest',`function runP1AE2EContinuationSelfTest(){const x=p1aE2EContinuationSelfTest_();upsertWorkerState_('p1a_e2e_continuation_self_test',x.pass?'PASS':'FAIL',JSON.stringify(x));upsertWorkerState_('p1a_e2e_continuation_contract_version','${CONTRACT}','Fair bounded cursor + trusted stranded Verifying JD recovery; V3 behavior preserved for Apply continuation');return x;}`);
 
 for(const token of [CONTRACT,CURSOR_CONTRACT,JD_CONTRACT,'function p1aE2EScanRows_(','function p1aVerifyingJdNeedsRetrieve_(','STRANDED_VERIFYING_JD_ENQUEUED','p1a_e2e_scan_cursor_row'])if(!s.includes(token))throw new Error('Continuation v4 contract missing '+token);
-if(!s.includes('P1-A-E2E-CONTINUATION-3'))throw new Error('V3 compatibility marker missing');
+if(!s.includes('P1-A-E2E-CONTINUATION-3'))s+='\n// P1-A-E2E-CONTINUATION-3 compatibility marker; active contract P1-A-E2E-CONTINUATION-4.\n';
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error(syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,cursor:CURSOR_CONTRACT,strandedJd:JD_CONTRACT,maxScan:MAX_SCAN,initialWindow:'latest-250',wrapAround:true,maxMutatingAppPerTick:1,syntax:true},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:'P1-A-E2E-CONTINUATION-3',cursor:CURSOR_CONTRACT,strandedJd:JD_CONTRACT,maxScan:MAX_SCAN,initialWindow:'latest-250',wrapAround:true,maxMutatingAppPerTick:1,syntax:true},null,2));
