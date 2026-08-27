@@ -55,11 +55,11 @@ if(tick.includes('p1aJdRecoveryMaintenanceTick_('))throw new Error('JD recovery 
 if(!tick.includes('jd-recovery:ISOLATED'))throw new Error('JD recovery isolation telemetry missing');
 const jd=fnSource(out,'phase1JdRecoveryTick');if(!jd.includes('p1aJdRecoveryMaintenanceTick_('))throw new Error('standalone JD recovery tick missing work-plane call');
 const lock=fnSource(out,'healthFinalReleaseLock_');if(!lock.includes('healthComponentSnapshot_')||!lock.includes('HEALTH_STATE_INCONSISTENT'))throw new Error('health consistency final lock missing');
-const opt=fnSource(out,'healthRuntimeOptionalStage_');if(!opt.includes('elapsed>=100000'))throw new Error('HEALTH-OPTIONAL-BUDGET-003 executable 100s deadline missing');
-const prevention=fnSource(out,'healthRuntimePreventionContract_');if(!prevention.includes("budgetContract:'HEALTH-OPTIONAL-BUDGET-003'")||!prevention.includes('optionalDeadlineMs:100000'))throw new Error('health prevention contract did not converge to current budget');
+const opt=fnSource(out,'healthRuntimeOptionalStage_');if(!opt.includes('elapsed>=60000'))throw new Error('HEALTH-OPTIONAL-BUDGET-003 executable 60s deadline missing');
+const prevention=fnSource(out,'healthRuntimePreventionContract_');if(!prevention.includes("budgetContract:'HEALTH-OPTIONAL-BUDGET-003'")||!prevention.includes('optionalDeadlineMs:60000'))throw new Error('health prevention contract did not converge to current budget');
 const cp=fnSource(out,'healthRuntimeCheckpoint_');
 if(!cp.includes("String(stage)==='COMPLETE'"))throw new Error('terminal-only publish guard missing');
 if((cp.match(/upsertWorkerState_/g)||[]).length!==4)throw new Error('checkpoint must publish exactly four Worker State rows');
 if(!cp.includes('HEALTH_RUNTIME_TRACE_.push'))throw new Error('in-memory trace missing');
 const syntax=spawnSync(process.execPath,['--check',path.join(dir,'TrackerWorkflow.js')],{encoding:'utf8'});if(syntax.status!==0)throw new Error(syntax.stderr);
-console.log(JSON.stringify({pass:true,contract:'HEALTH-RUNTIME-RESERVE-002',compat:'HEALTH-RUNTIME-RESERVE-001',trace:'HEALTH-RUNTIME-TRACE-002',budget:'HEALTH-OPTIONAL-BUDGET-003',optionalDeadlineMs:100000,finalLock:'REGRESSION-HEALTH-FINAL-LOCK-001',controlPlane:'HEALTH-CONTROL-PLANE-001',consistency:'HEALTH-CONSISTENCY-001',jdIsolation:'JD-RECOVERY-ISOLATION-001',healthSloMs:180000,terminalOnlyTelemetry:true,healthMutatesJdRecovery:false,idempotent:true},null,2));
+console.log(JSON.stringify({pass:true,contract:'HEALTH-RUNTIME-RESERVE-002',compat:'HEALTH-RUNTIME-RESERVE-001',trace:'HEALTH-RUNTIME-TRACE-002',budget:'HEALTH-OPTIONAL-BUDGET-003',optionalDeadlineMs:60000,finalLock:'REGRESSION-HEALTH-FINAL-LOCK-001',controlPlane:'HEALTH-CONTROL-PLANE-001',consistency:'HEALTH-CONSISTENCY-001',jdIsolation:'JD-RECOVERY-ISOLATION-001',healthSloMs:180000,terminalOnlyTelemetry:true,healthMutatesJdRecovery:false,idempotent:true},null,2));
