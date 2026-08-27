@@ -28,7 +28,7 @@ function iso_(){return new Date().toISOString();}
 function p1aPropagateClosedVacancy_(){return {status:'CLOSED_PROPAGATED'};}
 function p1aQueueWorkerState_(){return {state:'NONE'};}
 function nextQ_(onlyApp){const v=[['Q','A','RESUME_GENERATE','queued','','',0,4,new Date(),'','','','',JSON.stringify({source:'trace-fixture'})]],t=Date.now();let best=null;for(let i=0;i<v.length;i++){const app=String(v[i][1]||''),nx=0;if(onlyApp&&app!==onlyApp)continue;if(v[i][3]==='queued'&&(!nx||nx<=t))best=i+2;}return best;}
-function runQ_(r){const s=SH_();const qid='Q',app='A',type='RESUME_GENERATE',payload={},attempt=1,max=4,started=now_();s.getRange(r,4).setValue('running');return 1;}
+function runQ_(r){const s=SH_();const qid='Q',app='A',type='RESUME_GENERATE',payload={rendererPolicy:'RENDER-CAREERBREAK-V3'},attempt=1,max=4,started=now_();if(rendererQuarantineBlocks_(app,type,payload))throw new Error('RENDERER_QUARANTINE_ACTIVE');s.getRange(r,4).setValue('running');return 1;}
 function render_(v,d){const b={setFontFamily(){}};const scalar={'{{CAREER_BREAK}}':stripInternalEvidenceTags_(d&&d.career_break||'')};Object.keys(scalar).forEach(k=>{});function block(token,items){}block('{{GLOROOTS_BULLETS}}',[]);return b;}
 function phase1HealthTick(){return true;}
 `);
@@ -52,4 +52,5 @@ if(!twice.includes(neg))throw new Error('TRACE-DEDUPE-001 Tekion/Easyship negati
 if(!twice.includes("traceNextAppIdFromValues_('2026-08-23',['2026-08-23-001'])==='2026-08-23-002'"))throw new Error('TRACE-ID-001 collision fixture missing');
 if(!twice.includes("if(!raw)continue"))throw new Error('empty existing URLs must never dedupe');
 if(!twice.includes("if(!requested||last<2)"))throw new Error('empty requested URL must never dedupe');
+const claim=twice.slice(twice.indexOf('function runQ_('),twice.indexOf('function render_('));if(!claim.includes('rendererQuarantineBlocks_')||!claim.includes('RENDERER_QUARANTINE_ACTIVE'))throw new Error('claim-time renderer quarantine was not preserved');
 console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true,continuationV3Integration:true,rendererIntegration:true,rendererClaimQuarantineIntegration:true,traceDurabilityIntegration:true},null,2));
