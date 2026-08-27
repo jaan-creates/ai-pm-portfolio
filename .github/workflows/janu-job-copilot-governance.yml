@@ -101,6 +101,9 @@ jobs:
       - name: Behavior-test TRACE-GOLDEN-01 patch
         run: node "$PROJECT_DIR/scripts/test-trace-golden-v0-patch.mjs" "$PROJECT_DIR"
 
+      - name: Behavior-test renderer canary preconditions
+        run: node "$PROJECT_DIR/scripts/test-renderer-canary-preconditions.mjs" "$PROJECT_DIR"
+
       - name: Behavior-test FL-080 queue-order prevention
         run: node "$PROJECT_DIR/scripts/test-runtime-queue-quarantine-order.mjs" "$PROJECT_DIR"
 
