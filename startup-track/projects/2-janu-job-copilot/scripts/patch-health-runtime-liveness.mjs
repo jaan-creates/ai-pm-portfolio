@@ -7,7 +7,8 @@ const CONTRACT='HEALTH-RUNTIME-RESERVE-002';
 const COMPAT='HEALTH-RUNTIME-RESERVE-001';
 const FINAL_LOCK='REGRESSION-HEALTH-FINAL-LOCK-001';
 const TRACE_CONTRACT='HEALTH-RUNTIME-TRACE-002';
-const OPTIONAL_DEADLINE_MS=120000;
+const BUDGET_CONTRACT='HEALTH-OPTIONAL-BUDGET-003';
+const OPTIONAL_DEADLINE_MS=100000;
 const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
 const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function phase1HealthTick(')&&t.includes('const P12');});
 if(!target)throw new Error('TrackerWorkflow source with phase1HealthTick not found');
@@ -48,16 +49,21 @@ if(!s.includes(COMPAT)){
 if(!s.includes(TRACE_CONTRACT)){
   addBefore('function healthRuntimeElapsed_(', 'var HEALTH_RUNTIME_TRACE_', `var HEALTH_RUNTIME_TRACE_=[];`);
   replaceFunction('healthRuntimeCheckpoint_',`function healthRuntimeCheckpoint_(stage,startedAt,status){const elapsed=healthRuntimeElapsed_(startedAt);HEALTH_RUNTIME_TRACE_.push({stage:String(stage||''),elapsedMs:elapsed,status:String(status||'RUNNING')});if(HEALTH_RUNTIME_TRACE_.length>40)HEALTH_RUNTIME_TRACE_=HEALTH_RUNTIME_TRACE_.slice(-40);if(String(stage)==='COMPLETE'){upsertWorkerState_('health_tick_stage',String(stage),'${CONTRACT} final durable stage');upsertWorkerState_('health_tick_elapsed_ms',String(elapsed),'${CONTRACT}');upsertWorkerState_('health_tick_status',String(status||'COMPLETE'),'${CONTRACT}');upsertWorkerState_('health_tick_trace',JSON.stringify({contract:'${TRACE_CONTRACT}',compat:'${COMPAT}',elapsedMs:elapsed,events:HEALTH_RUNTIME_TRACE_}).slice(0,12000),'Single terminal publish; V1 per-checkpoint write amplification removed.');HEALTH_RUNTIME_TRACE_=[];}return elapsed;}`);
-  replaceFunction('healthRuntimeOptionalStage_',`function healthRuntimeOptionalStage_(stage,startedAt,fn){const elapsed=healthRuntimeElapsed_(startedAt);if(elapsed>=${OPTIONAL_DEADLINE_MS}){healthRuntimeCheckpoint_(stage+':YIELD',startedAt,'BUDGET_YIELD');return null;}healthRuntimeCheckpoint_(stage+':START',startedAt,'RUNNING');const ss=Date.now();try{return fn();}finally{HEALTH_RUNTIME_TRACE_.push({stage:String(stage)+':DURATION',elapsedMs:healthRuntimeElapsed_(startedAt),stageMs:Math.max(0,Date.now()-ss),status:'RUNNING'});healthRuntimeCheckpoint_(stage+':DONE',startedAt,'RUNNING');}}`);
-  replaceFunction('healthRuntimePreventionContract_',`function healthRuntimePreventionContract_(){return {pass:true,contract:'${CONTRACT}',compat:'${COMPAT}',traceContract:'${TRACE_CONTRACT}',finalLock:'${FINAL_LOCK}',optionalDeadlineMs:${OPTIONAL_DEADLINE_MS},singleTerminalPublish:true};}`);
   const rr=rangeOf('phase1HealthTick');s=s.slice(0,rr.start)+'/* '+CONTRACT+' / '+TRACE_CONTRACT+' */\n'+s.slice(rr.start);
 }
 
+// Converge the current optional-work budget on every deployment, including
+// targets already carrying the V2 runtime contract. A marker without current
+// executable budget semantics is not release convergence.
+replaceFunction('healthRuntimeOptionalStage_',`function healthRuntimeOptionalStage_(stage,startedAt,fn){const elapsed=healthRuntimeElapsed_(startedAt);if(elapsed>=${OPTIONAL_DEADLINE_MS}){healthRuntimeCheckpoint_(stage+':YIELD',startedAt,'BUDGET_YIELD');return null;}healthRuntimeCheckpoint_(stage+':START',startedAt,'RUNNING');const ss=Date.now();try{return fn();}finally{HEALTH_RUNTIME_TRACE_.push({stage:String(stage)+':DURATION',elapsedMs:healthRuntimeElapsed_(startedAt),stageMs:Math.max(0,Date.now()-ss),status:'RUNNING'});healthRuntimeCheckpoint_(stage+':DONE',startedAt,'RUNNING');}}`);
+replaceFunction('healthRuntimePreventionContract_',`function healthRuntimePreventionContract_(){return {pass:true,contract:'${CONTRACT}',compat:'${COMPAT}',traceContract:'${TRACE_CONTRACT}',budgetContract:'${BUDGET_CONTRACT}',finalLock:'${FINAL_LOCK}',optionalDeadlineMs:${OPTIONAL_DEADLINE_MS},singleTerminalPublish:true};}`);
+
 const tickRange=rangeOf('phase1HealthTick'),tick=s.slice(tickRange.start,tickRange.end);
-for(const token of [CONTRACT,COMPAT,TRACE_CONTRACT,FINAL_LOCK,'healthRuntimeOptionalStage_','healthFinalReleaseLock_'])if(!s.includes(token))throw new Error('Health runtime marker missing '+token);
+for(const token of [CONTRACT,COMPAT,TRACE_CONTRACT,BUDGET_CONTRACT,FINAL_LOCK,'healthRuntimeOptionalStage_','healthFinalReleaseLock_'])if(!s.includes(token))throw new Error('Health runtime marker missing '+token);
 for(const fn of ['p1aVacancyMaintenanceTick_','p1aJdRecoveryMaintenanceTick_','p1aE2EContinuationTick_','p1aClosedVacancyReconcileTick_','traceGoldenTick_'])if(tick.includes(fn+'()')&&!tick.includes('return '+fn+'();'))throw new Error('Unbounded optional health call remains '+fn);
 const finalPos=tick.lastIndexOf('healthFinalReleaseLock_('),healthyPos=tick.lastIndexOf("healthSet_('Regression Gate','HEALTHY'");if(finalPos<0||finalPos<healthyPos)throw new Error(FINAL_LOCK+' ordering proof failed');
 const checkpoint=rangeOf('healthRuntimeCheckpoint_');if(!checkpoint)throw new Error('checkpoint helper missing');const checkpointSource=s.slice(checkpoint.start,checkpoint.end);if((checkpointSource.match(/upsertWorkerState_/g)||[]).length!==4)throw new Error('V2 checkpoint should publish exactly four Worker State rows only at COMPLETE');if(!checkpointSource.includes("String(stage)==='COMPLETE'"))throw new Error('V2 terminal-only publish guard missing');
+const optional=rangeOf('healthRuntimeOptionalStage_');const optionalSource=s.slice(optional.start,optional.end);if(!optionalSource.includes('elapsed>='+OPTIONAL_DEADLINE_MS))throw new Error(BUDGET_CONTRACT+' executable deadline missing');
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('Health runtime transformed source invalid: '+syntax.stderr);
 
@@ -68,4 +74,4 @@ s=fs.readFileSync(file,'utf8');
 for(const token of ['HEALTH-CONTROL-PLANE-001','HEALTH-CONSISTENCY-001','JD-RECOVERY-ISOLATION-001','health_runtime_slo_ms'])if(!s.includes(token))throw new Error('Composed health control-plane marker missing '+token);
 if(s.includes('function p1aJdRecoveryMaintenanceTick_(')&&!s.includes('function phase1JdRecoveryTick('))throw new Error('Composed health control-plane marker missing phase1JdRecoveryTick when JD recovery exists');
 const syntax2=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax2.status!==0)throw new Error('Composed health source invalid: '+syntax2.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:COMPAT,traceContract:TRACE_CONTRACT,finalLock:FINAL_LOCK,optionalDeadlineMs:OPTIONAL_DEADLINE_MS,singleTerminalPublish:true,phaseFunctionRewriteInV2:false,finalFailClosed:true,controlPlane:'HEALTH-CONTROL-PLANE-001',healthConsistency:'HEALTH-CONSISTENCY-001',jdIsolation:'JD-RECOVERY-ISOLATION-001',healthSloMs:180000,standaloneJdRecoveryTick:s.includes('function phase1JdRecoveryTick('),verifiedArtifact:file},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:COMPAT,traceContract:TRACE_CONTRACT,budgetContract:BUDGET_CONTRACT,finalLock:FINAL_LOCK,optionalDeadlineMs:OPTIONAL_DEADLINE_MS,singleTerminalPublish:true,phaseFunctionRewriteInV2:false,finalFailClosed:true,controlPlane:'HEALTH-CONTROL-PLANE-001',healthConsistency:'HEALTH-CONSISTENCY-001',jdIsolation:'JD-RECOVERY-ISOLATION-001',healthSloMs:180000,standaloneJdRecoveryTick:s.includes('function phase1JdRecoveryTick('),verifiedArtifact:file},null,2));
