@@ -6,6 +6,7 @@ const root=process.argv[2]||'.janu-live';
 const CONTRACT='P1-A-E2E-CONTINUATION-4';
 const CURSOR_CONTRACT='E2E-CURSOR-FAIRNESS-001';
 const JD_CONTRACT='E2E-STRANDED-JD-001';
+const ENTRY_CONTRACT='E2E-LIVE-ENTRYPOINT-001';
 const MAX_SCAN=250;
 const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
 const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function p1aE2EContinuationTick_(')&&t.includes('P1-A-E2E-CONTINUATION-3')&&t.includes('const P12');});
@@ -38,4 +39,7 @@ for(const token of [CONTRACT,CURSOR_CONTRACT,JD_CONTRACT,'function p1aE2EScanRow
 if(!s.includes('P1-A-E2E-CONTINUATION-3'))s+='\n// P1-A-E2E-CONTINUATION-3 compatibility marker; active contract P1-A-E2E-CONTINUATION-4.\n';
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error(syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:'P1-A-E2E-CONTINUATION-3',cursor:CURSOR_CONTRACT,strandedJd:JD_CONTRACT,maxScan:MAX_SCAN,initialWindow:'latest-250',wrapAround:true,maxMutatingAppPerTick:1,syntax:true},null,2));
+const ep=spawnSync(process.execPath,[path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-p1a-e2e-continuation-entrypoint.mjs'),root],{encoding:'utf8'});if(ep.status!==0)throw new Error(ep.stderr||ep.stdout||'E2E live entrypoint patch failed');
+s=fs.readFileSync(file,'utf8');if(!s.includes(ENTRY_CONTRACT)||!s.includes('function runP1AE2EContinuationTick('))throw new Error(ENTRY_CONTRACT+' not composed into V4');
+const syntax2=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax2.status!==0)throw new Error(syntax2.stderr);
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:'P1-A-E2E-CONTINUATION-3',cursor:CURSOR_CONTRACT,strandedJd:JD_CONTRACT,liveEntrypoint:ENTRY_CONTRACT,maxScan:MAX_SCAN,initialWindow:'latest-250',wrapAround:true,maxMutatingAppPerTick:1,syntax:true},null,2));
