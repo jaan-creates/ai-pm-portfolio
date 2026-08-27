@@ -6,3 +6,4 @@
 // - FL-059 trace durability + unique Tekion identity CLOSED
 // - FL-080 bounded Worker Runtime CLOSED
 // Only Metaforms 2026-08-04-002 is authorized; normal RESUME_GENERATE remains blocked until canary PASS.
+// Bounded control tick retrigger: 2026-08-27T23:31+05:30; execute only the pre-authorized Metaforms canary if runtime gates permit.
