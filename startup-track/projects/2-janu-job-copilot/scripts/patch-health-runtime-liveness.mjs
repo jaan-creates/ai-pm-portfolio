@@ -67,4 +67,12 @@ const finalPos=tick.lastIndexOf('healthFinalReleaseLock_('),healthyPos=tick.last
 const checkpoint=rangeOf('healthRuntimeCheckpoint_');if(!checkpoint)throw new Error('checkpoint helper missing');const checkpointSource=s.slice(checkpoint.start,checkpoint.end);if((checkpointSource.match(/upsertWorkerState_/g)||[]).length!==4)throw new Error('V2 checkpoint should publish exactly four Worker State rows only at COMPLETE');if(!checkpointSource.includes("String(stage)==='COMPLETE'"))throw new Error('V2 terminal-only publish guard missing');
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('Health runtime transformed source invalid: '+syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:COMPAT,traceContract:TRACE_CONTRACT,finalLock:FINAL_LOCK,optionalDeadlineMs:OPTIONAL_DEADLINE_MS,singleTerminalPublish:true,phaseFunctionRewriteInV2:false,finalFailClosed:true,verifiedArtifact:file},null,2));
+
+// Compose the control-plane isolation transform after runtime telemetry is stable.
+const isolationPatch=path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-health-control-plane-isolation.mjs');
+const isolation=spawnSync(process.execPath,[isolationPatch,root],{encoding:'utf8'});
+if(isolation.status!==0)throw new Error(isolation.stderr||isolation.stdout||'Health control-plane isolation failed');
+s=fs.readFileSync(file,'utf8');
+for(const token of ['HEALTH-CONTROL-PLANE-001','HEALTH-CONSISTENCY-001','JD-RECOVERY-ISOLATION-001','phase1JdRecoveryTick','health_runtime_slo_ms'])if(!s.includes(token))throw new Error('Composed health control-plane marker missing '+token);
+const syntax2=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax2.status!==0)throw new Error('Composed health source invalid: '+syntax2.stderr);
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:COMPAT,traceContract:TRACE_CONTRACT,finalLock:FINAL_LOCK,optionalDeadlineMs:OPTIONAL_DEADLINE_MS,singleTerminalPublish:true,phaseFunctionRewriteInV2:false,finalFailClosed:true,controlPlane:'HEALTH-CONTROL-PLANE-001',healthConsistency:'HEALTH-CONSISTENCY-001',jdIsolation:'JD-RECOVERY-ISOLATION-001',healthSloMs:180000,verifiedArtifact:file},null,2));
