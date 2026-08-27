@@ -71,7 +71,15 @@ jobs:
           printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
           chmod 600 "$LIVE_DIR/.clasp.json"
       - name: Confirm CI clasp identity
-        run: clasp show-authorized-user --user "$CLASP_USER"
+        shell: bash
+        run: |
+          set -o pipefail
+          out="$(clasp show-authorized-user --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          if grep -Eiq 'Not logged in|No credentials found' <<<"$out" || ! grep -q 'You are logged in as ' <<<"$out"; then
+            echo 'CI clasp named profile is not semantically authenticated.' >&2
+            exit 16
+          fi
       - name: Pull current production Apps Script
         working-directory: .janu-live
         run: clasp pull --user "$CLASP_USER"
@@ -152,11 +160,11 @@ jobs:
           for token in releaseProvenanceValidate_ releaseProvenanceContractSelfTest_ recordDeploymentProvenance runReleaseProvenanceContractSelfTest deployment_provenance_status deployment_git_commit deployment_source_sha256 REL-PROV-1; do
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Release provenance contract missing: $token"; exit 13; }
           done
-      - name: Validate active TRACE, continuation, renderer and durability contracts
+      - name: Validate active TRACE, continuation, renderer, durability and runtime safety contracts
         shell: bash
         run: |
-          for token in traceGoldenTick_ traceRefreshGolden_ traceGoldenCompleteness_ runTraceGoldenSelfTest TRACE-GOLDEN-V0-2 P1-A-E2E-CONTINUATION-3 RENDER-CAREERBREAK-V2 RENDER-CAREERBREAK-001 PREVENTION-RECURRENCE-001 rendererQuarantineBlocks_ ATOMIC_APPEND_VERIFY_RETIRE golden_trace_lock_reset 'Trace Explorer' golden_trace_status; do
-            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Active release contract missing: $token"; exit 14; }
+          for token in traceGoldenTick_ traceRefreshGolden_ traceGoldenCompleteness_ runTraceGoldenSelfTest TRACE-GOLDEN-V0-2 P1-A-E2E-CONTINUATION-3 RENDER-CAREERBREAK-V2 RENDER-CAREERBREAK-001 PREVENTION-RECURRENCE-001 rendererQuarantineBlocks_ ATOMIC_APPEND_VERIFY_RETIRE golden_trace_lock_reset 'Trace Explorer' golden_trace_status QUEUE-NOJOB-QUARANTINE-001 HEALTH-RUNTIME-RESERVE-001 REGRESSION-HEALTH-FINAL-LOCK-001; do
+            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Active release/runtime contract missing: $token"; exit 14; }
           done
           grep -q "'Decision':'New'" /tmp/janu-job-copilot-combined.js
       - name: Build privacy-safe transformed-source manifest
@@ -201,7 +209,7 @@ jobs:
             rc=$?
             set -e
             printf '%s\n' "$out"
-            if [ "$rc" -ne 0 ] || grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:' <<<"$out"; then
+            if [ "$rc" -ne 0 ] || grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"; then
               echo "Semantic clasp execution failure for: $*" >&2
               return 15
             fi
@@ -215,25 +223,31 @@ jobs:
         working-directory: .janu-live
         shell: bash
         run: |
-          out="$(clasp run runP1AContractSelfTest --nondev --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:' <<<"$out"
+          out="$(clasp run runP1AContractSelfTest --nondev --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
       - name: Attempt P1-B self-test immediately
         continue-on-error: true
         working-directory: .janu-live
         shell: bash
         run: |
-          out="$(clasp run runP1BContractSelfTest --nondev --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:' <<<"$out"
+          out="$(clasp run runP1BContractSelfTest --nondev --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
       - name: Attempt P1-C self-test immediately
         continue-on-error: true
         working-directory: .janu-live
         shell: bash
         run: |
-          out="$(clasp run runP1CContractSelfTest --nondev --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:' <<<"$out"
-      - name: Attempt bounded health/control tick
-        continue-on-error: true
+          out="$(clasp run runP1CContractSelfTest --nondev --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+      - name: Require bounded health/control tick
         working-directory: .janu-live
         shell: bash
         run: |
-          out="$(clasp run phase1HealthTick --nondev --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:' <<<"$out"
+          started="$(date +%s)"
+          out="$(clasp run phase1HealthTick --nondev --user "$CLASP_USER" 2>&1)"; rc=$?
+          elapsed="$(( $(date +%s) - started ))"
+          printf '%s\n' "$out"
+          echo "Health tick elapsed seconds: $elapsed"
+          test "$rc" -eq 0
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+          test "$elapsed" -lt 240 || { echo "Health tick exceeded runtime budget: ${elapsed}s"; exit 17; }
       - name: Deployment summary
         if: always()
         shell: bash
@@ -243,7 +257,8 @@ jobs:
           echo "- Git commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "- GitHub Actions run: $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
           echo "- Verified transformed-source SHA-256: ${DEPLOYED_SOURCE_HASH:-not verified}" >> "$GITHUB_STEP_SUMMARY"
-          echo '- clasp runtime calls are semantically checked; known permission/API-executable error text is a failed step even when clasp exits zero.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- clasp identity and runtime calls are semantically checked; known auth/API/execution/502 error text is a failed gate even when clasp exits zero.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Bounded health execution is a required release gate; a green job cannot mask runtime liveness failure.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Verified deployment identity is persisted to connected Job Copilot Worker State only after post-push source-hash verification and successful semantic execution.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Privacy-safe source manifest uploaded; source text is not published as an artifact.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1 contract telemetry is not treated as end-to-end feature completion.' >> "$GITHUB_STEP_SUMMARY"
