@@ -37,16 +37,17 @@ function phase1HealthTick(){
 fs.writeFileSync(path.join(dir,'TrackerWorkflow.js'),fixture);
 const patch=path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-health-runtime-liveness.mjs');
 function apply(){const r=spawnSync(process.execPath,[patch,dir],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout||'patch failed');return r.stdout;}
+function fnSource(text,name){const start=text.indexOf('function '+name+'(');if(start<0)throw new Error(name+' missing');const open=text.indexOf('{',start);let d=0,q=null,e=false,line=false,block=false;for(let i=open;i<text.length;i++){const c=text[i],n=text[i+1]||'';if(line){if(c==='\n')line=false;continue;}if(block){if(c==='*'&&n==='/'){block=false;i++;}continue;}if(q){if(e){e=false;continue;}if(c==='\\'){e=true;continue;}if(c===q)q=null;continue;}if(c==='/'&&n==='/'){line=true;i++;continue;}if(c==='/'&&n==='*'){block=true;i++;continue;}if(c==='"'||c==="'"||c==='`'){q=c;continue;}if(c==='{')d++;else if(c==='}'&&--d===0)return text.slice(start,i+1);}throw new Error('unterminated '+name);}
 apply();
 const once=fs.readFileSync(path.join(dir,'TrackerWorkflow.js'),'utf8');
 apply();
 const out=fs.readFileSync(path.join(dir,'TrackerWorkflow.js'),'utf8');
 if(once!==out)throw new Error('health runtime patch is not idempotent');
 for(const token of ['HEALTH-RUNTIME-RESERVE-002','HEALTH-RUNTIME-RESERVE-001','HEALTH-RUNTIME-TRACE-002','REGRESSION-HEALTH-FINAL-LOCK-001','healthRuntimeOptionalStage_','healthRuntimeCheckpoint_','healthFinalReleaseLock_','health_tick_trace'])if(!out.includes(token))throw new Error('missing '+token);
-const tickStart=out.indexOf('function phase1HealthTick('),tickEnd=out.indexOf('\n}',tickStart)+2,tick=out.slice(tickStart,tickEnd);
+const tick=fnSource(out,'phase1HealthTick');
 if(tick.lastIndexOf('healthFinalReleaseLock_(')<tick.lastIndexOf("healthSet_('Regression Gate','HEALTHY'"))throw new Error('final lock is not final');
 for(const fn of ['p1aVacancyMaintenanceTick_','p1aJdRecoveryMaintenanceTick_','p1aE2EContinuationTick_','p1aClosedVacancyReconcileTick_','traceGoldenTick_'])if(!tick.includes("return "+fn+'();'))throw new Error('optional stage not bounded: '+fn);
-const cpStart=out.indexOf('function healthRuntimeCheckpoint_('),cpEnd=out.indexOf('\nfunction healthRuntimeOptionalStage_',cpStart),cp=out.slice(cpStart,cpEnd);
+const cp=fnSource(out,'healthRuntimeCheckpoint_');
 if(!cp.includes("String(stage)==='COMPLETE'"))throw new Error('terminal-only publish guard missing');
 if((cp.match(/upsertWorkerState_/g)||[]).length!==4)throw new Error('checkpoint must publish exactly four Worker State rows');
 if(!cp.includes('HEALTH_RUNTIME_TRACE_.push'))throw new Error('in-memory trace missing');
