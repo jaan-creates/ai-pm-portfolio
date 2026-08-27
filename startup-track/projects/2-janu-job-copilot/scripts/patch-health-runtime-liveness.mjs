@@ -32,9 +32,6 @@ function rangeOf(name){
 function replaceFunction(name,code){const r=rangeOf(name);if(!r)throw new Error(name+' missing');s=s.slice(0,r.start)+code+s.slice(r.end);}
 function addBefore(anchor,marker,code){if(s.includes(marker))return false;const i=s.indexOf(anchor);if(i<0)throw new Error('Anchor missing: '+anchor);s=s.slice(0,i)+code+'\n'+s.slice(i);return true;}
 
-// If this is a pre-V1 target, first install the already-proven V1 wrapper. This
-// keeps deployment convergence compatible with old baselines without rebuilding
-// phase1HealthTick in the V2 transform.
 if(!s.includes(COMPAT)){
   const helpersV1=`function healthRuntimeElapsed_(startedAt){return Math.max(0,Date.now()-Number(startedAt||Date.now()));}\nfunction healthRuntimeCheckpoint_(stage,startedAt,status){const elapsed=healthRuntimeElapsed_(startedAt);upsertWorkerState_('health_tick_stage',String(stage||''),'${COMPAT} last durable stage');upsertWorkerState_('health_tick_elapsed_ms',String(elapsed),'${COMPAT}');upsertWorkerState_('health_tick_status',String(status||'RUNNING'),'${COMPAT}');return elapsed;}\nfunction healthRuntimeOptionalStage_(stage,startedAt,fn){const elapsed=healthRuntimeElapsed_(startedAt);if(elapsed>=${OPTIONAL_DEADLINE_MS}){healthRuntimeCheckpoint_(stage,startedAt,'BUDGET_YIELD');return null;}healthRuntimeCheckpoint_(stage+':START',startedAt,'RUNNING');const out=fn();healthRuntimeCheckpoint_(stage+':DONE',startedAt,'RUNNING');return out;}\nfunction healthRuntimePreventionContract_(){return {pass:true,contract:'${COMPAT}',finalLock:'${FINAL_LOCK}',optionalDeadlineMs:${OPTIONAL_DEADLINE_MS}};}\nfunction runHealthRuntimePreventionSelfTest(){const x=healthRuntimePreventionContract_();upsertWorkerState_('health_runtime_self_test','PASS',JSON.stringify(x));return x;}\nfunction healthFinalReleaseLock_(){let out=null;try{out=enforceReleaseBlockerHealth_();}catch(e){healthSet_('Regression Gate','DEGRADED','OPEN','RELEASE_BLOCKER_CHECK_FAILED',String((e&&e.stack)||e).slice(0,1500),1,'${FINAL_LOCK}: fail closed when blocker join cannot be evaluated.');return{blocked:true,error:String(e)}}try{if(circuitOpen_('Worker Runtime')){healthSet_('Regression Gate','DEGRADED','OPEN','WORKER_RUNTIME_OPEN','Worker Runtime circuit is OPEN; release gate cannot close.',1,'${FINAL_LOCK}: runtime liveness has precedence over generic suite health.');return{blocked:true,runtimeOpen:true,base:out}}}catch(e){healthSet_('Regression Gate','DEGRADED','OPEN','RUNTIME_GATE_CHECK_FAILED',String((e&&e.stack)||e).slice(0,1500),1,'${FINAL_LOCK}: fail closed on runtime gate ambiguity.');return{blocked:true,error:String(e),base:out}}return out;}`;
   addBefore('function phase1HealthTick(', 'function healthRuntimeElapsed_(', helpersV1);
@@ -48,15 +45,11 @@ if(!s.includes(COMPAT)){
   replaceFunction('phase1HealthTick',old.slice(0,open+1)+prefix+body+suffix+old.slice(close));
 }
 
-// V2 converts the expensive V1 checkpoint helper into an in-memory trace and a
-// single terminal Worker State publication. phase1HealthTick itself stays
-// structurally intact, avoiding fragile unwrap/rewrap source surgery.
 if(!s.includes(TRACE_CONTRACT)){
   addBefore('function healthRuntimeElapsed_(', 'var HEALTH_RUNTIME_TRACE_', `var HEALTH_RUNTIME_TRACE_=[];`);
   replaceFunction('healthRuntimeCheckpoint_',`function healthRuntimeCheckpoint_(stage,startedAt,status){const elapsed=healthRuntimeElapsed_(startedAt);HEALTH_RUNTIME_TRACE_.push({stage:String(stage||''),elapsedMs:elapsed,status:String(status||'RUNNING')});if(HEALTH_RUNTIME_TRACE_.length>40)HEALTH_RUNTIME_TRACE_=HEALTH_RUNTIME_TRACE_.slice(-40);if(String(stage)==='COMPLETE'){upsertWorkerState_('health_tick_stage',String(stage),'${CONTRACT} final durable stage');upsertWorkerState_('health_tick_elapsed_ms',String(elapsed),'${CONTRACT}');upsertWorkerState_('health_tick_status',String(status||'COMPLETE'),'${CONTRACT}');upsertWorkerState_('health_tick_trace',JSON.stringify({contract:'${TRACE_CONTRACT}',compat:'${COMPAT}',elapsedMs:elapsed,events:HEALTH_RUNTIME_TRACE_}).slice(0,12000),'Single terminal publish; V1 per-checkpoint write amplification removed.');HEALTH_RUNTIME_TRACE_=[];}return elapsed;}`);
   replaceFunction('healthRuntimeOptionalStage_',`function healthRuntimeOptionalStage_(stage,startedAt,fn){const elapsed=healthRuntimeElapsed_(startedAt);if(elapsed>=${OPTIONAL_DEADLINE_MS}){healthRuntimeCheckpoint_(stage+':YIELD',startedAt,'BUDGET_YIELD');return null;}healthRuntimeCheckpoint_(stage+':START',startedAt,'RUNNING');const ss=Date.now();try{return fn();}finally{HEALTH_RUNTIME_TRACE_.push({stage:String(stage)+':DURATION',elapsedMs:healthRuntimeElapsed_(startedAt),stageMs:Math.max(0,Date.now()-ss),status:'RUNNING'});healthRuntimeCheckpoint_(stage+':DONE',startedAt,'RUNNING');}}`);
   replaceFunction('healthRuntimePreventionContract_',`function healthRuntimePreventionContract_(){return {pass:true,contract:'${CONTRACT}',compat:'${COMPAT}',traceContract:'${TRACE_CONTRACT}',finalLock:'${FINAL_LOCK}',optionalDeadlineMs:${OPTIONAL_DEADLINE_MS},singleTerminalPublish:true};}`);
-  // Mark the live source contract without changing the health function's control flow.
   const rr=rangeOf('phase1HealthTick');s=s.slice(0,rr.start)+'/* '+CONTRACT+' / '+TRACE_CONTRACT+' */\n'+s.slice(rr.start);
 }
 
@@ -68,11 +61,11 @@ const checkpoint=rangeOf('healthRuntimeCheckpoint_');if(!checkpoint)throw new Er
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('Health runtime transformed source invalid: '+syntax.stderr);
 
-// Compose the control-plane isolation transform after runtime telemetry is stable.
 const isolationPatch=path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-health-control-plane-isolation.mjs');
 const isolation=spawnSync(process.execPath,[isolationPatch,root],{encoding:'utf8'});
 if(isolation.status!==0)throw new Error(isolation.stderr||isolation.stdout||'Health control-plane isolation failed');
 s=fs.readFileSync(file,'utf8');
-for(const token of ['HEALTH-CONTROL-PLANE-001','HEALTH-CONSISTENCY-001','JD-RECOVERY-ISOLATION-001','phase1JdRecoveryTick','health_runtime_slo_ms'])if(!s.includes(token))throw new Error('Composed health control-plane marker missing '+token);
+for(const token of ['HEALTH-CONTROL-PLANE-001','HEALTH-CONSISTENCY-001','JD-RECOVERY-ISOLATION-001','health_runtime_slo_ms'])if(!s.includes(token))throw new Error('Composed health control-plane marker missing '+token);
+if(s.includes('function p1aJdRecoveryMaintenanceTick_(')&&!s.includes('function phase1JdRecoveryTick('))throw new Error('Composed health control-plane marker missing phase1JdRecoveryTick when JD recovery exists');
 const syntax2=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax2.status!==0)throw new Error('Composed health source invalid: '+syntax2.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:COMPAT,traceContract:TRACE_CONTRACT,finalLock:FINAL_LOCK,optionalDeadlineMs:OPTIONAL_DEADLINE_MS,singleTerminalPublish:true,phaseFunctionRewriteInV2:false,finalFailClosed:true,controlPlane:'HEALTH-CONTROL-PLANE-001',healthConsistency:'HEALTH-CONSISTENCY-001',jdIsolation:'JD-RECOVERY-ISOLATION-001',healthSloMs:180000,verifiedArtifact:file},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:COMPAT,traceContract:TRACE_CONTRACT,finalLock:FINAL_LOCK,optionalDeadlineMs:OPTIONAL_DEADLINE_MS,singleTerminalPublish:true,phaseFunctionRewriteInV2:false,finalFailClosed:true,controlPlane:'HEALTH-CONTROL-PLANE-001',healthConsistency:'HEALTH-CONSISTENCY-001',jdIsolation:'JD-RECOVERY-ISOLATION-001',healthSloMs:180000,standaloneJdRecoveryTick:s.includes('function phase1JdRecoveryTick('),verifiedArtifact:file},null,2));
