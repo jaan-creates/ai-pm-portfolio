@@ -43,6 +43,7 @@ fs.writeFileSync(file,s);
 runPatch('patch-p1a-e2e-continuation.mjs','continuation');
 const rendererTest=spawnSync(process.execPath,[path.resolve(dir,'test-renderer-careerbreak.mjs'),path.resolve(dir,'..')],{encoding:'utf8'});if(rendererTest.status!==0)throw new Error(rendererTest.stderr||rendererTest.stdout||'renderer regression failed');
 runPatch('patch-renderer-careerbreak.mjs','renderer');
+runPatch('patch-renderer-canary-preconditions.mjs','renderer canary preconditions');
 runPatch('patch-renderer-guard-placement.mjs','guard placement');
 runPatch('patch-runtime-queue-quarantine-order.mjs','runtime queue ordering');
 runPatch('patch-trace-durability.mjs','trace durability');
@@ -51,8 +52,8 @@ s=fs.readFileSync(file,'utf8');
 if(!s.includes('RENDER-CAREERBREAK-V3'))throw new Error('renderer V3 missing');
 if(!s.includes('RENDER-CAREERBREAK-V2'))s+='\n// RENDER-CAREERBREAK-V2 compatibility marker; active contract RENDER-CAREERBREAK-V3.\n';
 if(!s.includes('PREVENTION-RECURRENCE-001'))s+='\nfunction rendererPreventionContract_(){return \'PREVENTION-RECURRENCE-001\';}\n';
-for(const token of ['TRACE-GOLDEN-V0-2','P1-A-E2E-CONTINUATION-3','QUEUE-NOJOB-QUARANTINE-001','ATOMIC_APPEND_VERIFY_RETIRE','HEALTH-RUNTIME-RESERVE-001','REGRESSION-HEALTH-FINAL-LOCK-001'])if(!s.includes(token))throw new Error('Integrated release safety contract missing '+token);
+for(const token of ['TRACE-GOLDEN-V0-2','P1-A-E2E-CONTINUATION-3','QUEUE-NOJOB-QUARANTINE-001','ATOMIC_APPEND_VERIFY_RETIRE','HEALTH-RUNTIME-RESERVE-001','REGRESSION-HEALTH-FINAL-LOCK-001','CANARY-PRECONDITION-001'])if(!s.includes(token))throw new Error('Integrated release safety contract missing '+token);
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
 if(syntax.status!==0){const head=s.split('\n').slice(0,40).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');throw new Error('TRACE/runtime transformed source invalid: '+syntax.stderr+'\n--- transformed head ---\n'+head);}
-console.log(JSON.stringify({status:'PASS',file:target,contract:'TRACE-GOLDEN-V0-2',baseInstallerSkipped:hasTrace,generatedEscapeRepairs:count,generatedSyntax:true,dedupeNegativeGuard:true,uniqueIdGuard:true,duplicateEvidence:true,continuation:'P1-A-E2E-CONTINUATION-3',renderer:'RENDER-CAREERBREAK-V3',queueRuntime:'QUEUE-NOJOB-QUARANTINE-001',traceDurability:'TRACE-DURABLE-V1',healthRuntime:'HEALTH-RUNTIME-RESERVE-001',healthFinalLock:'REGRESSION-HEALTH-FINAL-LOCK-001',liveCanaryRequired:true},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,contract:'TRACE-GOLDEN-V0-2',baseInstallerSkipped:hasTrace,generatedEscapeRepairs:count,generatedSyntax:true,dedupeNegativeGuard:true,uniqueIdGuard:true,duplicateEvidence:true,continuation:'P1-A-E2E-CONTINUATION-3',renderer:'RENDER-CAREERBREAK-V3',rendererCanary:'CANARY-PRECONDITION-001',queueRuntime:'QUEUE-NOJOB-QUARANTINE-001',traceDurability:'TRACE-DURABLE-V1',healthRuntime:'HEALTH-RUNTIME-RESERVE-001',healthFinalLock:'REGRESSION-HEALTH-FINAL-LOCK-001',liveCanaryRequired:true},null,2));
