@@ -8,7 +8,7 @@ const COMPAT='HEALTH-RUNTIME-RESERVE-001';
 const FINAL_LOCK='REGRESSION-HEALTH-FINAL-LOCK-001';
 const TRACE_CONTRACT='HEALTH-RUNTIME-TRACE-002';
 const BUDGET_CONTRACT='HEALTH-OPTIONAL-BUDGET-003';
-const OPTIONAL_DEADLINE_MS=100000;
+const OPTIONAL_DEADLINE_MS=60000;
 const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
 const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function phase1HealthTick(')&&t.includes('const P12');});
 if(!target)throw new Error('TrackerWorkflow source with phase1HealthTick not found');
