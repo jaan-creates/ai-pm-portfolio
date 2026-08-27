@@ -104,6 +104,9 @@ jobs:
       - name: Behavior-test E2E continuation V4 fairness and stranded JD recovery
         run: node "$PROJECT_DIR/scripts/test-p1a-e2e-continuation-v4.mjs" "$PROJECT_DIR"
 
+      - name: Behavior-test locked E2E V4 live entrypoint
+        run: node "$PROJECT_DIR/scripts/test-p1a-e2e-continuation-entrypoint.mjs" "$PROJECT_DIR"
+
       - name: Behavior-test renderer canary preconditions
         run: node "$PROJECT_DIR/scripts/test-renderer-canary-preconditions.mjs" "$PROJECT_DIR"
 
