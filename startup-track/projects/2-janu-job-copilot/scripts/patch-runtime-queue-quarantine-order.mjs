@@ -4,6 +4,7 @@ import {spawnSync} from 'node:child_process';
 
 const root=process.argv[2]||'.janu-live';
 const CONTRACT='QUEUE-NOJOB-QUARANTINE-001';
+const ABSENT='QUEUE-SELECTOR-NO-QUARANTINE-001';
 const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
 const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function nextQ_(')&&t.includes('function rendererQuarantineBlocks_(')&&t.includes('const P12');});
 if(!target)throw new Error('Queue + renderer source not found');
@@ -21,14 +22,21 @@ function rangeOf(name){
     if(c==='/'&&n==='/'){line=true;i++;continue;}
     if(c==='/'&&n==='*'){block=true;i++;continue;}
     if(c==='"'||c==="'"||c==='`'){quote=c;continue;}
-    if(c==='{')depth++;else if(c==='}'&&--depth===0)return{start,end:i+1};
+    if(c==='{')depth++;else if(c==='}'&&--depth===0)return{start,open,end:i+1};
   }
   throw new Error('Unterminated '+name);
 }
 function replaceRange(name,fn){const r=rangeOf(name);if(!r)throw new Error(name+' missing');const old=s.slice(r.start,r.end),neu=fn(old);if(neu===old)return false;s=s.slice(0,r.start)+neu+s.slice(r.end);return true;}
 
 replaceRange('nextQ_',old=>{
-  if(old.includes(CONTRACT))return old;
+  if(old.includes(CONTRACT)||old.includes(ABSENT))return old;
+  // A selector with no quarantine call is already safe from the FL-080 expensive
+  // per-row quarantine failure mode. Mark it explicitly rather than refusing a
+  // convergent deployment fixture or a future simplified selector.
+  if(!old.includes('rendererQuarantineBlocks_(')){
+    const open=old.indexOf('{');
+    return old.slice(0,open+1)+'/* '+CONTRACT+' '+ABSENT+' no sheet-backed quarantine in selection path */'+old.slice(open+1);
+  }
   const bad="let qp={};try{qp=v[i][13]?JSON.parse(String(v[i][13])):{}}catch(e){qp={};}if(rendererQuarantineBlocks_(app,String(v[i][2]||''),qp))continue;if(v[i][3]==='queued'";
   if(!old.includes(bad))throw new Error('FL-080 queue/quarantine ordering anchor missing; refuse unsafe rewrite');
   const fixed="if(v[i][3]!=='queued'||(nx&&nx>t))continue;/* "+CONTRACT+" cheap local eligibility before sheet-backed quarantine */let qp={};try{qp=v[i][13]?JSON.parse(String(v[i][13])):{}}catch(e){qp={};}if(rendererQuarantineBlocks_(app,String(v[i][2]||''),qp))continue;if(v[i][3]==='queued'";
@@ -42,12 +50,14 @@ if(!s.includes('function runtimeQueueSelectionPreventionContract_(')){
 }
 
 const nr=rangeOf('nextQ_');const next=s.slice(nr.start,nr.end);
-const guard=next.indexOf("if(v[i][3]!=='queued'||(nx&&nx>t))continue;");
 const quarantine=next.indexOf('rendererQuarantineBlocks_(');
-if(guard<0||quarantine<0||guard>quarantine)throw new Error('QUEUE-NOJOB-QUARANTINE-001 ordering proof failed');
+if(quarantine>=0){
+  const guard=next.indexOf("if(v[i][3]!=='queued'||(nx&&nx>t))continue;");
+  if(guard<0||guard>quarantine)throw new Error('QUEUE-NOJOB-QUARANTINE-001 ordering proof failed');
+}else if(!next.includes(ABSENT))throw new Error('Quarantine-free selector lacks explicit convergence marker');
 if(!next.includes(CONTRACT))throw new Error('Queue no-work prevention marker missing');
-if(!s.includes("QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001"))throw new Error('Candidate-bounded prevention marker missing');
+if(!s.includes('QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001'))throw new Error('Candidate-bounded prevention marker missing');
 
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('Queue-order transformed source invalid: '+syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,candidateGuard:'QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001',cheapEligibilityBeforeQuarantine:true,terminalRowsSkipQuarantine:true,notDueRowsSkipQuarantine:true,claimQuarantinePreserved:s.includes('RENDERER_QUARANTINE_ACTIVE'),verifiedArtifact:file},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,selectorQuarantineAbsent:quarantine<0,candidateGuard:'QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001',cheapEligibilityBeforeQuarantine:true,terminalRowsSkipQuarantine:true,notDueRowsSkipQuarantine:true,claimQuarantinePreserved:s.includes('RENDERER_QUARANTINE_ACTIVE'),verifiedArtifact:file},null,2));
