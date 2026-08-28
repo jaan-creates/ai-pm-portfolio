@@ -66,12 +66,22 @@ jobs:
           clasp pull --user "$CLASP_USER"
           grep -q 'CANONICAL-EVIDENCE-AUTH-PROBE-001' TrackerWorkflow.js
           grep -q 'function runCanonicalEvidenceAuthorizationProbe()' TrackerWorkflow.js
-      - name: Execute read-only canonical evidence authorization probe
+      - name: Inspect Apps Script manifest authorization model
+        working-directory: .janu-auth-probe
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const m=JSON.parse(fs.readFileSync('appsscript.json','utf8'));
+          const scopes=Array.isArray(m.oauthScopes)?m.oauthScopes:[];
+          console.log(JSON.stringify({explicitOauthScopes:Array.isArray(m.oauthScopes),hasDocumentsScope:scopes.includes('https://www.googleapis.com/auth/documents'),scopeCount:scopes.length},null,2));
+          NODE
+      - name: Execute read-only canonical evidence authorization probe on HEAD
         working-directory: .janu-auth-probe
         shell: bash
         run: |
           set +e
-          out="$(clasp run runCanonicalEvidenceAuthorizationProbe --nondev --user "$CLASP_USER" 2>&1)"
+          out="$(clasp run runCanonicalEvidenceAuthorizationProbe --user "$CLASP_USER" 2>&1)"
           rc=$?
           set -e
           printf '%s\n' "$out"
