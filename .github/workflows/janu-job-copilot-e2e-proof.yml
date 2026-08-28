@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: janu-job-copilot-apps-script-production
+  group: janu-job-copilot-e2e-live-proof
   cancel-in-progress: false
 
 jobs:
