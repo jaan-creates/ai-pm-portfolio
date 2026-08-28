@@ -10,7 +10,7 @@ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'janu-trace-golden-'));
 const target=path.join(tmp,'TrackerWorkflow.js');
 fs.writeFileSync(target,`
 const P12=Object.freeze({VERSION:'1.3.8',SUITE:'p0-regression-v19'});
-const JC={S:{A:'Applications',Q:'__Processing Queue'},W:{}};
+const JC={S:{A:'Applications',Q:'__Processing Queue',MAP:'__JD Map'},W:{JD:'JD_RETRIEVE',SCORE:'JD_PARSE_SCORE_MAP',RES:'RESUME_GENERATE',MIG:'MIGRATION',QA:'QA_FINALIZE'}};
 const WORKERS=['RESUME_GENERATE','QA_FINALIZE'];
 function stripInternalEvidenceTags_(s){return String(s||'');}
 function esc_(s){return String(s||'');}
@@ -27,6 +27,9 @@ function now_(){return new Date();}
 function iso_(){return new Date().toISOString();}
 function p1aPropagateClosedVacancy_(){return {status:'CLOSED_PROPAGATED'};}
 function p1aQueueWorkerState_(){return {state:'NONE'};}
+function workNeededFromState_(a,type){return true;}
+function workNeeded_(appId,type){return true;}
+function workerJD_(){return {status:'OK'};}
 function nextQ_(onlyApp){const v=[['Q','A','RESUME_GENERATE','queued','','',0,4,new Date(),'','','','',JSON.stringify({source:'trace-fixture'})]],t=Date.now();let best=null;for(let i=0;i<v.length;i++){const app=String(v[i][1]||''),nx=0;if(onlyApp&&app!==onlyApp)continue;if(v[i][3]==='queued'&&(!nx||nx<=t))best=i+2;}return best;}
 function runQ_(r){const s=SH_();const qid='Q',app='A',type='RESUME_GENERATE',payload={rendererPolicy:'RENDER-CAREERBREAK-V3'},attempt=1,max=4,started=now_();if(rendererQuarantineBlocks_(app,type,payload))throw new Error('RENDERER_QUARANTINE_ACTIVE');s.getRange(r,4).setValue('running');return 1;}
 function render_(v,d){const b={setFontFamily(){}};const scalar={'{{CAREER_BREAK}}':stripInternalEvidenceTags_(d&&d.career_break||'')};Object.keys(scalar).forEach(k=>{});function block(token,items){}block('{{GLOROOTS_BULLETS}}',[]);return b;}
