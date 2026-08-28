@@ -15,6 +15,7 @@ concurrency:
   group: janu-job-copilot-e2e-live-proof
   cancel-in-progress: false
 
+# Operational retrigger: recovery-safe stranded-JD enqueue is deployed and bounded health passed on 2026-08-28.
 jobs:
   run-once:
     runs-on: ubuntu-latest
@@ -61,6 +62,7 @@ jobs:
           grep -q 'function runP1AE2EContinuationTick(' "$LIVE_DIR/TrackerWorkflow.js"
           grep -q 'E2E-LIVE-ENTRYPOINT-001' "$LIVE_DIR/TrackerWorkflow.js"
           grep -q 'P1-A-E2E-CONTINUATION-4' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'E2E-JD-RECOVERY-SAFE-001' "$LIVE_DIR/TrackerWorkflow.js"
       - name: Execute one locked E2E V4 continuation tick
         working-directory: .janu-live-proof
         shell: bash
