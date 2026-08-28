@@ -15,7 +15,7 @@ concurrency:
   group: janu-job-copilot-e2e-live-proof
   cancel-in-progress: false
 
-# Operational retrigger: recovery-safe stranded-JD enqueue is deployed and bounded health passed on 2026-08-28.
+# Recovery proof runs the verified HEAD generation; nondev/version drift cannot satisfy this check.
 jobs:
   run-once:
     runs-on: ubuntu-latest
@@ -56,19 +56,21 @@ jobs:
       - name: Pull target runtime
         working-directory: .janu-live-proof
         run: clasp pull --user "$CLASP_USER"
-      - name: Assert deployed live entrypoint exists
+      - name: Assert deployed live entrypoint and repair generation exist
         shell: bash
         run: |
           grep -q 'function runP1AE2EContinuationTick(' "$LIVE_DIR/TrackerWorkflow.js"
           grep -q 'E2E-LIVE-ENTRYPOINT-001' "$LIVE_DIR/TrackerWorkflow.js"
           grep -q 'P1-A-E2E-CONTINUATION-4' "$LIVE_DIR/TrackerWorkflow.js"
           grep -q 'E2E-JD-RECOVERY-SAFE-001' "$LIVE_DIR/TrackerWorkflow.js"
-      - name: Execute one locked E2E V4 continuation tick
+          grep -q 'CANONICAL-EVIDENCE-DRIVE-EXPORT-001' "$LIVE_DIR/TrackerWorkflow.js"
+          ! grep -Eq 'function docText_\([^)]*\)\{[^}]*DocumentApp' "$LIVE_DIR/TrackerWorkflow.js"
+      - name: Execute one locked E2E V4 continuation tick on HEAD
         working-directory: .janu-live-proof
         shell: bash
         run: |
           set +e
-          out="$(clasp run runP1AE2EContinuationTick --nondev --user "$CLASP_USER" 2>&1)"
+          out="$(clasp run runP1AE2EContinuationTick --user "$CLASP_USER" 2>&1)"
           rc=$?
           set -e
           printf '%s\n' "$out"
