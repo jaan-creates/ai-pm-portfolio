@@ -113,6 +113,9 @@ jobs:
       - name: Behavior-test renderer canary preconditions
         run: node "$PROJECT_DIR/scripts/test-renderer-canary-preconditions.mjs" "$PROJECT_DIR"
 
+      - name: Behavior-test exact canary queue accounting and artifact proof
+        run: node "$PROJECT_DIR/scripts/test-canary-exact-execution.mjs" "$PROJECT_DIR"
+
       - name: Behavior-test FL-080 queue-order prevention
         run: node "$PROJECT_DIR/scripts/test-runtime-queue-quarantine-order.mjs" "$PROJECT_DIR"
 
