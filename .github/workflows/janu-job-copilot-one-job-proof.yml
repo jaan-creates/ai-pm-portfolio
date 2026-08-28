@@ -71,3 +71,5 @@ jobs:
           printf '%s\n' "$out"
           test "$rc" -eq 0
           ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+
+# execution checkpoint: stability proof after Worker Runtime circuit heal
