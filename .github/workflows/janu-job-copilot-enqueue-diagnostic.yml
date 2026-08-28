@@ -37,31 +37,37 @@ jobs:
       - name: Pull target runtime
         working-directory: .janu-live-diagnostic
         run: clasp pull --user "$CLASP_USER"
-      - name: Print privacy-safe enqueue control structure
+      - name: Print privacy-safe queue admission predicate structure
         shell: bash
         run: |
           node - <<'NODE'
           const fs=require('fs');
-          const p='.janu-live-diagnostic/TrackerWorkflow.js';
-          const s=fs.readFileSync(p,'utf8');
-          const sig='function enqueue_(';
-          const start=s.indexOf(sig); if(start<0) throw new Error('enqueue_ missing');
-          const open=s.indexOf('{',start); let d=0,q=null,e=false,line=false,block=false,end=-1;
-          for(let i=open;i<s.length;i++){
-            const c=s[i],n=s[i+1]||'';
-            if(line){if(c==='\n')line=false;continue}
-            if(block){if(c==='*'&&n==='/'){block=false;i++}continue}
-            if(q){if(e){e=false;continue}if(c==='\\'){e=true;continue}if(c===q)q=null;continue}
-            if(c==='/'&&n==='/'){line=true;i++;continue}
-            if(c==='/'&&n==='*'){block=true;i++;continue}
-            if(c==='"'||c==="'"||c==='`'){q=c;continue}
-            if(c==='{')d++; else if(c==='}'&&--d===0){end=i+1;break}
+          const s=fs.readFileSync('.janu-live-diagnostic/TrackerWorkflow.js','utf8');
+          function functionText(name){
+            const sig='function '+name+'(';
+            const start=s.indexOf(sig); if(start<0) return null;
+            const open=s.indexOf('{',start); let d=0,q=null,e=false,line=false,block=false,end=-1;
+            for(let i=open;i<s.length;i++){
+              const c=s[i],n=s[i+1]||'';
+              if(line){if(c==='\n')line=false;continue}
+              if(block){if(c==='*'&&n==='/'){block=false;i++}continue}
+              if(q){if(e){e=false;continue}if(c==='\\'){e=true;continue}if(c===q)q=null;continue}
+              if(c==='/'&&n==='/'){line=true;i++;continue}
+              if(c==='/'&&n==='*'){block=true;i++;continue}
+              if(c==='"'||c==="'"||c==='`'){q=c;continue}
+              if(c==='{')d++; else if(c==='}'&&--d===0){end=i+1;break}
+            }
+            if(end<0) throw new Error(name+' unterminated');
+            return s.slice(start,end);
           }
-          if(end<0) throw new Error('enqueue_ unterminated');
-          const f=s.slice(start,end);
-          const redacted=f.replace(/(['"`])(?:\\.|(?!\1)[\s\S])*?\1/g,'<STR>');
-          const calls=[...redacted.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1]).filter((x,i,a)=>a.indexOf(x)===i);
-          const returns=[...redacted.matchAll(/return\s+([^;]{0,180})/g)].map((m,i)=>({index:i+1,expr:m[1].replace(/\s+/g,' ').trim()}));
-          const conditions=[...redacted.matchAll(/if\s*\(([^)]{0,220})\)/g)].map((m,i)=>({index:i+1,expr:m[1].replace(/\s+/g,' ').trim()}));
-          console.log(JSON.stringify({contract:'QUEUE-ADMISSION-DIAG-001',functionBytes:f.length,calls,conditions,returns},null,2));
+          function inspect(name){
+            const f=functionText(name); if(!f)return {name,missing:true};
+            const r=f.replace(/(['"`])(?:\\.|(?!\1)[\s\S])*?\1/g,'<STR>');
+            const calls=[...r.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1]).filter((x,i,a)=>a.indexOf(x)===i);
+            const conditions=[...r.matchAll(/if\s*\(([^)]{0,260})\)/g)].map((m,i)=>({index:i+1,expr:m[1].replace(/\s+/g,' ').trim()}));
+            const returns=[...r.matchAll(/return\s+([^;]{0,240})/g)].map((m,i)=>({index:i+1,expr:m[1].replace(/\s+/g,' ').trim()}));
+            const workerRefs=[...new Set([...r.matchAll(/JC\.W\.([A-Za-z0-9_$]+)/g)].map(m=>m[1]))];
+            return {name,functionBytes:f.length,calls,conditions,returns,workerRefs};
+          }
+          console.log(JSON.stringify({contract:'QUEUE-ADMISSION-DIAG-002',functions:['enqueue_','queueMutationAllowed_','workNeeded_'].map(inspect)},null,2));
           NODE
