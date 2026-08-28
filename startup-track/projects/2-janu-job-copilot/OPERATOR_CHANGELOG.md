@@ -64,6 +64,30 @@
 
 **Verification state at authoring:** source controls are committed; target-environment deployment provenance, renderer canary and consecutive health-cycle proof remain required before the recurrence family can close. Source-level completion must not be reported as production PASS.
 
+## 2026-08-28 — FL-082 canary execution / Worker Runtime circuit-state divergence
+
+**Finding ID:** FL-082 (`WORKER-CIRCUIT-CONSISTENCY-001`, `CANARY-EXACTJOB-001`, `CANARY-SEMANTIC-RESULT-001`).
+
+**Production evidence:**
+
+- Exact deployment readback remained PASS for deployed commit `fc29e6cb9d5000d86c17ec0fbd476a98227e6e03` and source hash `70440eb60cfaea86c38fe2222cd3d2602d4588698dc6a880f9ae5f01ddb6ca67`.
+- TRACE golden evidence remained `TRACE-GOLDEN-V0-2` with `ATOMIC_APPEND_VERIFY_RETIRE`; the stale Easyship fixture lock had already converged to the unique Tekion application identity.
+- Renderer production self-test remained PASS under the superseding `RENDER-CAREERBREAK-V3` contract, and renderer recurrence/replay gates remained fail-closed pending the single Metaforms canary.
+- Controlled trigger commit `41820ade9fd79406f6471b674758cf8707142765` invoked only the already-existing Metaforms canary queue item; no second queue job/version was created.
+- GitHub Actions run `33143515615` completed at the transport/workflow layer, but production `phase1OneJobTick` returned `CIRCUIT_OPEN` in 34 ms with `jobsProcessed=0`.
+- The authorized canary queue row remained `queued`, `attempts=0`; therefore no renderer artifact was produced and no artifact-fidelity PASS is claimed.
+- Live `__System Health` still published Worker Runtime as `HEALTHY/CLOSED`, creating a mismatch with the enforcing worker circuit consulted by `phase1OneJobTick`.
+
+**Containment / evidence updates:**
+
+- Recorded FL-082 in live `__Failure Learning` as an Open / Release Blocker.
+- Added FAIL evidence to `__Verification Ledger`, `__Regression Results`, and `Audit Log`.
+- Kept `renderer_recurrence_gate=SELF_TEST_PASS_CANARY_PENDING` and `renderer_replay_gate` blocked; normal `RESUME_GENERATE`, renderer backlog fan-out, and continuation recovery were not authorized.
+- No `My Actions` row was created because the failure is system-owned and requires no human authority.
+- The canary must not be retriggered until the enforcing Worker Runtime circuit is cleared through a controlled recovery and read back from the same enforcement primitive. A green GitHub workflow with zero intended jobs is not canary success.
+
+**Release-note decision:** no canonical user-facing release-note change was made because no user-visible renderer capability was released or proven in this turn.
+
 ## Logging rule going forward
 
 For every material execution turn:
