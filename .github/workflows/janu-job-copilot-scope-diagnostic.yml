@@ -1,0 +1,58 @@
+name: Janu Job Copilot Scope Diagnostic
+
+on:
+  push:
+    branches:
+      - janu-job-copilot/apps-script-ci
+    paths:
+      - '.github/janu-job-copilot-scope-diagnostic-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-live-manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      LIVE_DIR: .janu-scope-diagnostic
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify credentials
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON"
+          test -n "$CLASP_JSON"
+      - name: Install clasp
+        run: npm install --global @google/clasp
+      - name: Prepare isolated runtime workspace
+        shell: bash
+        run: |
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+      - name: Confirm canonical runtime identity
+        shell: bash
+        run: |
+          out="$(clasp show-authorized-user --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          grep -q 'You are logged in as janu.bkurup@gmail.com.' <<<"$out"
+      - name: Pull exact connected production manifest
+        working-directory: .janu-scope-diagnostic
+        run: clasp pull --user "$CLASP_USER"
+      - name: Report manifest scopes
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const p=JSON.parse(fs.readFileSync('.janu-scope-diagnostic/appsscript.json','utf8'));
+          console.log(JSON.stringify({oauthScopes:p.oauthScopes||null,executionApi:p.executionApi||null,exceptionLogging:p.exceptionLogging||null,runtimeVersion:p.runtimeVersion||null},null,2));
+          NODE
