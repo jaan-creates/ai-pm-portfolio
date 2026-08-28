@@ -218,30 +218,27 @@ jobs:
           PARAMS="$(node -e 'console.log(JSON.stringify([process.env.GITHUB_SHA,process.env.GITHUB_RUN_ID,process.env.GITHUB_RUN_ATTEMPT,process.env.DEPLOYED_SOURCE_HASH,process.env.EXPECTED_VERSION,process.env.EXPECTED_SUITE]))')"
           echo 'Persisting privacy-safe deployment provenance to connected product state.'
           run_clasp_checked recordDeploymentProvenance --params "$PARAMS" --user "$CLASP_USER"
-      - name: Attempt P1-A self-test immediately
-        continue-on-error: true
+      - name: Require P1-A self-test on verified HEAD
         working-directory: .janu-live
         shell: bash
         run: |
-          out="$(clasp run runP1AContractSelfTest --nondev --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
-      - name: Attempt P1-B self-test immediately
-        continue-on-error: true
+          out="$(clasp run runP1AContractSelfTest --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+      - name: Require P1-B self-test on verified HEAD
         working-directory: .janu-live
         shell: bash
         run: |
-          out="$(clasp run runP1BContractSelfTest --nondev --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
-      - name: Attempt P1-C self-test immediately
-        continue-on-error: true
+          out="$(clasp run runP1BContractSelfTest --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+      - name: Require P1-C self-test on verified HEAD
         working-directory: .janu-live
         shell: bash
         run: |
-          out="$(clasp run runP1CContractSelfTest --nondev --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
-      - name: Require bounded health/control tick
+          out="$(clasp run runP1CContractSelfTest --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+      - name: Require bounded health/control tick on verified HEAD
         working-directory: .janu-live
         shell: bash
         run: |
           started="$(date +%s)"
-          out="$(clasp run phase1HealthTick --nondev --user "$CLASP_USER" 2>&1)"; rc=$?
+          out="$(clasp run phase1HealthTick --user "$CLASP_USER" 2>&1)"; rc=$?
           elapsed="$(( $(date +%s) - started ))"
           printf '%s\n' "$out"
           echo "Health tick elapsed seconds: $elapsed"
@@ -258,6 +255,7 @@ jobs:
           echo "- GitHub Actions run: $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
           echo "- Verified transformed-source SHA-256: ${DEPLOYED_SOURCE_HASH:-not verified}" >> "$GITHUB_STEP_SUMMARY"
           echo '- clasp identity and runtime calls are semantically checked; known auth/API/execution/502 error text is a failed gate even when clasp exits zero.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- P1 self-tests and bounded health execute the same verified HEAD generation that CD pushed; versioned/nondev drift cannot satisfy the release gate.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Bounded health execution is a required release gate; a green job cannot mask runtime liveness failure.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Verified deployment identity is persisted to connected Job Copilot Worker State only after post-push source-hash verification and successful semantic execution.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Privacy-safe source manifest uploaded; source text is not published as an artifact.' >> "$GITHUB_STEP_SUMMARY"
