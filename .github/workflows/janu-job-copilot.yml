@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - janu-job-copilot/apps-script-ci
       - janu-job-copilot/p1a-release
     paths:
       - 'startup-track/projects/2-janu-job-copilot/scripts/**'
@@ -41,6 +40,18 @@ jobs:
     steps:
       - name: Checkout isolated Job Copilot branch
         uses: actions/checkout@v4
+      - name: Reject superseded PR deployment
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          event_head='${{ github.event.pull_request.head.sha }}'
+          remote_head="$(git ls-remote origin "refs/heads/${GITHUB_HEAD_REF}" | awk '{print $1}')"
+          test -n "$remote_head" || { echo 'Unable to resolve current remote PR head'; exit 18; }
+          if [ "$event_head" != "$remote_head" ]; then
+            echo "Superseded deployment blocked: event=$event_head current=$remote_head" >&2
+            exit 18
+          fi
+          echo "PR deployment head is current: $event_head"
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
