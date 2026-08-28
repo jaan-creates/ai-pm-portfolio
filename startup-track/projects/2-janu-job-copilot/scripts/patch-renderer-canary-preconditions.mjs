@@ -20,7 +20,7 @@ function rangeOf(name){
   for(let i=open;i<s.length;i++){
     const c=s[i],n=s[i+1]||'';
     if(line){if(c==='\n')line=false;continue;}
-    if(block){if(c==='*'&&n==='/'){block=false;i++;}continue;}
+    if(block){if(c==='*'&&n==='/'){block=false;i++;continue;}
     if(quote){if(esc){esc=false;continue;}if(c==='\\'){esc=true;continue;}if(c===quote)quote=null;continue;}
     if(c==='/'&&n==='/'){line=true;i++;continue;}
     if(c==='/'&&n==='*'){block=true;i++;continue;}
@@ -31,6 +31,7 @@ function rangeOf(name){
 }
 function replaceFunction(name,code){const r=rangeOf(name);if(!r)throw new Error(name+' missing');s=s.slice(0,r.start)+code+s.slice(r.end);}
 function putFunction(name,code,anchor){const r=rangeOf(name);if(r){replaceFunction(name,code);return;}const i=s.indexOf(anchor);if(i<0)throw new Error('Anchor missing '+anchor);s=s.slice(0,i)+code+'\n'+s.slice(i);}
+function placeEvidenceHelper(code){const existing=rangeOf('canonicalEvidenceText_');if(existing)s=s.slice(0,existing.start)+s.slice(existing.end);const doc=rangeOf('docText_');const anchor=doc?doc.start:s.indexOf('function rendererQuarantineBlocks_(');if(anchor<0)throw new Error('Canonical evidence placement anchor missing');s=s.slice(0,anchor)+code+'\n'+s.slice(anchor);}
 
 const evidenceFn=`function canonicalEvidenceText_(id){id=String(id||'').trim();if(!id)return'';const url='https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(id)+'/export?mimeType=text%2Fplain';const res=UrlFetchApp.fetch(url,{method:'get',headers:{Authorization:'Bearer '+ScriptApp.getOAuthToken()},muteHttpExceptions:true});const code=Number(res.getResponseCode());if(code<200||code>=300)throw new Error('DETERMINISTIC:CANONICAL_EVIDENCE_EXPORT_HTTP_'+code);return String(res.getContentText()||'');}`;
 const docFn=`function docText_(id){return canonicalEvidenceText_(id);}`;
@@ -42,7 +43,7 @@ const preFn=`function rendererCanaryPreconditionsMet_(appId,payload){const canar
 const contractFn=`function rendererCanaryPreconditionContract_(){return{pass:true,contract:'${CONTRACT}',compat:'${COMPAT}',canonicalEvidence:'${EVIDENCE}',policy:'${POLICY}',healthMaxMs:${HEALTH_MAX_MS},requiresExplicitCanary:true,requiresRuntimeMargin:true,requiresTracePreRendererProof:true,requiresAtomicTraceReadback:true,requiresHealthConsistency:true,fullGoldenTracePassRequiredBeforeCanary:false};}`;
 const guardFn=`function rendererQuarantineBlocks_(appId,type,payload){if(String(type)!=='RESUME_GENERATE')return false;payload=payload||{};const rec=rendererWorkerStateValue_('renderer_recurrence_gate'),rep=rendererWorkerStateValue_('renderer_replay_gate');if(rec==='CANARY_PASS'&&rep==='CANARY_PASS')return false;return !rendererCanaryPreconditionsMet_(appId,payload);}`;
 
-putFunction('canonicalEvidenceText_',evidenceFn,'function rendererQuarantineBlocks_(');
+placeEvidenceHelper(evidenceFn);
 if(rangeOf('docText_'))replaceFunction('docText_',docFn);
 putFunction('rendererHealthSnapshot_',healthFn,'function rendererQuarantineBlocks_(');
 putFunction('rendererWorkerStateNotes_',notesFn,'function rendererQuarantineBlocks_(');
@@ -54,7 +55,8 @@ replaceFunction('rendererQuarantineBlocks_',guardFn);
 
 for(const token of [CONTRACT,COMPAT,EVIDENCE,POLICY,'rendererCanaryPreconditionsMet_','rendererGoldenTracePreRendererReady_','ATOMIC_APPEND_VERIFY_RETIRE','FL-080-CLOSED','FL-059-CLOSED',String(HEALTH_MAX_MS),'HEALTH_STATE_INCONSISTENT'])if(!s.includes(token))throw new Error('Canary precondition marker missing '+token);
 if(rangeOf('docText_')){const d=rangeOf('docText_'),body=s.slice(d.start,d.end);if(body.includes('DocumentApp'))throw new Error('DocumentApp dependency survived canonical evidence patch');if(!body.includes('canonicalEvidenceText_'))throw new Error('docText_ does not use canonical evidence Drive export');}
+const traceStart=s.indexOf('function traceStateValue_('),traceEnd=s.indexOf('function verifyReleaseIdentity()');if(traceStart>=0&&traceEnd>traceStart&&/UrlFetchApp\.fetch/.test(s.slice(traceStart,traceEnd)))throw new Error('Canonical evidence network helper leaked into TRACE layer');
 const q=rangeOf('rendererQuarantineBlocks_'),body=s.slice(q.start,q.end);if(!body.includes('rendererCanaryPreconditionsMet_'))throw new Error('Claim/enqueue quarantine does not consume canary preconditions');
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('Canary-precondition transformed source invalid: '+syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:COMPAT,canonicalEvidence:EVIDENCE,policy:POLICY,healthMaxMs:HEALTH_MAX_MS,explicitCanaryRequired:true,runtimeMarginRequired:true,tracePreRendererProofRequired:true,atomicTraceReadbackRequired:true,healthConsistencyRequired:true,fullGoldenTracePassRequiredBeforeCanary:false,documentAppRemoved:!!rangeOf('docText_'),verifiedArtifact:file},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:COMPAT,canonicalEvidence:EVIDENCE,policy:POLICY,healthMaxMs:HEALTH_MAX_MS,explicitCanaryRequired:true,runtimeMarginRequired:true,tracePreRendererProofRequired:true,atomicTraceReadbackRequired:true,healthConsistencyRequired:true,fullGoldenTracePassRequiredBeforeCanary:false,documentAppRemoved:!!rangeOf('docText_'),traceNetworkOwnershipPreserved:true,verifiedArtifact:file},null,2));
