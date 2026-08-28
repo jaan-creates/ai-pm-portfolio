@@ -10,7 +10,7 @@ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'janu-trace-golden-'));
 const target=path.join(tmp,'TrackerWorkflow.js');
 fs.writeFileSync(target,`
 const P12=Object.freeze({VERSION:'1.3.8',SUITE:'p0-regression-v19'});
-const JC={S:{A:'Applications',Q:'__Processing Queue',MAP:'__JD Map'},W:{JD:'JD_RETRIEVE',SCORE:'JD_PARSE_SCORE_MAP',RES:'RESUME_GENERATE',MIG:'MIGRATION',QA:'QA_FINALIZE'}};
+const JC={S:{A:'Applications',Q:'__Processing Queue',MAP:'__JD Map'},W:{JD:'JD_RETRIEVE',SCORE:'JD_PARSE_SCORE_MAP',RES:'RESUME_GENERATE',MIG:'MIGRATION',QA:'QA_FINALIZE'},IDS:{EV:'EV-DOC'}};
 const WORKERS=['RESUME_GENERATE','QA_FINALIZE'];
 function stripInternalEvidenceTags_(s){return String(s||'');}
 function esc_(s){return String(s||'');}
@@ -18,7 +18,9 @@ function verifyReleaseIdentity(){return true;}
 function enqueue_(){return 'Q-1';}
 function upsertWorkerState_(){}
 function hash_(x){return String(x);}
-function SH_(){return {getLastRow(){return 1;},getLastColumn(){return 41;},getRange(){return {getDisplayValues(){return [[]];},getDisplayValue(){return'';},getValue(){return'';},setValue(){return this;},setValues(){}};},appendRow(){}};}
+function has_(){return false;}
+function docText_(){return 'CANONICAL CANDIDATE EVIDENCE REGISTRY';}
+function SH_(){return {getLastRow(){return 1;},getLastColumn(){return 41;},getRange(){return {getDisplayValues(){return [[]];},getDisplayValue(){return'';},getValue(){return'';},setValue(){return this;},setValues(){},createTextFinder(){return {matchEntireCell(){return this;},findNext(){return null;}}}};},appendRow(){}};}
 function hm_(){return {'Application ID':1,'Job URL':5,'Canonical Apply URL':26};}
 function obj_(){return {};}
 function set_(){}
@@ -27,6 +29,7 @@ function now_(){return new Date();}
 function iso_(){return new Date().toISOString();}
 function p1aPropagateClosedVacancy_(){return {status:'CLOSED_PROPAGATED'};}
 function p1aQueueWorkerState_(){return {state:'NONE'};}
+function rendererWorkerStateValue_(){return '';}
 function workNeededFromState_(a,type){return true;}
 function workNeeded_(appId,type){return true;}
 function workerJD_(){return {status:'OK'};}
@@ -44,16 +47,18 @@ if(syntax.status!==0){
   const numbered=twice.split('\n').slice(0,60).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');
   throw new Error('patched source syntax invalid:\n'+syntax.stderr+'\n--- transformed source head ---\n'+numbered);
 }
-for(const token of ['function traceGoldenTick_(','function traceRefreshGolden_(','function traceGoldenCompleteness_(','function runTraceGoldenSelfTest()','Trace Explorer','TRACE-GOLDEN-V0-2','function traceUrlIdentityMatch_(','function traceNextAppIdFromValues_(','function traceFindAppByUrlDetail_(','golden_trace_duplicate_evidence','DETERMINISTIC:TRACE_GOLDEN_ID_COLLISION','P1-A-E2E-CONTINUATION-3','RENDER-CAREERBREAK-V2','ATOMIC_APPEND_VERIFY_RETIRE','RENDERER_QUARANTINE_ACTIVE'])if(!twice.includes(token))throw new Error('missing '+token);
+for(const token of ['function traceGoldenTick_(','function traceRefreshGolden_(','function traceGoldenCompleteness_(','function runTraceGoldenSelfTest()','Trace Explorer','TRACE-GOLDEN-V0-2','function traceUrlIdentityMatch_(','function traceNextAppIdFromValues_(','function traceFindAppByUrlDetail_(','golden_trace_duplicate_evidence','DETERMINISTIC:TRACE_GOLDEN_ID_COLLISION','P1-A-E2E-CONTINUATION-3','RENDER-CAREERBREAK-V2','ATOMIC_APPEND_VERIFY_RETIRE','RENDERER_QUARANTINE_ACTIVE','TRACE-LOCK-CONVERGENCE-001','JD-SCORE-AUTH-RECOVERY-001','AUTHORIZATION_RECOVERY'])if(!twice.includes(token))throw new Error('missing '+token);
 if(!twice.includes("'Decision':'New'"))throw new Error('fresh system intake must begin Decision=New');
 if(!twice.includes(".replace(/[/]$/,'')"))throw new Error('safe generated slash matcher missing');
 if(twice.includes(".replace(//$/,'')"))throw new Error('malformed generated slash matcher survived');
 if(/UrlFetchApp\.fetch|OpenAI|TAVILY_API_KEY|SERPAPI_API_KEY/.test(twice.slice(twice.indexOf('function traceStateValue_('),twice.indexOf('function verifyReleaseIdentity()'))))throw new Error('trace layer must not introduce its own paid/network retrieval path');
 const occurrences=(twice.match(/function traceGoldenTick_\(/g)||[]).length;if(occurrences!==1)throw new Error('traceGoldenTick_ duplicated');
+const tickStart=twice.indexOf('function traceGoldenTick_('),tickEnd=twice.indexOf('function ',tickStart+10)>tickStart?twice.indexOf('function ',tickStart+10):twice.length,tick=twice.slice(tickStart,tickEnd);
+const lockGuards=(tick.match(/golden_trace_lock_reset','MISSING_APPLICATION'/g)||[]).length;if(lockGuards!==1)throw new Error('TRACE-LOCK-CONVERGENCE-001 expected one lock guard, got '+lockGuards);
 const neg="traceUrlIdentityMatch_('https://jobs.ashbyhq.com/tekion/e0956a72-ce85-4e10-a34d-f5c4d630d8e0','https://job-boards.greenhouse.io/easyship/jobs/4706111006?gh_jid=4706111006')===false";
 if(!twice.includes(neg))throw new Error('TRACE-DEDUPE-001 Tekion/Easyship negative fixture missing');
 if(!twice.includes("traceNextAppIdFromValues_('2026-08-23',['2026-08-23-001'])==='2026-08-23-002'"))throw new Error('TRACE-ID-001 collision fixture missing');
 if(!twice.includes("if(!raw)continue"))throw new Error('empty existing URLs must never dedupe');
 if(!twice.includes("if(!requested||last<2)"))throw new Error('empty requested URL must never dedupe');
 const claim=twice.slice(twice.indexOf('function runQ_('),twice.indexOf('function render_('));if(!claim.includes('rendererQuarantineBlocks_')||!claim.includes('RENDERER_QUARANTINE_ACTIVE'))throw new Error('claim-time renderer quarantine was not preserved');
-console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true,continuationV3Integration:true,rendererIntegration:true,rendererClaimQuarantineIntegration:true,traceDurabilityIntegration:true},null,2));
+console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true,continuationV3Integration:true,rendererIntegration:true,rendererClaimQuarantineIntegration:true,traceDurabilityIntegration:true,traceLockConvergence:true,scoreAuthorizationRecovery:true},null,2));
