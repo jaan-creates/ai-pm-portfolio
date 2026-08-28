@@ -64,5 +64,8 @@ jobs:
           const literals=[...f.matchAll(/['"]([^'"]{0,100})['"]/g)].map(m=>m[1]).filter(x=>!/https?:|@|AIza|sk-|token|secret|key/i.test(x));
           const qma=functionText('queueMutationAllowed_')||'';
           const circuit=(qma.match(/circuitOpen_\(\s*['"]([^'"]+)['"]\s*\)/)||[])[1]||null;
-          console.log(JSON.stringify({contract:'QUEUE-ADMISSION-DIAG-005',workNeededFromStateLiterals:[...new Set(literals)],circuitComponent:circuit},null,2));
+          const enq=functionText('enqueue_')||'';
+          const enqueueSignals=[...enq.matchAll(/['"]([^'"]{1,120})['"]/g)].map(m=>m[1]).filter(x=>/queue|admission|circuit|work|status|allowed|blocked|resume|jd|score|qa/i.test(x));
+          console.log(JSON.stringify({contract:'QUEUE-ADMISSION-DIAG-006',workNeededFromStateLiterals:[...new Set(literals)],circuitComponent:circuit,enqueueSignals:[...new Set(enqueueSignals)]},null,2));
           NODE
+# Triggered after repeated E2E-JD enqueue failure on 2026-08-28; read-only target-source diagnostic only.
