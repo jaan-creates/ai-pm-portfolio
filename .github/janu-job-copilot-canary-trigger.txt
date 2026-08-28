@@ -1,4 +1,5 @@
-2026-08-28T16:43+05:30
-Authorized single worker execution for Metaforms 2026-08-04-002 only.
-Validate post-deploy RENDER-CAREERBREAK-V3 canary after deployment run 33165656621.
-Normal renderer gates remain blocked until exact live canary PASS and target readback.
+2026-08-28T20:55+05:30
+Authorized single renderer canary for Metaforms 2026-08-04-002 only.
+Preconditions: golden JD_RETRIEVE and JD_PARSE_SCORE_MAP live proof complete; RENDER-CAREERBREAK-V3 self-test PASS; exact connected HEAD only.
+Require exactly one RESUME_GENERATE job processed, queue readback success, artifact creation, and downstream QA evidence before recurrence gate can open.
+Normal renderer backlog fan-out remains blocked until CANARY_PASS and live readback.
