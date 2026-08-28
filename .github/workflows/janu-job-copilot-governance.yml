@@ -107,6 +107,9 @@ jobs:
       - name: Behavior-test locked E2E V4 live entrypoint
         run: node "$PROJECT_DIR/scripts/test-p1a-e2e-continuation-entrypoint.mjs" "$PROJECT_DIR"
 
+      - name: Behavior-test pre-decision JD admission
+        run: node "$PROJECT_DIR/scripts/test-jd-predecision-admission.mjs" "$PROJECT_DIR"
+
       - name: Behavior-test renderer canary preconditions
         run: node "$PROJECT_DIR/scripts/test-renderer-canary-preconditions.mjs" "$PROJECT_DIR"
 
