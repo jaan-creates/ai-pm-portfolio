@@ -58,9 +58,12 @@ if(!s.includes('QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001'))throw new Error('Candid
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('Queue-order transformed source invalid: '+syntax.stderr);
 
-// The JD worker transitions a freshly persisted JD to Status=Scoring while Decision is still New.
-// Apply the exact admission regression here because this transform is already part of every controlled runtime convergence.
-const scorePatch=spawnSync(process.execPath,[path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-p1a-score-admission.mjs'),root],{encoding:'utf8'});
-if(scorePatch.status!==0)throw new Error(scorePatch.stderr||scorePatch.stdout||'JD-SCORE-ADMISSION-001 patch failed');
+// Score-admission convergence is coupled only on production-shaped sources that actually contain
+// the scoring/JD admission boundary. Queue-only fixtures must remain independently testable.
+const scoreCapable=s.includes('function workNeededFromState_(')&&s.includes('function workerJD_(')&&s.includes('function workNeeded_(');
+if(scoreCapable){
+  const scorePatch=spawnSync(process.execPath,[path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-p1a-score-admission.mjs'),root],{encoding:'utf8'});
+  if(scorePatch.status!==0)throw new Error(scorePatch.stderr||scorePatch.stdout||'JD-SCORE-ADMISSION-001 patch failed');
+}
 
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,selectorQuarantineAbsent:quarantine<0,candidateGuard:'QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001',cheapEligibilityBeforeQuarantine:true,terminalRowsSkipQuarantine:true,notDueRowsSkipQuarantine:true,claimQuarantinePreserved:s.includes('RENDERER_QUARANTINE_ACTIVE'),scoreAdmission:'JD-SCORE-ADMISSION-001',verifiedArtifact:file},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,selectorQuarantineAbsent:quarantine<0,candidateGuard:'QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001',cheapEligibilityBeforeQuarantine:true,terminalRowsSkipQuarantine:true,notDueRowsSkipQuarantine:true,claimQuarantinePreserved:s.includes('RENDERER_QUARANTINE_ACTIVE'),scoreAdmission:scoreCapable?'JD-SCORE-ADMISSION-001':'NOT_APPLICABLE_QUEUE_ONLY_FIXTURE',verifiedArtifact:file},null,2));
