@@ -64,10 +64,10 @@ jobs:
             const f=functionText(name); if(!f)return {name,missing:true};
             const r=f.replace(/(['"`])(?:\\.|(?!\1)[\s\S])*?\1/g,'<STR>');
             const calls=[...r.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1]).filter((x,i,a)=>a.indexOf(x)===i);
-            const conditions=[...r.matchAll(/if\s*\(([^)]{0,260})\)/g)].map((m,i)=>({index:i+1,expr:m[1].replace(/\s+/g,' ').trim()}));
-            const returns=[...r.matchAll(/return\s+([^;]{0,240})/g)].map((m,i)=>({index:i+1,expr:m[1].replace(/\s+/g,' ').trim()}));
+            const conditions=[...r.matchAll(/if\s*\(([^)]{0,320})\)/g)].map((m,i)=>({index:i+1,expr:m[1].replace(/\s+/g,' ').trim()}));
+            const returns=[...r.matchAll(/return\s+([^;]{0,300})/g)].map((m,i)=>({index:i+1,expr:m[1].replace(/\s+/g,' ').trim()}));
             const workerRefs=[...new Set([...r.matchAll(/JC\.W\.([A-Za-z0-9_$]+)/g)].map(m=>m[1]))];
             return {name,functionBytes:f.length,calls,conditions,returns,workerRefs};
           }
-          console.log(JSON.stringify({contract:'QUEUE-ADMISSION-DIAG-002',functions:['enqueue_','queueMutationAllowed_','workNeeded_'].map(inspect)},null,2));
+          console.log(JSON.stringify({contract:'QUEUE-ADMISSION-DIAG-003',functions:['enqueue_','queueMutationAllowed_','workNeeded_','workNeededFromState_'].map(inspect)},null,2));
           NODE
