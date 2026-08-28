@@ -37,7 +37,7 @@ jobs:
       - name: Pull target runtime
         working-directory: .janu-live-diagnostic
         run: clasp pull --user "$CLASP_USER"
-      - name: Print privacy-safe queue admission literals
+      - name: Print privacy-safe queue state literals
         shell: bash
         run: |
           node - <<'NODE'
@@ -60,12 +60,9 @@ jobs:
             if(end<0) throw new Error(name+' unterminated');
             return s.slice(start,end);
           }
+          const f=functionText('workNeededFromState_')||'';
+          const literals=[...f.matchAll(/['"]([^'"]{0,100})['"]/g)].map(m=>m[1]).filter(x=>!/https?:|@|AIza|sk-|token|secret|key/i.test(x));
           const qma=functionText('queueMutationAllowed_')||'';
-          const e2e=functionText('p1aE2EContinuationTick_')||'';
           const circuit=(qma.match(/circuitOpen_\(\s*['"]([^'"]+)['"]\s*\)/)||[])[1]||null;
-          const jcStart=s.indexOf('const JC');
-          const jcWindow=jcStart>=0?s.slice(jcStart,jcStart+5000):'';
-          const jdCandidates=[...jcWindow.matchAll(/\bJD\s*:\s*['"]([^'"]+)['"]/g)].map(m=>m[1]);
-          const e2eTypes=[...e2e.matchAll(/(?:p1aQueueWorkerState_|enqueue_)\(id,\s*([^,\)]+)/g)].map(m=>m[1].trim());
-          console.log(JSON.stringify({contract:'QUEUE-ADMISSION-DIAG-004',circuitComponent:circuit,jdWorkerCandidates:[...new Set(jdCandidates)],e2eWorkerTypeExpressions:[...new Set(e2eTypes)],hasLiteralJdRetrieve:e2e.includes("'JD_RETRIEVE'")},null,2));
+          console.log(JSON.stringify({contract:'QUEUE-ADMISSION-DIAG-005',workNeededFromStateLiterals:[...new Set(literals)],circuitComponent:circuit},null,2));
           NODE
