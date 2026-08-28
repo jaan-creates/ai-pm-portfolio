@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 
+// FL-084 current-head deployment trigger: this fixture is the durable recurrence guard.
 const project=process.argv[2]||path.resolve(path.dirname(new URL(import.meta.url).pathname),'..');
 const patch=path.join(project,'scripts','patch-canary-exact-execution.mjs');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'janu-canary-exact-'));
