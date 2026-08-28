@@ -56,6 +56,12 @@ jobs:
       - name: Pull exact connected production source
         working-directory: .janu-live
         run: clasp pull --user "$CLASP_USER"
+      - name: Assert canary gate generation is present
+        shell: bash
+        run: |
+          grep -q 'CANARY-PRECONDITION-002' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'RENDER-CAREERBREAK-V3' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'ATOMIC_APPEND_VERIFY_RETIRE' "$LIVE_DIR/TrackerWorkflow.js"
       - name: Diagnose worker circuit source
         shell: bash
         run: |
@@ -76,14 +82,14 @@ jobs:
             }
             return 'UNTERMINATED';
           }
-          for(const name of ['circuitOpen_','phase1OneJobTick','phase1OneJobTickCore_','openCircuit_','closeCircuit_']) console.log('\n=== '+name+' ===\n'+extract(name));
+          for(const name of ['circuitOpen_','phase1OneJobTick','phase1OneJobTickCore_','rendererCanaryPreconditionsMet_','rendererGoldenTracePreRendererReady_']) console.log('\n=== '+name+' ===\n'+extract(name));
           NODE
-      - name: Execute exactly one authorized worker job
+      - name: Execute exactly one authorized worker job against HEAD
         working-directory: .janu-live
         shell: bash
         run: |
           set +e
-          out="$(clasp run phase1OneJobTick --nondev --user "$CLASP_USER" 2>&1)"
+          out="$(clasp run phase1OneJobTick --user "$CLASP_USER" 2>&1)"
           rc=$?
           set -e
           printf '%s\n' "$out"
@@ -92,6 +98,6 @@ jobs:
           ! grep -Eq "status:[[:space:]]*'CIRCUIT_OPEN'" <<<"$out"
           grep -Eq "status:[[:space:]]*'OK'" <<<"$out"
           grep -Eq 'jobsProcessed:[[:space:]]*1' <<<"$out"
-          # CANARY-SEMANTIC-RESULT-001 / CANARY-EXACTJOB-001:
-          # transport success with zero work is not a canary pass. Exact queue-row
-          # advancement is independently read back from the connected Tracker.
+          # CANARY-SEMANTIC-RESULT-001 / CANARY-EXACTJOB-001 / CANARY-HEAD-GENERATION-001:
+          # transport success with zero work is not a canary pass. The canary executes
+          # the same HEAD generation pulled and source-validated by controlled CD.
