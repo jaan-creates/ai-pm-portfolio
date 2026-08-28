@@ -17,25 +17,26 @@ function hm_(){return {};}
 fs.writeFileSync(target,source);
 function apply(){const r=spawnSync(process.execPath,[patch,tmp],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout||'canary patch failed');return r.stdout;}
 apply();const once=fs.readFileSync(target,'utf8');apply();const twice=fs.readFileSync(target,'utf8');
-if(once!==twice)throw new Error('CANARY-PRECONDITION-001 patch is not idempotent');
+if(once!==twice)throw new Error('CANARY-PRECONDITION-002 patch is not idempotent');
 const syntax=spawnSync(process.execPath,['--check',target],{encoding:'utf8'});if(syntax.status!==0)throw new Error(syntax.stderr);
-for(const token of ['CANARY-PRECONDITION-001','rendererCanaryStateDecision_','rendererCanaryPreconditionsMet_','FL-080-CLOSED','FL-059-CLOSED','180000','HEALTH_STATE_INCONSISTENT'])if(!twice.includes(token))throw new Error('missing '+token);
+for(const token of ['CANARY-PRECONDITION-002','rendererCanaryStateDecision_','rendererCanaryPreconditionsMet_','rendererGoldenTracePreRendererReady_','ATOMIC_APPEND_VERIFY_RETIRE','FL-080-CLOSED','FL-059-CLOSED','180000','HEALTH_STATE_INCONSISTENT'])if(!twice.includes(token))throw new Error('missing '+token);
 const sandbox={};vm.createContext(sandbox);vm.runInContext(twice,sandbox);
-const base={configuredCanary:true,payload:{canary:true,rendererPolicy:'RENDER-CAREERBREAK-V3',preconditions:{runtime:'FL-080-CLOSED',trace:'FL-059-CLOSED'}},selfTest:'PASS',recurrence:'SELF_TEST_PASS_CANARY_PENDING',runtimeStatus:'HEALTHY',runtimeCircuit:'CLOSED',regressionErrorCode:'RELEASE_BLOCKER_OPEN',healthElapsedMs:150000,traceSelfTest:'PASS',goldenTraceStatus:'PASS',fl059Status:'Closed / Prevention Effective'};
+const base={configuredCanary:true,payload:{canary:true,rendererPolicy:'RENDER-CAREERBREAK-V3',preconditions:{runtime:'FL-080-CLOSED',trace:'FL-059-CLOSED'}},selfTest:'PASS',recurrence:'SELF_TEST_PASS_CANARY_PENDING',runtimeStatus:'HEALTHY',runtimeCircuit:'CLOSED',regressionErrorCode:'RELEASE_BLOCKER_OPEN',healthElapsedMs:150000,traceSelfTest:'PASS',goldenTracePreRendererReady:true};
 const decide=x=>sandbox.rendererCanaryStateDecision_(Object.assign({},base,x||{}));
 if(decide()!==true)throw new Error('known-good canary state must pass');
 const negatives=[
   {payload:{canary:false,rendererPolicy:'RENDER-CAREERBREAK-V3',preconditions:{runtime:'FL-080-CLOSED',trace:'FL-059-CLOSED'}}},
   {healthElapsedMs:180001},
-  {fl059Status:'Open / Fix Required'},
   {runtimeCircuit:'OPEN'},
   {regressionErrorCode:'WORKER_RUNTIME_OPEN'},
   {regressionErrorCode:'HEALTH_STATE_INCONSISTENT'},
   {recurrence:'BLOCKED_SELF_TEST_FAIL'},
   {traceSelfTest:'FAIL'},
-  {goldenTraceStatus:'INTAKE_ACCEPTED'},
+  {goldenTracePreRendererReady:false},
   {payload:{canary:true,rendererPolicy:'RENDER-CAREERBREAK-V3',preconditions:{runtime:'FL-080-CLOSED',trace:'OPEN'}}}
 ];
 for(const x of negatives)if(decide(x)!==false)throw new Error('unsafe canary state passed '+JSON.stringify(x));
+if(decide({goldenTraceStatus:'IN_PROGRESS'})!==true)throw new Error('full golden trace status must not deadlock pre-render canary admission');
 if(!twice.match(/function rendererQuarantineBlocks_[\s\S]*rendererCanaryPreconditionsMet_/))throw new Error('quarantine does not consume executable canary gate');
-console.log(JSON.stringify({status:'PASS',contract:'CANARY-PRECONDITION-001',idempotent:true,syntax:true,positiveFixture:true,negativeFixtures:negatives.length,healthMaxMs:180000,traceClosureRequired:true,healthConsistencyRequired:true},null,2));
+if(!twice.includes('fullGoldenTracePassRequiredBeforeCanary:false'))throw new Error('deadlock-prevention contract marker missing');
+console.log(JSON.stringify({status:'PASS',contract:'CANARY-PRECONDITION-002',idempotent:true,syntax:true,positiveFixture:true,negativeFixtures:negatives.length,healthMaxMs:180000,tracePreRendererProofRequired:true,atomicTraceReadbackRequired:true,fullGoldenTracePassRequiredBeforeCanary:false,healthConsistencyRequired:true},null,2));
