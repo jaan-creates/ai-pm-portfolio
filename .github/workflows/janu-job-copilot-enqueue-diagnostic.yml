@@ -60,10 +60,10 @@ jobs:
             if(end<0) throw new Error(name+' unterminated');
             return s.slice(start,end);
           }
-          function sanitize(x){return String(x||'').replace(/https?:\/\/[^'"\s)]+/g,'<URL>').replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'<EMAIL>').replace(/[A-Za-z0-9_-]{35,}/g,'<LONG_TOKEN>').slice(0,3500);}
-          const names=['enqueue_','queueMutationAllowed_','workNeededFromState_'];
-          const out={contract:'QUEUE-ADMISSION-DIAG-007'};
+          function sanitize(x){return String(x||'').replace(/https?:\/\/[^'"\s)]+/g,'<URL>').replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'<EMAIL>').replace(/[A-Za-z0-9_-]{35,}/g,'<LONG_TOKEN>').slice(0,4500);}
+          const names=['enqueue_','queueMutationAllowed_','workNeeded_','workNeededFromState_'];
+          const out={contract:'QUEUE-ADMISSION-DIAG-008',predecisionMarker:s.includes('JD-PREDECISION-ADMISSION-001')};
           for(const n of names){const t=functionText(n)||'';out[n]={present:!!t,signature:(t.match(/^function\s+[^\{]+/)||[])[0]||'',body:sanitize(t)};}
           console.log(JSON.stringify(out,null,2));
           NODE
-# Read-only diagnostic after repeated E2E-JD enqueue failure; no runtime mutation.
+# Read-only diagnostic after live pre-decision admission proof still failed; no runtime mutation.
