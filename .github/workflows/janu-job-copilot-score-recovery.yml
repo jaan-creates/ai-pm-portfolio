@@ -8,28 +8,49 @@ on:
       - '.github/janu-job-copilot-score-recovery-trigger.txt'
 
 permissions:
+  actions: read
   contents: read
 
-# Share the production Apps Script concurrency lock so scoring recovery can never
-# execute while a source deployment is mutating the connected runtime.
+# Use a separate recovery lock, but explicitly wait for the production CD queue to
+# drain before touching the connected Apps Script runtime. This avoids GitHub's
+# one-running/one-pending concurrency replacement behavior cancelling recovery.
 concurrency:
-  group: janu-job-copilot-apps-script-production
+  group: janu-job-copilot-golden-score-recovery
   cancel-in-progress: false
 
 jobs:
   recover-and-run-one:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     env:
       LIVE_DIR: .janu-score-recovery
       CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
       CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
       CLASP_USER: janu-build
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Wait for production deploy queue to drain
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            active=0
+            for status in in_progress queued pending requested waiting; do
+              count="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/janu-job-copilot.yml/runs?branch=janu-job-copilot%2Fapps-script-ci&status=${status}&per_page=1" --jq '.total_count')"
+              active=$((active + count))
+            done
+            echo "Production CD active/queued count: $active"
+            if [ "$active" -eq 0 ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'Production CD queue did not drain within 10 minutes.' >&2
+          exit 18
       - name: Verify credentials
         shell: bash
         run: |
