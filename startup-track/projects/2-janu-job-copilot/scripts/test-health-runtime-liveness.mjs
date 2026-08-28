@@ -9,7 +9,7 @@ function healthSet_(){}
 function SH_(){return {getLastRow(){return 1},getRange(){return {getDisplayValue(){return''},createTextFinder(){return {matchEntireCell(){return this},findNext(){return null}}}}}}}
 function hm_(){return {}}
 function circuitOpen_(name){return name==='Worker Runtime';}
-function enforceReleaseBlockerHealth_(){healthSet_('Regression Gate','DEGRADED','OPEN');return {blocked:true};}
+function enforceReleaseBlockerHealth_(){healthSet_('Regression Gate','DEGRADED','OPEN');return {blocked:true,ids:['FL-060'],recurrence:'SELF_TEST_PASS_CANARY_PENDING',replay:'BLOCKED_FL060_QUARANTINE_BREACH'};}
 function processOperatorCommand_(){}
 function ensureP12Sheets_(){}
 function sourceFreshnessHealth_(){}
@@ -47,19 +47,22 @@ const once=fs.readFileSync(path.join(dir,'TrackerWorkflow.js'),'utf8');
 apply();
 const out=fs.readFileSync(path.join(dir,'TrackerWorkflow.js'),'utf8');
 if(once!==out)throw new Error('health runtime/control-plane patch is not idempotent');
-for(const token of ['HEALTH-RUNTIME-RESERVE-002','HEALTH-RUNTIME-RESERVE-001','HEALTH-RUNTIME-TRACE-002','HEALTH-OPTIONAL-BUDGET-003','REGRESSION-HEALTH-FINAL-LOCK-001','HEALTH-CONTROL-PLANE-001','HEALTH-CONSISTENCY-001','JD-RECOVERY-ISOLATION-001','healthRuntimeOptionalStage_','healthRuntimeCheckpoint_','healthFinalReleaseLock_','health_tick_trace','phase1JdRecoveryTick','health_runtime_slo_ms'])if(!out.includes(token))throw new Error('missing '+token);
+for(const token of ['HEALTH-RUNTIME-RESERVE-002','HEALTH-RUNTIME-RESERVE-001','HEALTH-RUNTIME-TRACE-002','HEALTH-OPTIONAL-BUDGET-003','REGRESSION-HEALTH-FINAL-LOCK-001','REGRESSION-HEALTH-BLOCKER-READBACK-001','HEALTH-CONTROL-PLANE-001','HEALTH-CONSISTENCY-001','JD-RECOVERY-ISOLATION-001','healthRuntimeOptionalStage_','healthRuntimeCheckpoint_','healthFinalReleaseLock_','health_tick_trace','phase1JdRecoveryTick','health_runtime_slo_ms'])if(!out.includes(token))throw new Error('missing '+token);
 const tick=fnSource(out,'phase1HealthTick');
 if(tick.lastIndexOf('healthFinalReleaseLock_(')<tick.lastIndexOf("healthSet_('Regression Gate','HEALTHY'"))throw new Error('final lock is not final');
 for(const fn of ['p1aVacancyMaintenanceTick_','p1aE2EContinuationTick_','p1aClosedVacancyReconcileTick_','traceGoldenTick_'])if(!tick.includes("return "+fn+'();'))throw new Error('optional stage not bounded: '+fn);
 if(tick.includes('p1aJdRecoveryMaintenanceTick_('))throw new Error('JD recovery mutation remains in health control plane');
 if(!tick.includes('jd-recovery:ISOLATED'))throw new Error('JD recovery isolation telemetry missing');
 const jd=fnSource(out,'phase1JdRecoveryTick');if(!jd.includes('p1aJdRecoveryMaintenanceTick_('))throw new Error('standalone JD recovery tick missing work-plane call');
-const lock=fnSource(out,'healthFinalReleaseLock_');if(!lock.includes('healthComponentSnapshot_')||!lock.includes('HEALTH_STATE_INCONSISTENT'))throw new Error('health consistency final lock missing');
+const lock=fnSource(out,'healthFinalReleaseLock_');
+for(const token of ['healthComponentSnapshot_','HEALTH_STATE_INCONSISTENT','REGRESSION-HEALTH-BLOCKER-READBACK-001','if(base&&base.blocked)','RELEASE_BLOCKER_OPEN','blocker truth must survive generic health publication'])if(!lock.includes(token))throw new Error('health blocker final-lock regression missing '+token);
+const lockVm=`let gate={found:true,status:'HEALTHY',circuit:'CLOSED',errorCode:'',errorDetail:''};function enforceReleaseBlockerHealth_(){return{blocked:true,ids:['FL-060','FL-063'],recurrence:'SELF_TEST_PASS_CANARY_PENDING',replay:'BLOCKED_FL060_QUARANTINE_BREACH'}}function healthComponentSnapshot_(name){if(name==='Worker Runtime')return{found:true,status:'HEALTHY',circuit:'CLOSED',errorCode:'',errorDetail:''};return Object.assign({},gate)}function healthConsistencyDecision_(){return{kind:'OK'}}function healthSet_(name,status,circuit,errorCode,errorDetail){if(name==='Regression Gate')gate={found:true,status,circuit,errorCode,errorDetail}}${lock};const result=healthFinalReleaseLock_();console.log(JSON.stringify({result,gate}));`;
+const lockRun=spawnSync(process.execPath,['-e',lockVm],{encoding:'utf8'});if(lockRun.status!==0)throw new Error(lockRun.stderr||lockRun.stdout);const lockGot=JSON.parse(lockRun.stdout.trim());if(!lockGot.result.blocked||lockGot.gate.status!=='DEGRADED'||lockGot.gate.circuit!=='OPEN'||lockGot.gate.errorCode!=='RELEASE_BLOCKER_OPEN')throw new Error('REGRESSION-HEALTH-BLOCKER-READBACK-001 fixture failed '+JSON.stringify(lockGot));
 const opt=fnSource(out,'healthRuntimeOptionalStage_');if(!opt.includes('elapsed>=60000'))throw new Error('HEALTH-OPTIONAL-BUDGET-003 executable 60s deadline missing');
-const prevention=fnSource(out,'healthRuntimePreventionContract_');if(!prevention.includes("budgetContract:'HEALTH-OPTIONAL-BUDGET-003'")||!prevention.includes('optionalDeadlineMs:60000'))throw new Error('health prevention contract did not converge to current budget');
+const prevention=fnSource(out,'healthRuntimePreventionContract_');if(!prevention.includes("budgetContract:'HEALTH-OPTIONAL-BUDGET-003'")||!prevention.includes("blockerReadback:'REGRESSION-HEALTH-BLOCKER-READBACK-001'")||!prevention.includes('optionalDeadlineMs:60000'))throw new Error('health prevention contract did not converge to current budget/blocker readback');
 const cp=fnSource(out,'healthRuntimeCheckpoint_');
 if(!cp.includes("String(stage)==='COMPLETE'"))throw new Error('terminal-only publish guard missing');
 if((cp.match(/upsertWorkerState_/g)||[]).length!==4)throw new Error('checkpoint must publish exactly four Worker State rows');
 if(!cp.includes('HEALTH_RUNTIME_TRACE_.push'))throw new Error('in-memory trace missing');
 const syntax=spawnSync(process.execPath,['--check',path.join(dir,'TrackerWorkflow.js')],{encoding:'utf8'});if(syntax.status!==0)throw new Error(syntax.stderr);
-console.log(JSON.stringify({pass:true,contract:'HEALTH-RUNTIME-RESERVE-002',compat:'HEALTH-RUNTIME-RESERVE-001',trace:'HEALTH-RUNTIME-TRACE-002',budget:'HEALTH-OPTIONAL-BUDGET-003',optionalDeadlineMs:60000,finalLock:'REGRESSION-HEALTH-FINAL-LOCK-001',controlPlane:'HEALTH-CONTROL-PLANE-001',consistency:'HEALTH-CONSISTENCY-001',jdIsolation:'JD-RECOVERY-ISOLATION-001',healthSloMs:180000,terminalOnlyTelemetry:true,healthMutatesJdRecovery:false,idempotent:true},null,2));
+console.log(JSON.stringify({pass:true,contract:'HEALTH-RUNTIME-RESERVE-002',compat:'HEALTH-RUNTIME-RESERVE-001',trace:'HEALTH-RUNTIME-TRACE-002',budget:'HEALTH-OPTIONAL-BUDGET-003',optionalDeadlineMs:60000,finalLock:'REGRESSION-HEALTH-FINAL-LOCK-001',blockerReadback:'REGRESSION-HEALTH-BLOCKER-READBACK-001',controlPlane:'HEALTH-CONTROL-PLANE-001',consistency:'HEALTH-CONSISTENCY-001',jdIsolation:'JD-RECOVERY-ISOLATION-001',healthSloMs:180000,terminalOnlyTelemetry:true,healthMutatesJdRecovery:false,blockerFixture:true,idempotent:true},null,2));
