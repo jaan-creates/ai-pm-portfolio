@@ -42,7 +42,7 @@ jobs:
       - name: Pull connected production source
         working-directory: .janu-admission-diagnostic
         run: clasp pull --user "$CLASP_USER"
-      - name: Emit exact admission functions
+      - name: Emit exact recovery and admission functions
         shell: bash
         run: |
           node - <<'NODE'
@@ -62,5 +62,9 @@ jobs:
             }
             return 'UNTERMINATED';
           }
-          for(const name of ['enqueue_','queueMutationAllowed_','workNeeded_','workNeededFromState_','semanticKey_','nextQ_','workerScore_','workerJD_']) console.log('\n=== '+name+' ===\n'+extract(name));
+          for(const name of [
+            'p1aE2EContinuationTick_','p1aQueueWorkerState_','p1aVerifiedJdReady_','p1aStrandedJdCandidate_',
+            'p1aStrandedJdRecoverySafe_','p1aJdScoreRecoveryCandidate_','p1aJdScoreRecoverySafe_','enqueue_',
+            'queueMutationAllowed_','workNeeded_','workNeededFromState_','semanticKey_','nextQ_','workerScore_','docText_','canonicalEvidenceText_'
+          ]) console.log('\n=== '+name+' ===\n'+extract(name));
           NODE
