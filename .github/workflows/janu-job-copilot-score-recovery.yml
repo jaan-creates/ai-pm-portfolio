@@ -10,8 +10,10 @@ on:
 permissions:
   contents: read
 
+# Share the production Apps Script concurrency lock so scoring recovery can never
+# execute while a source deployment is mutating the connected runtime.
 concurrency:
-  group: janu-job-copilot-golden-score-recovery
+  group: janu-job-copilot-apps-script-production
   cancel-in-progress: false
 
 jobs:
