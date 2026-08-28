@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -18,12 +19,13 @@ concurrency:
 jobs:
   run-one-authorized-job:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     env:
       LIVE_DIR: .janu-live
       CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
       CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
       CLASP_USER: janu-build
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout isolated Job Copilot branch
         uses: actions/checkout@v4
@@ -31,6 +33,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Wait for production deploy queue to drain
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            active=0
+            for status in in_progress queued pending requested waiting; do
+              count="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/janu-job-copilot.yml/runs?branch=janu-job-copilot%2Fapps-script-ci&status=${status}&per_page=1" --jq '.total_count')"
+              active=$((active + count))
+            done
+            echo "Production CD active/queued count: $active"
+            if [ "$active" -eq 0 ]; then exit 0; fi
+            sleep 10
+          done
+          echo 'Production CD queue did not drain within 10 minutes.' >&2
+          exit 18
       - name: Verify deployment credentials exist
         shell: bash
         run: |
@@ -49,55 +67,36 @@ jobs:
       - name: Confirm CI clasp identity
         shell: bash
         run: |
-          set -o pipefail
           out="$(clasp show-authorized-user --user "$CLASP_USER" 2>&1)"
           printf '%s\n' "$out"
           grep -q 'You are logged in as ' <<<"$out"
       - name: Pull exact connected production source
         working-directory: .janu-live
         run: clasp pull --user "$CLASP_USER"
-      - name: Assert canary gate generation is present
+      - name: Assert exact canary generation is deployed
         shell: bash
         run: |
-          grep -q 'CANARY-PRECONDITION-002' "$LIVE_DIR/TrackerWorkflow.js"
-          grep -q 'RENDER-CAREERBREAK-V3' "$LIVE_DIR/TrackerWorkflow.js"
-          grep -q 'ATOMIC_APPEND_VERIFY_RETIRE' "$LIVE_DIR/TrackerWorkflow.js"
-      - name: Diagnose worker circuit source
-        shell: bash
-        run: |
-          node - <<'NODE'
-          const fs=require('fs'),path=require('path');
-          const dir='.janu-live';
-          const source=fs.readdirSync(dir).filter(f=>/\.(?:js|gs)$/.test(f)).map(f=>fs.readFileSync(path.join(dir,f),'utf8')).join('\n');
-          function extract(name){
-            const start=source.indexOf('function '+name+'('); if(start<0)return 'NOT_FOUND';
-            const open=source.indexOf('{',start); let depth=0,quote=null,esc=false,line=false,block=false;
-            for(let i=open;i<source.length;i++){
-              const c=source[i],n=source[i+1]||'';
-              if(line){if(c==='\n')line=false;continue;}
-              if(block){if(c==='*'&&n==='/'){block=false;i++;}continue;}
-              if(quote){if(esc){esc=false;continue;}if(c==='\\'){esc=true;continue;}if(c===quote)quote=null;continue;}
-              if(c==='/'&&n==='/'){line=true;i++;continue;} if(c==='/'&&n==='*'){block=true;i++;continue;}
-              if(c==='"'||c==="'"||c==='`'){quote=c;continue;} if(c==='{')depth++; else if(c==='}'&&--depth===0)return source.slice(start,i+1);
-            }
-            return 'UNTERMINATED';
-          }
-          for(const name of ['circuitOpen_','phase1OneJobTick','phase1OneJobTickCore_','rendererCanaryPreconditionsMet_','rendererGoldenTracePreRendererReady_']) console.log('\n=== '+name+' ===\n'+extract(name));
-          NODE
-      - name: Execute exactly one authorized worker job against HEAD
+          for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 'function runRendererAuthorizedCanary()'; do
+            grep -q "$token" "$LIVE_DIR/TrackerWorkflow.js" || { echo "Exact canary runtime contract missing: $token"; exit 19; }
+          done
+      - name: Execute fresh authorized canary by exact queue ID on HEAD
         working-directory: .janu-live
         shell: bash
         run: |
           set +e
-          out="$(clasp run phase1OneJobTick --user "$CLASP_USER" 2>&1)"
+          out="$(clasp run runRendererAuthorizedCanary --user "$CLASP_USER" 2>&1)"
           rc=$?
           set -e
           printf '%s\n' "$out"
           test "$rc" -eq 0
-          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
-          ! grep -Eq "status:[[:space:]]*'CIRCUIT_OPEN'" <<<"$out"
-          grep -Eq "status:[[:space:]]*'OK'" <<<"$out"
-          grep -Eq 'jobsProcessed:[[:space:]]*1' <<<"$out"
-          # CANARY-SEMANTIC-RESULT-001 / CANARY-EXACTJOB-001 / CANARY-HEAD-GENERATION-001:
-          # transport success with zero work is not a canary pass. The canary executes
-          # the same HEAD generation pulled and source-validated by controlled CD.
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|CANARY_.*FAILED|CANARY_.*MISMATCH|CANARY_.*NOT_' <<<"$out"
+          grep -Eq 'pass:[[:space:]]*true' <<<"$out"
+          grep -q "contract: 'CANARY-EXACT-EXECUTION-001'" <<<"$out"
+          grep -Eq "status:[[:space:]]*'succeeded'" <<<"$out"
+          grep -Eq 'attempts:[[:space:]]*1' <<<"$out"
+          grep -Eq "workerType:[[:space:]]*'RESUME_GENERATE'" <<<"$out"
+          grep -Eq "rendererPolicy:[[:space:]]*'RENDER-CAREERBREAK-V3'" <<<"$out"
+          grep -Eq "resumeVersionId:[[:space:]]*'[^']+'" <<<"$out"
+          grep -Eq "tailoredResumeLink:[[:space:]]*'[^']+'" <<<"$out"
+          # FL-084: aggregate jobsProcessed is no longer accepted as canary identity proof.
+          # The exact newly-enqueued queue row must succeed and create a durable artifact.
