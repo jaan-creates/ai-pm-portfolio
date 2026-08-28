@@ -1,5 +1,6 @@
-2026-08-28T20:55+05:30
-Authorized single renderer canary for Metaforms 2026-08-04-002 only.
-Preconditions: golden JD_RETRIEVE and JD_PARSE_SCORE_MAP live proof complete; RENDER-CAREERBREAK-V3 self-test PASS; exact connected HEAD only.
-Require exactly one RESUME_GENERATE job processed, queue readback success, artifact creation, and downstream QA evidence before recurrence gate can open.
-Normal renderer backlog fan-out remains blocked until CANARY_PASS and live readback.
+2026-08-28T21:12+05:30
+Authorize a fresh renderer canary for Metaforms 2026-08-04-002 only after production CD drains.
+Do not reuse CANARY-FL060-METAFORMS-20260827-1818; it is terminal STALE_SEMANTIC_WORK evidence for FL-084.
+Require CANARY-EXACT-EXECUTION-001: freshly enqueue current-state RESUME_GENERATE, execute that exact Queue Job ID, require status=succeeded, attempts=1, RENDER-CAREERBREAK-V3, non-empty Resume Version ID and Tailored Resume Link.
+Any cancellation, stale semantic work, other queue item, missing artifact, or exact-ID mismatch is FAIL and must not open renderer recurrence/replay.
+Normal renderer backlog fan-out remains blocked until exact live proof and downstream QA/readback complete.
