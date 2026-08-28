@@ -31,7 +31,16 @@ function rangeOf(name){
 }
 function replaceFunction(name,code){const r=rangeOf(name);if(!r)throw new Error(name+' missing');s=s.slice(0,r.start)+code+s.slice(r.end);}
 function putFunction(name,code,anchor){const r=rangeOf(name);if(r){replaceFunction(name,code);return;}const i=s.indexOf(anchor);if(i<0)throw new Error('Anchor missing '+anchor);s=s.slice(0,i)+code+'\n'+s.slice(i);}
-function placeEvidenceHelper(code){const existing=rangeOf('canonicalEvidenceText_');if(existing)s=s.slice(0,existing.start)+s.slice(existing.end);const doc=rangeOf('docText_');const anchor=doc?doc.start:s.indexOf('function rendererQuarantineBlocks_(');if(anchor<0)throw new Error('Canonical evidence placement anchor missing');s=s.slice(0,anchor)+code+'\n'+s.slice(anchor);}
+function placeEvidenceHelper(code){
+  const existing=rangeOf('canonicalEvidenceText_');
+  const traceStart=s.indexOf('function traceStateValue_('),traceEnd=s.indexOf('function verifyReleaseIdentity()');
+  const misplaced=!!(existing&&traceStart>=0&&traceEnd>traceStart&&existing.start>=traceStart&&existing.start<traceEnd);
+  if(existing&&!misplaced)return;
+  if(existing&&misplaced){let end=existing.end;while(end<s.length&&s[end]==='\n')end++;s=s.slice(0,existing.start)+s.slice(end);}
+  const doc=rangeOf('docText_');const anchor=doc?doc.start:s.indexOf('function rendererQuarantineBlocks_(');
+  if(anchor<0)throw new Error('Canonical evidence placement anchor missing');
+  s=s.slice(0,anchor)+code+'\n'+s.slice(anchor);
+}
 
 const evidenceFn=`function canonicalEvidenceText_(id){id=String(id||'').trim();if(!id)return'';const url='https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(id)+'/export?mimeType=text%2Fplain';const res=UrlFetchApp.fetch(url,{method:'get',headers:{Authorization:'Bearer '+ScriptApp.getOAuthToken()},muteHttpExceptions:true});const code=Number(res.getResponseCode());if(code<200||code>=300)throw new Error('DETERMINISTIC:CANONICAL_EVIDENCE_EXPORT_HTTP_'+code);return String(res.getContentText()||'');}`;
 const docFn=`function docText_(id){return canonicalEvidenceText_(id);}`;
