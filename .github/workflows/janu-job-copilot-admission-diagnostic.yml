@@ -42,7 +42,7 @@ jobs:
       - name: Pull connected production source
         working-directory: .janu-admission-diagnostic
         run: clasp pull --user "$CLASP_USER"
-      - name: Emit exact recovery and admission functions
+      - name: Emit stale-work and exact-canary processing path
         shell: bash
         run: |
           node - <<'NODE'
@@ -62,9 +62,11 @@ jobs:
             }
             return 'UNTERMINATED';
           }
-          for(const name of [
-            'p1aE2EContinuationTick_','p1aQueueWorkerState_','p1aVerifiedJdReady_','p1aStrandedJdCandidate_',
-            'p1aStrandedJdRecoverySafe_','p1aJdScoreRecoveryCandidate_','p1aJdScoreRecoverySafe_','enqueue_',
-            'queueMutationAllowed_','workNeeded_','workNeededFromState_','semanticKey_','nextQ_','workerScore_','docText_','canonicalEvidenceText_'
-          ]) console.log('\n=== '+name+' ===\n'+extract(name));
+          for(const name of ['processQ_','runQ_','nextQ_','workNeeded_','workNeededFromState_','rendererQuarantineBlocks_','rendererCanaryPreconditionsMet_','phase1OneJobTickCore_']) {
+            console.log('\n=== '+name+' ===\n'+extract(name));
+          }
+          const marker='STALE_SEMANTIC_WORK';
+          let at=source.indexOf(marker);
+          console.log('\n=== STALE_SEMANTIC_WORK CONTEXT ===');
+          while(at>=0){ console.log(source.slice(Math.max(0,at-1200),Math.min(source.length,at+1800))); at=source.indexOf(marker,at+marker.length); }
           NODE
