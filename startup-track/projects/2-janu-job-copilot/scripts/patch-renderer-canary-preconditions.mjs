@@ -20,7 +20,7 @@ function rangeOf(name){
   for(let i=open;i<s.length;i++){
     const c=s[i],n=s[i+1]||'';
     if(line){if(c==='\n')line=false;continue;}
-    if(block){if(c==='*'&&n==='/'){block=false;i++;continue;}
+    if(block){if(c==='*'&&n==='/'){block=false;i++;}continue;}
     if(quote){if(esc){esc=false;continue;}if(c==='\\'){esc=true;continue;}if(c===quote)quote=null;continue;}
     if(c==='/'&&n==='/'){line=true;i++;continue;}
     if(c==='/'&&n==='*'){block=true;i++;continue;}
