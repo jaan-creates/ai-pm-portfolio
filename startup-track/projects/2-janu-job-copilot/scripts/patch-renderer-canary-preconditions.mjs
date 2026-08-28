@@ -68,4 +68,18 @@ const traceStart=s.indexOf('function traceStateValue_('),traceEnd=s.indexOf('fun
 const q=rangeOf('rendererQuarantineBlocks_'),body=s.slice(q.start,q.end);if(!body.includes('rendererCanaryPreconditionsMet_'))throw new Error('Claim/enqueue quarantine does not consume canary preconditions');
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('Canary-precondition transformed source invalid: '+syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:COMPAT,canonicalEvidence:EVIDENCE,policy:POLICY,healthMaxMs:HEALTH_MAX_MS,explicitCanaryRequired:true,runtimeMarginRequired:true,tracePreRendererProofRequired:true,atomicTraceReadbackRequired:true,healthConsistencyRequired:true,fullGoldenTracePassRequiredBeforeCanary:false,documentAppRemoved:!!rangeOf('docText_'),traceNetworkOwnershipPreserved:true,verifiedArtifact:file},null,2));
+
+// Compose FL-084 exact execution/accounting only when the full worker queue runtime
+// is present. Lightweight renderer fixtures intentionally omit runQ_/processQ_.
+let exactCanary='not-applicable-fixture';
+s=fs.readFileSync(file,'utf8');
+if(s.includes('function runQ_(')&&s.includes('function processQ_(')){
+  const exactPatch=path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-canary-exact-execution.mjs');
+  const exact=spawnSync(process.execPath,[exactPatch,root],{encoding:'utf8'});
+  if(exact.status!==0)throw new Error(exact.stderr||exact.stdout||'Exact canary execution patch failed');
+  exactCanary='CANARY-EXACT-EXECUTION-001';
+  s=fs.readFileSync(file,'utf8');
+  for(const token of ['QUEUE-PROCESSED-ACCOUNTING-001','STALE-WORK-COUNT-001','CANARY-QUEUE-ID-BINDING-001','CANARY-TERMINAL-SUCCESS-001','CANARY-ARTIFACT-READBACK-001','CANARY-EXACT-EXECUTION-001'])if(!s.includes(token))throw new Error('Composed exact-canary marker missing '+token);
+}
+const syntax2=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax2.status!==0)throw new Error('Composed canary source invalid: '+syntax2.stderr);
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,compat:COMPAT,canonicalEvidence:EVIDENCE,policy:POLICY,healthMaxMs:HEALTH_MAX_MS,explicitCanaryRequired:true,runtimeMarginRequired:true,tracePreRendererProofRequired:true,atomicTraceReadbackRequired:true,healthConsistencyRequired:true,fullGoldenTracePassRequiredBeforeCanary:false,documentAppRemoved:!!rangeOf('docText_'),traceNetworkOwnershipPreserved:true,exactCanary:exactCanary,verifiedArtifact:file},null,2));
