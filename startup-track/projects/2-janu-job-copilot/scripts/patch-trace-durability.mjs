@@ -21,7 +21,7 @@ const lockBlock=`if(appId){const lr=find_(JC.S.A,appId);if(!lr){upsertWorkerStat
 // TRACE-LOCK-CONVERGENCE-001: historical additive patching could stack identical lock guards.
 // Remove every canonical copy and publish exactly one immediately after the lock read.
 tick=tick.split(lockBlock).join('');
-tick=tick.replace(lockAnchor,lockAnchor+lockBlock);
+tick=tick.replace(lockAnchor,lockAnchor+"/* TRACE-LOCK-CONVERGENCE-001: exactly one canonical golden fixture lock guard. */"+lockBlock);
 const lockCount=tick.split("golden_trace_lock_reset','MISSING_APPLICATION'").length-1;
 if(lockCount!==1)throw new Error('TRACE-LOCK-CONVERGENCE-001 expected one golden lock guard, found '+lockCount);
 s=s.slice(0,r.start)+tick+s.slice(r.end);
