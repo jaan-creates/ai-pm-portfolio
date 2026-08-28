@@ -18,14 +18,17 @@ replaceFn('traceRefreshGolden_',`function traceRefreshGolden_(appId,traceId){tra
 
 const r=rangeOf('traceGoldenTick_');if(!r)throw new Error('traceGoldenTick_ missing');let tick=s.slice(r.start,r.end);const lockAnchor="let appId=traceStateValue_('golden_trace_application_id');";if(!tick.includes(lockAnchor))throw new Error('golden trace lock anchor missing');
 const lockBlock=`if(appId){const lr=find_(JC.S.A,appId);if(!lr){upsertWorkerState_('golden_trace_lock_reset','MISSING_APPLICATION',appId);upsertWorkerState_('golden_trace_application_id','','Reset invalid golden fixture lock');appId='';}else{const la=obj_(SH_(JC.S.A),lr),lockedUrl=String(la['Canonical Apply URL']||la['Job URL']||'');if(!traceUrlIdentityMatch_(lockedUrl,req.url)){upsertWorkerState_('golden_trace_lock_reset','URL_MISMATCH',JSON.stringify({oldApplicationId:appId,lockedCanonical:traceCanonicalUrl_(lockedUrl),requestedCanonical:traceCanonicalUrl_(req.url)}).slice(0,1500));upsertWorkerState_('golden_trace_application_id','','Reset stale cross-fixture golden lock');appId='';}}}`;
+const lockMarker="/* TRACE-LOCK-CONVERGENCE-001: exactly one canonical golden fixture lock guard. */";
 // TRACE-LOCK-CONVERGENCE-001: historical additive patching could stack identical lock guards.
-// Remove every canonical copy and publish exactly one immediately after the lock read.
+// Remove every canonical copy/marker and publish exactly one immediately after the lock read.
 tick=tick.split(lockBlock).join('');
-tick=tick.replace(lockAnchor,lockAnchor+"/* TRACE-LOCK-CONVERGENCE-001: exactly one canonical golden fixture lock guard. */"+lockBlock);
+tick=tick.split(lockMarker).join('');
+tick=tick.replace(lockAnchor,lockAnchor+lockMarker+lockBlock);
 const lockCount=tick.split("golden_trace_lock_reset','MISSING_APPLICATION'").length-1;
-if(lockCount!==1)throw new Error('TRACE-LOCK-CONVERGENCE-001 expected one golden lock guard, found '+lockCount);
+const markerCount=tick.split('TRACE-LOCK-CONVERGENCE-001').length-1;
+if(lockCount!==1||markerCount!==1)throw new Error('TRACE-LOCK-CONVERGENCE-001 expected one golden lock guard/marker, found '+lockCount+'/'+markerCount);
 s=s.slice(0,r.start)+tick+s.slice(r.end);
 
 for(const token of ['ATOMIC_APPEND_VERIFY_RETIRE','TRACE_CANDIDATE_READBACK_FAILED','TRACE_FINAL_READBACK_MISMATCH','golden_trace_lock_reset','URL_MISMATCH','Reset stale cross-fixture golden lock','TRACE-LOCK-CONVERGENCE-001','QUEUE-NOJOB-QUARANTINE-001','QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001'])if(!s.includes(token))throw new Error('TRACE/runtime durability control missing '+token);
 fs.writeFileSync(file,s);const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('TRACE durability transformed source invalid: '+syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:'TRACE-DURABLE-V1',tests:['TRACE-ATOMIC-001','TRACE-READBACK-001','TRACE-LOCK-001','TRACE-LOCK-CONVERGENCE-001','QUEUE-NOJOB-QUARANTINE-001','QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001'],nonDestructiveCandidate:true,staleFixtureLockReset:true,lockGuardCount:1,queueCheapEligibilityBeforeQuarantine:true,idempotent:true,verifiedArtifact:file},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:'TRACE-DURABLE-V1',tests:['TRACE-ATOMIC-001','TRACE-READBACK-001','TRACE-LOCK-001','TRACE-LOCK-CONVERGENCE-001','QUEUE-NOJOB-QUARANTINE-001','QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001'],nonDestructiveCandidate:true,staleFixtureLockReset:true,lockGuardCount:1,lockMarkerCount:1,queueCheapEligibilityBeforeQuarantine:true,idempotent:true,verifiedArtifact:file},null,2));
