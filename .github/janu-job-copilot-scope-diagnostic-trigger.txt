@@ -1,0 +1,3 @@
+2026-08-28T14:00+05:30
+Inspect connected Apps Script manifest oauth scopes after DocumentApp authorization failure.
+Read-only diagnostic only; no production mutation.
