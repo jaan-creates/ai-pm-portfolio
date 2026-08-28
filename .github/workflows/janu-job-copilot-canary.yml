@@ -78,7 +78,7 @@ jobs:
           }
           for(const name of ['circuitOpen_','phase1OneJobTick','phase1OneJobTickCore_','openCircuit_','closeCircuit_']) console.log('\n=== '+name+' ===\n'+extract(name));
           NODE
-      - name: Execute exactly one existing worker job
+      - name: Execute exactly one authorized worker job
         working-directory: .janu-live
         shell: bash
         run: |
@@ -89,3 +89,9 @@ jobs:
           printf '%s\n' "$out"
           test "$rc" -eq 0
           ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+          ! grep -Eq "status:[[:space:]]*'CIRCUIT_OPEN'" <<<"$out"
+          grep -Eq "status:[[:space:]]*'OK'" <<<"$out"
+          grep -Eq 'jobsProcessed:[[:space:]]*1' <<<"$out"
+          # CANARY-SEMANTIC-RESULT-001 / CANARY-EXACTJOB-001:
+          # transport success with zero work is not a canary pass. Exact queue-row
+          # advancement is independently read back from the connected Tracker.
