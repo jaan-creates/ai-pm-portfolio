@@ -11,9 +11,6 @@ permissions:
   actions: read
   contents: read
 
-# Use a separate recovery lock, but explicitly wait for the production CD queue to
-# drain before touching the connected Apps Script runtime. This avoids GitHub's
-# one-running/one-pending concurrency replacement behavior cancelling recovery.
 concurrency:
   group: janu-job-copilot-golden-score-recovery
   cancel-in-progress: false
@@ -75,18 +72,21 @@ jobs:
       - name: Pull exact connected production source
         working-directory: .janu-score-recovery
         run: clasp pull --user "$CLASP_USER"
-      - name: Assert scoring recovery contract deployed
+      - name: Assert scoring recovery contract and canonical evidence repair deployed
         shell: bash
         run: |
           grep -q 'JD-SCORE-ADMISSION-001' "$LIVE_DIR/TrackerWorkflow.js"
           grep -q 'JD-SCORE-RECOVERY-001' "$LIVE_DIR/TrackerWorkflow.js"
           grep -q 'function runJdScoreAdmissionRecovery()' "$LIVE_DIR/TrackerWorkflow.js"
-      - name: Enqueue only the stranded golden scoring job
+          grep -q 'CANONICAL-EVIDENCE-DRIVE-EXPORT-001' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'function canonicalEvidenceText_(' "$LIVE_DIR/TrackerWorkflow.js"
+          ! grep -Eq 'function docText_\([^)]*\)\{[^}]*DocumentApp' "$LIVE_DIR/TrackerWorkflow.js"
+      - name: Enqueue only the stranded golden scoring job on HEAD
         working-directory: .janu-score-recovery
         shell: bash
         run: |
           set +e
-          out="$(clasp run runJdScoreAdmissionRecovery --nondev --user "$CLASP_USER" 2>&1)"
+          out="$(clasp run runJdScoreAdmissionRecovery --user "$CLASP_USER" 2>&1)"
           rc=$?
           set -e
           printf '%s\n' "$out"
@@ -94,12 +94,12 @@ jobs:
           ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
           grep -q "contract: 'JD-SCORE-RECOVERY-001'" <<<"$out"
           grep -q "status: 'ENQUEUED'" <<<"$out"
-      - name: Execute exactly one eligible worker job
+      - name: Execute exactly one eligible worker job on HEAD
         working-directory: .janu-score-recovery
         shell: bash
         run: |
           set +e
-          out="$(clasp run phase1OneJobTick --nondev --user "$CLASP_USER" 2>&1)"
+          out="$(clasp run phase1OneJobTick --user "$CLASP_USER" 2>&1)"
           rc=$?
           set -e
           printf '%s\n' "$out"
