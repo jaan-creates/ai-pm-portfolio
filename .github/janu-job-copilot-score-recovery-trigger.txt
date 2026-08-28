@@ -1,0 +1,4 @@
+2026-08-28T13:55+05:30
+Authorize bounded scoring recovery for golden trace application 2026-08-23-002 only.
+Requires deployed JD-SCORE-ADMISSION-001 + JD-SCORE-RECOVERY-001 and exactly one worker job processed.
+Normal renderer replay remains blocked.
