@@ -5,6 +5,7 @@ import {spawnSync} from 'node:child_process';
 const root=process.argv[2]||'.janu-live';
 const BULK='E2E-BULK-SCAN-001';
 const ADMISSION='QUEUE-ADMISSION-REASON-001';
+const JD_NEW='QUEUE-JD-NEW-001';
 const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
 const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function p1aE2EContinuationTick_(')&&t.includes('P1-A-E2E-CONTINUATION-4')&&t.includes('const P12');});
 if(!target)throw new Error('E2E V4 TrackerWorkflow source not found');
@@ -15,7 +16,13 @@ function put(name,code){const r=rangeOf(name);if(!r)throw new Error(name+' missi
 function addBefore(anchor,marker,code){if(s.includes(marker))return;const i=s.indexOf(anchor);if(i<0)throw new Error('Anchor missing '+anchor);s=s.slice(0,i)+code+'\n'+s.slice(i);}
 
 addBefore('function p1aE2EContinuationTick_','function p1aE2EBulkRows_(',`function p1aE2EBulkRows_(sheet,rows){const out={};if(!rows||!rows.length)return out;const last=sheet.getLastRow(),cols=sheet.getLastColumn();if(last<2||cols<1)return out;const headers=sheet.getRange(1,1,1,cols).getDisplayValues()[0],data=sheet.getRange(2,1,last-1,cols).getDisplayValues();for(let i=0;i<rows.length;i++){const r=Number(rows[i]),v=data[r-2];if(!v)continue;const o={};for(let c=0;c<headers.length;c++)if(headers[c])o[headers[c]]=v[c];out[String(r)]=o;}return out;}
-function p1aE2EQueueAdmission_(opts){opts=opts||{};return queueMutationAllowed_(opts)?{allowed:true,reason:'ALLOWED',contract:'${ADMISSION}'}:{allowed:false,reason:'WORKER_RUNTIME_CIRCUIT_OPEN',contract:'${ADMISSION}'};}`);
+function p1aE2EQueueAdmission_(opts){opts=opts||{};return queueMutationAllowed_(opts)?{allowed:true,reason:'ALLOWED',contract:'${ADMISSION}'}:{allowed:false,reason:'WORKER_RUNTIME_CIRCUIT_OPEN',contract:'${ADMISSION}'};}
+function p1aJdNewQueueEligible_(a){a=a||{};const trusted=/TRACE-GOLDEN-01/i.test(String(a['Source']||''))||String(a['Source Reliability']||'').toUpperCase()==='OFFICIAL ATS',url=String(a['Canonical Apply URL']||a['Job URL']||'').trim(),vacancy=String(a['Vacancy Status']||'').toUpperCase(),complete=Number(a['JD Completeness %']||0),snap=String(a['JD Snapshot Status']||'');return String(a['Decision']||'')==='New'&&String(a['Status']||'')==='Verifying JD'&&vacancy!=='CLOSED'&&trusted&&!!url&&complete<70&&!/Full JD|Partial JD/i.test(snap);}`);
+
+if(rangeOf('workNeededFromState_')){
+  let wn=fn('workNeededFromState_');
+  if(!wn.includes('p1aJdNewQueueEligible_(a)')){const open=wn.indexOf('{');wn=wn.slice(0,open+1)+`if(type===JC.W.JD&&p1aJdNewQueueEligible_(a))return true;`+wn.slice(open+1);put('workNeededFromState_',wn);}
+}
 
 let tick=fn('p1aE2EContinuationTick_');
 if(!tick.includes('const bulk=p1aE2EBulkRows_(aSheet,rows);')){
@@ -30,13 +37,15 @@ if(tick.includes(oldJd)){
   tick=tick.replace(oldJd,newJd);
 }
 put('p1aE2EContinuationTick_',tick);
-addBefore('function runP1AE2EContinuationSelfTest','function p1aE2ERuntimeEfficiencySelfTest_(',`function p1aE2ERuntimeEfficiencySelfTest_(){const c=[];c.push(JC.W.JD==='JD_RETRIEVE');c.push(p1aE2EQueueAdmission_({recoverySafe:true}).allowed===true);if(c.some(x=>!x))throw new Error('${BULK} self-test failed '+JSON.stringify(c));return{pass:true,total:c.length,bulk:'${BULK}',admission:'${ADMISSION}',jdWorker:JC.W.JD};}
+addBefore('function runP1AE2EContinuationSelfTest','function p1aE2ERuntimeEfficiencySelfTest_(',`function p1aE2ERuntimeEfficiencySelfTest_(){const c=[],trusted={'Decision':'New','Status':'Verifying JD','JD Snapshot Status':'Not Started','JD Completeness %':0,'Source Reliability':'Official ATS','Canonical Apply URL':'https://jobs.example/x'};c.push(JC.W.JD==='JD_RETRIEVE');c.push(p1aE2EQueueAdmission_({recoverySafe:true}).allowed===true);c.push(p1aJdNewQueueEligible_(trusted)===true);c.push(p1aJdNewQueueEligible_(Object.assign({},trusted,{'Source Reliability':'Unverified'}))===false);if(c.some(x=>!x))throw new Error('${BULK} self-test failed '+JSON.stringify(c));return{pass:true,total:c.length,bulk:'${BULK}',admission:'${ADMISSION}',jdNew:'${JD_NEW}',jdWorker:JC.W.JD};}
 function runP1AE2ERuntimeEfficiencySelfTest(){const x=p1aE2ERuntimeEfficiencySelfTest_();upsertWorkerState_('p1a_e2e_runtime_efficiency_self_test',x.pass?'PASS':'FAIL',JSON.stringify(x));return x;}`);
 if(!s.includes(BULK))s+='\n// '+BULK+' active.\n';
 if(!s.includes(ADMISSION))s+='\n// '+ADMISSION+' active.\n';
+if(!s.includes(JD_NEW))s+='\n// '+JD_NEW+' active.\n';
 const check=fn('p1aE2EContinuationTick_');
 for(const token of ['p1aE2EBulkRows_(aSheet,rows)','p1aE2EQueueAdmission_(opts)','JD_ENQUEUE_DEFERRED','DETERMINISTIC:P1A_E2E_JD_ENQUEUE_FAILED_AFTER_ADMISSION','p1aQueueWorkerState_(id,JC.W.JD)','enqueue_(id,JC.W.JD'])if(!check.includes(token))throw new Error('E2E runtime efficiency contract missing '+token);
 if(check.includes("p1aQueueWorkerState_(id,'JD_RETRIEVE')")||check.includes("enqueue_(id,'JD_RETRIEVE'"))throw new Error('Literal JD worker bypass remains');
+if(rangeOf('workNeededFromState_')&&!fn('workNeededFromState_').includes('if(type===JC.W.JD&&p1aJdNewQueueEligible_(a))return true;'))throw new Error(JD_NEW+' not ahead of generic queue state gate');
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error(syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,bulk:BULK,admission:ADMISSION,jdWorkerConstant:true,syntax:true},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,bulk:BULK,admission:ADMISSION,jdNew:JD_NEW,jdWorkerConstant:true,syntax:true},null,2));
