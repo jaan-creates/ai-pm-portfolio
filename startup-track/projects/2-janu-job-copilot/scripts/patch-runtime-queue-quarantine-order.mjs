@@ -30,9 +30,6 @@ function replaceRange(name,fn){const r=rangeOf(name);if(!r)throw new Error(name+
 
 replaceRange('nextQ_',old=>{
   if(old.includes(CONTRACT)||old.includes(ABSENT))return old;
-  // A selector with no quarantine call is already safe from the FL-080 expensive
-  // per-row quarantine failure mode. Mark it explicitly rather than refusing a
-  // convergent deployment fixture or a future simplified selector.
   if(!old.includes('rendererQuarantineBlocks_(')){
     const open=old.indexOf('{');
     return old.slice(0,open+1)+'/* '+CONTRACT+' '+ABSENT+' no sheet-backed quarantine in selection path */'+old.slice(open+1);
@@ -60,4 +57,10 @@ if(!s.includes('QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001'))throw new Error('Candid
 
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error('Queue-order transformed source invalid: '+syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,selectorQuarantineAbsent:quarantine<0,candidateGuard:'QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001',cheapEligibilityBeforeQuarantine:true,terminalRowsSkipQuarantine:true,notDueRowsSkipQuarantine:true,claimQuarantinePreserved:s.includes('RENDERER_QUARANTINE_ACTIVE'),verifiedArtifact:file},null,2));
+
+// The JD worker transitions a freshly persisted JD to Status=Scoring while Decision is still New.
+// Apply the exact admission regression here because this transform is already part of every controlled runtime convergence.
+const scorePatch=spawnSync(process.execPath,[path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-p1a-score-admission.mjs'),root],{encoding:'utf8'});
+if(scorePatch.status!==0)throw new Error(scorePatch.stderr||scorePatch.stdout||'JD-SCORE-ADMISSION-001 patch failed');
+
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,selectorQuarantineAbsent:quarantine<0,candidateGuard:'QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001',cheapEligibilityBeforeQuarantine:true,terminalRowsSkipQuarantine:true,notDueRowsSkipQuarantine:true,claimQuarantinePreserved:s.includes('RENDERER_QUARANTINE_ACTIVE'),scoreAdmission:'JD-SCORE-ADMISSION-001',verifiedArtifact:file},null,2));
