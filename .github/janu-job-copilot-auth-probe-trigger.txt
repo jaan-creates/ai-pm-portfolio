@@ -1,0 +1,3 @@
+2026-08-28T14:04+05:30
+After production CD drains, verify the deployed read-only canonical evidence authorization probe under janu-build.
+No tracker mutation.
