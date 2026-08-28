@@ -1,0 +1,81 @@
+name: Janu Job Copilot Canonical Evidence Auth Probe
+
+on:
+  push:
+    branches:
+      - janu-job-copilot/apps-script-ci
+    paths:
+      - '.github/janu-job-copilot-auth-probe-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LIVE_DIR: .janu-auth-probe
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Wait for production deploy queue to drain
+        shell: bash
+        run: |
+          deadline=$((SECONDS+420))
+          while [ $SECONDS -lt $deadline ]; do
+            busy=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/janu-job-copilot.yml/runs?per_page=30" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);console.log((j.workflow_runs||[]).filter(r=>['queued','pending','in_progress','waiting','requested'].includes(r.status)).length)})")
+            echo "production deploys busy=$busy"
+            if [ "$busy" = "0" ]; then exit 0; fi
+            sleep 15
+          done
+          echo 'Timed out waiting for production CD queue to drain.' >&2
+          exit 19
+      - name: Verify credentials
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON"
+          test -n "$CLASP_JSON"
+      - name: Install clasp
+        run: npm install --global @google/clasp
+      - name: Prepare isolated runtime workspace
+        shell: bash
+        run: |
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+      - name: Confirm canonical runtime identity
+        shell: bash
+        run: |
+          out="$(clasp show-authorized-user --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          grep -q 'You are logged in as janu.bkurup@gmail.com.' <<<"$out"
+      - name: Pull exact production source and assert probe deployed
+        working-directory: .janu-auth-probe
+        shell: bash
+        run: |
+          clasp pull --user "$CLASP_USER"
+          grep -q 'CANONICAL-EVIDENCE-AUTH-PROBE-001' TrackerWorkflow.js
+          grep -q 'function runCanonicalEvidenceAuthorizationProbe()' TrackerWorkflow.js
+      - name: Execute read-only canonical evidence authorization probe
+        working-directory: .janu-auth-probe
+        shell: bash
+        run: |
+          set +e
+          out="$(clasp run runCanonicalEvidenceAuthorizationProbe --nondev --user "$CLASP_USER" 2>&1)"
+          rc=$?
+          set -e
+          printf '%s\n' "$out"
+          test "$rc" -eq 0
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|Required permissions|Authorization is required|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+          grep -q "contract: 'CANONICAL-EVIDENCE-AUTH-PROBE-001'" <<<"$out"
+          grep -q 'pass: true' <<<"$out"
