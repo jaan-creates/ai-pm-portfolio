@@ -16,5 +16,7 @@ if(!s.includes('function runP1AE2EContinuationTick(')){
 }
 if(!s.includes(CONTRACT)||!s.includes('function runP1AE2EContinuationTick(')||!s.includes('p1aE2EContinuationSelfTest_()')||!s.includes('p1aE2EContinuationTick_()'))throw new Error(CONTRACT+' wiring incomplete');
 fs.writeFileSync(file,s);
+const productionV4=s.includes('function p1aE2EScanRows_(')&&s.includes('STRANDED_VERIFYING_JD_ENQUEUED');
+if(productionV4){const patch=path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-p1a-e2e-runtime-efficiency.mjs'),r=spawnSync(process.execPath,[patch,root],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout||'E2E runtime efficiency patch failed');s=fs.readFileSync(file,'utf8');if(!s.includes('E2E-BULK-SCAN-001')||!s.includes('QUEUE-ADMISSION-REASON-001'))throw new Error('E2E runtime efficiency contracts not composed');}
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error(syntax.stderr);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,lock:true,selfTestGate:true,maxMutatingAppPerCall:1,anchorFallback:true,syntax:true},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:CONTRACT,lock:true,selfTestGate:true,maxMutatingAppPerCall:1,anchorFallback:true,runtimeEfficiency:productionV4?'E2E-BULK-SCAN-001':'not-applicable-fixture',admissionReason:productionV4?'QUEUE-ADMISSION-REASON-001':'not-applicable-fixture',syntax:true},null,2));
