@@ -48,14 +48,17 @@ jobs:
       - name: Pull exact connected production manifest
         working-directory: .janu-scope-diagnostic
         run: clasp pull --user "$CLASP_USER"
-      - name: Report manifest scopes and scoring read path
+      - name: Report manifest scopes, scoring path, retry semantics and sourcing hooks
         shell: bash
         run: |
           node - <<'NODE'
-          const fs=require('fs');
-          const p=JSON.parse(fs.readFileSync('.janu-scope-diagnostic/appsscript.json','utf8'));
-          const s=fs.readFileSync('.janu-scope-diagnostic/TrackerWorkflow.js','utf8');
+          const fs=require('fs'),path=require('path');
+          const dir='.janu-scope-diagnostic';
+          const p=JSON.parse(fs.readFileSync(path.join(dir,'appsscript.json'),'utf8'));
+          const s=fs.readdirSync(dir).filter(f=>/\.(?:js|gs)$/.test(f)).sort().map(f=>fs.readFileSync(path.join(dir,f),'utf8')).join('\n');
           function fn(name){const sig='function '+name+'(';const st=s.indexOf(sig);if(st<0)return null;const op=s.indexOf('{',st);let d=0,q=null,e=false,line=false,block=false;for(let i=op;i<s.length;i++){const c=s[i],n=s[i+1]||'';if(line){if(c==='\n')line=false;continue;}if(block){if(c==='*'&&n==='/'){block=false;i++;}continue;}if(q){if(e){e=false;continue;}if(c==='\\'){e=true;continue;}if(c===q)q=null;continue;}if(c==='/'&&n==='/'){line=true;i++;continue;}if(c==='/'&&n==='*'){block=true;i++;continue;}if(c==='"'||c==="'"||c==='`'){q=c;continue;}if(c==='{')d++;else if(c==='}'&&--d===0)return s.slice(st,i+1);}return null;}
           console.log(JSON.stringify({oauthScopes:p.oauthScopes||null,executionApi:p.executionApi||null,exceptionLogging:p.exceptionLogging||null,runtimeVersion:p.runtimeVersion||null},null,2));
-          for(const n of ['docText_','workerScore_']){console.log('--- '+n+' ---');console.log(fn(n)||'MISSING');}
+          for(const n of ['docText_','workerScore_','enqueue_','failQ_','classifyErr_','nextQ_','runDailySourcingWorker','sourcingFreshnessHealth_','installPhase1_2','enablePhase1_2Worker']){console.log('--- '+n+' ---');console.log(fn(n)||'MISSING');}
+          console.log('--- sourcing signals ---');
+          for(const token of ['__Sourcing Runs','last_successful_sourcing_at','Daily Sourcing','SOURCING_STALE','runDailySourcingWorker','ScriptApp.newTrigger'])console.log(token+': '+(s.includes(token)?'YES':'NO'));
           NODE
