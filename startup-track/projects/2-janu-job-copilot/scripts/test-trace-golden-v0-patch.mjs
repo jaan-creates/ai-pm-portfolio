@@ -36,6 +36,12 @@ function workerJD_(){return {status:'OK'};}
 function nextQ_(onlyApp){const v=[['Q','A','RESUME_GENERATE','queued','','',0,4,new Date(),'','','','',JSON.stringify({source:'trace-fixture'})]],t=Date.now();let best=null;for(let i=0;i<v.length;i++){const app=String(v[i][1]||''),nx=0;if(onlyApp&&app!==onlyApp)continue;if(v[i][3]==='queued'&&(!nx||nx<=t))best=i+2;}return best;}
 function runQ_(r){const s=SH_();const qid='Q',app='A',type='RESUME_GENERATE',payload={rendererPolicy:'RENDER-CAREERBREAK-V3'},attempt=1,max=4,started=now_();if(rendererQuarantineBlocks_(app,type,payload))throw new Error('RENDERER_QUARANTINE_ACTIVE');s.getRange(r,4).setValue('running');return 1;}
 function render_(v,d){const b={setFontFamily(){}};const scalar={'{{CAREER_BREAK}}':stripInternalEvidenceTags_(d&&d.career_break||'')};Object.keys(scalar).forEach(k=>{});function block(token,items){}block('{{GLOROOTS_BULLETS}}',[]);return b;}
+function phase1OnEdit(e){return e;}
+function controlPlaneExecutionAuthorized_(){return true;}
+function rendererFreshCanaryEnqueue_(){return {queueJobId:'Q-FRESH'};}
+function rendererCanaryQueueReadback_(qid){return {found:true,queueJobId:qid,status:'queued',attempts:0};}
+function rendererExactCanaryExecute_(qid){return {pass:true,queueJobId:qid};}
+function runOwnedRendererCanaryTick(){const qid=rendererWorkerStateValue_('renderer_canary_pending_queue_id');if(!qid)throw new Error('NO_PENDING_RENDERER_CANARY');return rendererExactCanaryExecute_(qid);}
 function phase1HealthTick(){return true;}
 `);
 function run(){const r=spawnSync(process.execPath,[patcher,tmp],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout);return r.stdout;}
@@ -47,7 +53,7 @@ if(syntax.status!==0){
   const numbered=twice.split('\n').slice(0,60).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');
   throw new Error('patched source syntax invalid:\n'+syntax.stderr+'\n--- transformed source head ---\n'+numbered);
 }
-for(const token of ['function traceGoldenTick_(','function traceRefreshGolden_(','function traceGoldenCompleteness_(','function runTraceGoldenSelfTest()','Trace Explorer','TRACE-GOLDEN-V0-2','function traceUrlIdentityMatch_(','function traceNextAppIdFromValues_(','function traceFindAppByUrlDetail_(','golden_trace_duplicate_evidence','DETERMINISTIC:TRACE_GOLDEN_ID_COLLISION','P1-A-E2E-CONTINUATION-3','RENDER-CAREERBREAK-V2','ATOMIC_APPEND_VERIFY_RETIRE','RENDERER_QUARANTINE_ACTIVE','TRACE-LOCK-CONVERGENCE-001','JD-SCORE-AUTH-RECOVERY-001','AUTHORIZATION_RECOVERY'])if(!twice.includes(token))throw new Error('missing '+token);
+for(const token of ['function traceGoldenTick_(','function traceRefreshGolden_(','function traceGoldenCompleteness_(','function runTraceGoldenSelfTest()','Trace Explorer','TRACE-GOLDEN-V0-2','function traceUrlIdentityMatch_(','function traceNextAppIdFromValues_(','function traceFindAppByUrlDetail_(','golden_trace_duplicate_evidence','DETERMINISTIC:TRACE_GOLDEN_ID_COLLISION','P1-A-E2E-CONTINUATION-3','RENDER-CAREERBREAK-V2','ATOMIC_APPEND_VERIFY_RETIRE','RENDERER_QUARANTINE_ACTIVE','TRACE-LOCK-CONVERGENCE-001','JD-SCORE-AUTH-RECOVERY-001','AUTHORIZATION_RECOVERY','OWNED-EDIT-WAKEUP-001','CONTROL-PLANE-CANARY-FRESH-001'])if(!twice.includes(token))throw new Error('missing '+token);
 if(!twice.includes("'Decision':'New'"))throw new Error('fresh system intake must begin Decision=New');
 if(!twice.includes(".replace(/[/]$/,'')"))throw new Error('safe generated slash matcher missing');
 if(twice.includes(".replace(//$/,'')"))throw new Error('malformed generated slash matcher survived');
@@ -61,4 +67,4 @@ if(!twice.includes("traceNextAppIdFromValues_('2026-08-23',['2026-08-23-001'])==
 if(!twice.includes("if(!raw)continue"))throw new Error('empty existing URLs must never dedupe');
 if(!twice.includes("if(!requested||last<2)"))throw new Error('empty requested URL must never dedupe');
 const claim=twice.slice(twice.indexOf('function runQ_('),twice.indexOf('function render_('));if(!claim.includes('rendererQuarantineBlocks_')||!claim.includes('RENDERER_QUARANTINE_ACTIVE'))throw new Error('claim-time renderer quarantine was not preserved');
-console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true,continuationV3Integration:true,rendererIntegration:true,rendererClaimQuarantineIntegration:true,traceDurabilityIntegration:true,traceLockConvergence:true,scoreAuthorizationRecovery:true},null,2));
+console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true,continuationV3Integration:true,rendererIntegration:true,rendererClaimQuarantineIntegration:true,traceDurabilityIntegration:true,traceLockConvergence:true,scoreAuthorizationRecovery:true,ownedEditIntegration:true,freshCanaryIntegration:true},null,2));
