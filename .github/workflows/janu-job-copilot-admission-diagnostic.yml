@@ -42,7 +42,7 @@ jobs:
       - name: Pull connected production source
         working-directory: .janu-admission-diagnostic
         run: clasp pull --user "$CLASP_USER"
-      - name: Emit bounded control-plane and pack functions
+      - name: Emit bounded canary and sourcing control paths
         shell: bash
         run: |
           node - <<'NODE'
@@ -64,7 +64,17 @@ jobs:
             }
             return 'UNTERMINATED';
           }
-          for(const name of ['ownedApplyAdmission_','ownedApplyStatePlan_','ownedEnsureQueueAdmission_','rendererFreshCanaryEnqueue_','runOwnedRendererCanaryTick','rendererExactCanaryExecute_','pack_','stripInternalEvidenceTags_','assertExternalTextClean_','sanitizeExternalText_']) {
-            console.log('\n=== '+name+' ===\n'+extract(name));
+          const names=[...source.matchAll(/function\s+([A-Za-z0-9_$]+)\s*\(/g)].map(m=>m[1]);
+          const selected=['installOwnedRendererCanaryTrigger','runOwnedRendererCanaryTick','rendererFreshCanaryEnqueue_','rendererExactCanaryExecute_','ownedApplyAdmission_','ownedApplyStatePlan_','ownedEnsureQueueAdmission_'];
+          for(const name of selected) console.log('\n=== '+name+' ===\n'+extract(name));
+          const needles=['SOURCE-CONTROL-001','SOURCE-CYCLE-DEDUPE-001','last_sourcing_success_at','__Sourcing Runs','SOURCING_STALE','sourcing_','Sourcing'];
+          const hits=[];
+          for(const name of names){const body=extract(name);if(needles.some(n=>body.includes(n)))hits.push(name);}
+          console.log('\n=== SOURCING FUNCTION NAMES ===\n'+[...new Set(hits)].sort().join('\n'));
+          for(const name of [...new Set(hits)].sort()) console.log('\n=== '+name+' ===\n'+extract(name));
+          for(const needle of ['SOURCE-CONTROL-001','SOURCE-CYCLE-DEDUPE-001','last_sourcing_success_at','__Sourcing Runs','SOURCING_STALE']){
+            console.log('\n=== CONTEXT '+needle+' ===');
+            let from=0,count=0;
+            while(count<8){const i=source.indexOf(needle,from);if(i<0)break;console.log(source.slice(Math.max(0,i-500),Math.min(source.length,i+900)));from=i+needle.length;count++;}
           }
           NODE
