@@ -1,6 +1,6 @@
-2026-08-31T11:44+05:30
-Authorize one fresh renderer canary for Metaforms 2026-08-04-002 after production CD drains.
-Execution contract: CANARY-OWNER-WORKER-001. CI may enqueue and bind the exact Queue Job ID, but must not execute the Docs-heavy renderer through Execution API caller context.
-Normal owner-authorized worker trigger must execute the exact fresh RESUME_GENERATE canary. Require status=succeeded, attempts=1, RENDER-CAREERBREAK-V3, non-empty Resume Version ID and Tailored Resume Link, and empty Error Code.
-Require FL-080-CLOSED and FL-059-CLOSED preconditions. Any other queue item, stale semantic work, terminal failure, artifact mismatch, execution-context mismatch, or polling timeout is FAIL and must keep renderer recurrence/replay fail-closed.
-Normal renderer backlog remains blocked until exact owner-worker live proof and downstream artifact/QA readback complete.
+2026-08-31T12:24+05:30
+Authorize the bounded Metaforms renderer canary after canonical owner-worker trigger topology repair and production CD drain.
+Execution contract: CANARY-OWNER-WORKER-001 + CANONICAL-WORKER-TRIGGER-001. CI may ensure trigger topology, enqueue/bind or reuse the existing zero-attempt exact canary Queue Job ID, but must not execute the Docs-heavy renderer through Execution API caller context.
+Exactly one phase1OneJobTick installable time trigger must be read back before observation. Normal owner-authorized worker execution must process the bound RESUME_GENERATE canary. Require status=succeeded, attempts=1, RENDER-CAREERBREAK-V3, non-empty Resume Version ID and Tailored Resume Link, and empty Error Code.
+Require FL-080-CLOSED and FL-059-CLOSED preconditions. Any trigger-topology failure, other queue item, stale semantic work, terminal failure, artifact mismatch, execution-context mismatch, or polling timeout is FAIL and must keep renderer recurrence/replay fail-closed.
+Normal renderer backlog remains blocked until exact owner-worker live proof and downstream artifact/Career-Break/QA readback complete.
