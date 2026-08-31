@@ -11,10 +11,12 @@ function rangeOf(name){const start=s.indexOf('function '+name+'(');if(start<0)th
 const r=rangeOf('runOwnedRendererCanaryTick');
 const code=`function runOwnedRendererCanaryTick(){if(!controlPlaneExecutionAuthorized_())throw new Error('CONTROL_OWNER_MISMATCH');let qid=rendererWorkerStateValue_('renderer_canary_pending_queue_id'),rb=qid?rendererCanaryQueueReadback_(qid):null;if(!rb||!rb.found||rb.status!=='queued'||rb.attempts!==0){const fresh=rendererFreshCanaryEnqueue_();qid=fresh.queueJobId;upsertWorkerState_('renderer_canary_pending_queue_id',qid,JSON.stringify({contract:'CONTROL-PLANE-CANARY-FRESH-001',replacedStale:true}).slice(0,1500));rb=rendererCanaryQueueReadback_(qid);}if(!rb||rb.status!=='queued'||rb.attempts!==0)throw new Error('FRESH_CANARY_NOT_QUEUED:'+JSON.stringify(rb));return rendererExactCanaryExecute_(qid);/* CONTROL-PLANE-CANARY-FRESH-001 */}`;
 s=s.slice(0,r.start)+code+s.slice(r.end);if(!s.includes('CONTROL-PLANE-CANARY-FRESH-001'))throw new Error('fresh canary marker missing');fs.writeFileSync(file,s);
-// The exact canary exposed a current live application-pack EV-* leak. Bind the
-// post-composition sanitizer regression into the same production convergence path
-// so renderer acceptance cannot drift away from external-content hygiene.
+// Always prove the post-composition sanitizer behavior. Synthetic canary fixtures do
+// not contain pack_(), so mutate the pack only when this root is the full runtime.
 const test=spawnSync(process.execPath,[path.resolve(dir,'test-pack-live-evidence-sanitization.mjs'),path.resolve(dir,'..')],{encoding:'utf8'});if(test.status!==0)throw new Error(test.stderr||test.stdout||'PACK-SAN-LIVE-METAFORMS-001 regression failed');
-const patch=spawnSync(process.execPath,[path.resolve(dir,'patch-pack-live-evidence-sanitization.mjs'),root],{encoding:'utf8'});if(patch.status!==0)throw new Error(patch.stderr||patch.stdout||'PACK-SAN-LIVE-EVIDENCE-001 patch failed');
-s=fs.readFileSync(file,'utf8');if(!s.includes('PACK-SAN-LIVE-EVIDENCE-001'))throw new Error('pack live-evidence sanitizer missing after convergence');
-const ck=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(ck.status!==0)throw new Error(ck.stderr);console.log(JSON.stringify({status:'PASS',contract:'CONTROL-PLANE-CANARY-FRESH-001',packSanitization:'PACK-SAN-LIVE-EVIDENCE-001',file:target},null,2));
+s=fs.readFileSync(file,'utf8');let packSanitization='fixture-only';
+if(s.includes('function pack_(')&&s.includes('function stripInternalEvidenceTags_(')&&s.includes('function assertExternalTextClean_(')){
+ const patch=spawnSync(process.execPath,[path.resolve(dir,'patch-pack-live-evidence-sanitization.mjs'),root],{encoding:'utf8'});if(patch.status!==0)throw new Error(patch.stderr||patch.stdout||'PACK-SAN-LIVE-EVIDENCE-001 patch failed');
+ s=fs.readFileSync(file,'utf8');if(!s.includes('PACK-SAN-LIVE-EVIDENCE-001'))throw new Error('pack live-evidence sanitizer missing after convergence');packSanitization='PACK-SAN-LIVE-EVIDENCE-001';
+}
+const ck=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(ck.status!==0)throw new Error(ck.stderr);console.log(JSON.stringify({status:'PASS',contract:'CONTROL-PLANE-CANARY-FRESH-001',packSanitization:packSanitization,file:target},null,2));
