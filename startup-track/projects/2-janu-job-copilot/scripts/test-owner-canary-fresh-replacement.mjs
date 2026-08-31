@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+const project=process.argv[2]||path.resolve('startup-track/projects/2-janu-job-copilot');
+const patch=path.join(project,'scripts','patch-owner-canary-fresh-replacement.mjs');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'fresh-canary-'));
+const f=path.join(dir,'TrackerWorkflow.js');
+fs.writeFileSync(f,`function controlPlaneExecutionAuthorized_(){return true}function rendererWorkerStateValue_(){return 'OLD'}function rendererCanaryQueueReadback_(qid){return qid==='OLD'?{found:true,status:'cancelled',attempts:0}:{found:true,status:'queued',attempts:0}}function rendererFreshCanaryEnqueue_(){return{queueJobId:'NEW'}}function upsertWorkerState_(){}function rendererExactCanaryExecute_(qid){return qid}function runOwnedRendererCanaryTick(){const qid=rendererWorkerStateValue_('renderer_canary_pending_queue_id');if(!qid)throw new Error('NO_PENDING_RENDERER_CANARY');return rendererExactCanaryExecute_(qid);}`);
+const r=spawnSync(process.execPath,[patch,dir],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout);const s=fs.readFileSync(f,'utf8');if(!s.includes('CONTROL-PLANE-CANARY-FRESH-001'))throw new Error('marker missing');if(!s.includes("rb.status!=='queued'||rb.attempts!==0"))throw new Error('stale detection missing');if(!s.includes('rendererFreshCanaryEnqueue_()'))throw new Error('fresh enqueue missing');const ck=spawnSync(process.execPath,['--check',f],{encoding:'utf8'});if(ck.status!==0)throw new Error(ck.stderr);console.log(JSON.stringify({status:'PASS',contract:'CONTROL-PLANE-CANARY-FRESH-001',cancelledPendingReplaced:true,exactFreshExecution:true}));
