@@ -19,7 +19,7 @@ concurrency:
 jobs:
   run-one-authorized-job:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       LIVE_DIR: .janu-live
       CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
@@ -69,34 +69,76 @@ jobs:
         run: |
           out="$(clasp show-authorized-user --user "$CLASP_USER" 2>&1)"
           printf '%s\n' "$out"
-          grep -q 'You are logged in as ' <<<"$out"
+          grep -q 'You are logged in as janu.bkurup@gmail.com.' <<<"$out"
       - name: Pull exact connected production source
         working-directory: .janu-live
         run: clasp pull --user "$CLASP_USER"
-      - name: Assert exact canary generation is deployed
+      - name: Assert owner-worker canary generation is deployed
         shell: bash
         run: |
-          for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 'function runRendererAuthorizedCanary()'; do
-            grep -q "$token" "$LIVE_DIR/TrackerWorkflow.js" || { echo "Exact canary runtime contract missing: $token"; exit 19; }
+          for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 CANARY-OWNER-WORKER-001 OWNER_WORKER_TRIGGER 'function runRendererAuthorizedCanaryEnqueue()' 'function runRendererCanaryReadback('; do
+            grep -q "$token" "$LIVE_DIR/TrackerWorkflow.js" || { echo "Owner-worker canary runtime contract missing: $token"; exit 19; }
           done
-      - name: Execute fresh authorized canary by exact queue ID on HEAD
+      - name: Enqueue fresh authorized canary only
         working-directory: .janu-live
         shell: bash
         run: |
           set +e
-          out="$(clasp run runRendererAuthorizedCanary --user "$CLASP_USER" 2>&1)"
+          out="$(clasp run runRendererAuthorizedCanaryEnqueue --user "$CLASP_USER" 2>&1)"
           rc=$?
           set -e
           printf '%s\n' "$out"
           test "$rc" -eq 0
           ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|CANARY_.*FAILED|CANARY_.*MISMATCH|CANARY_.*NOT_' <<<"$out"
           grep -Eq 'pass:[[:space:]]*true' <<<"$out"
-          grep -q "contract: 'CANARY-EXACT-EXECUTION-001'" <<<"$out"
-          grep -Eq "status:[[:space:]]*'succeeded'" <<<"$out"
-          grep -Eq 'attempts:[[:space:]]*1' <<<"$out"
+          grep -q "contract: 'CANARY-OWNER-WORKER-001'" <<<"$out"
+          grep -Eq "status:[[:space:]]*'queued'" <<<"$out"
           grep -Eq "workerType:[[:space:]]*'RESUME_GENERATE'" <<<"$out"
+          grep -Eq "canary:[[:space:]]*true" <<<"$out"
           grep -Eq "rendererPolicy:[[:space:]]*'RENDER-CAREERBREAK-V3'" <<<"$out"
-          grep -Eq "resumeVersionId:[[:space:]]*'[^']+'" <<<"$out"
-          grep -Eq "tailoredResumeLink:[[:space:]]*'[^']+'" <<<"$out"
-          # FL-084: aggregate jobsProcessed is no longer accepted as canary identity proof.
-          # The exact newly-enqueued queue row must succeed and create a durable artifact.
+          grep -Eq "runtimePrecondition:[[:space:]]*'FL-080-CLOSED'" <<<"$out"
+          grep -Eq "tracePrecondition:[[:space:]]*'FL-059-CLOSED'" <<<"$out"
+          qid="$(sed -n "s/.*queueJobId:[[:space:]]*'\([^']*\)'.*/\1/p" <<<"$out" | head -n1)"
+          test -n "$qid" || { echo 'Exact canary Queue Job ID missing from enqueue result.' >&2; exit 20; }
+          echo "CANARY_QID=$qid" >> "$GITHUB_ENV"
+          echo "Enqueued exact canary $qid; execution is intentionally delegated to the normal owner-authorized worker trigger."
+      - name: Await owner-worker terminal canary proof
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CANARY_QID:-}"
+          for i in $(seq 1 36); do
+            set +e
+            out="$(clasp run runRendererCanaryReadback --params "[\"$CANARY_QID\"]" --user "$CLASP_USER" 2>&1)"
+            rc=$?
+            set -e
+            printf '%s\n' "$out"
+            test "$rc" -eq 0
+            ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+            status="$(sed -n "s/.*status:[[:space:]]*'\([^']*\)'.*/\1/p" <<<"$out" | head -n1 | tr '[:upper:]' '[:lower:]')"
+            case "$status" in
+              succeeded)
+                grep -Eq "queueJobId:[[:space:]]*'$CANARY_QID'" <<<"$out"
+                grep -Eq 'attempts:[[:space:]]*1' <<<"$out"
+                grep -Eq "workerType:[[:space:]]*'RESUME_GENERATE'" <<<"$out"
+                grep -Eq "canary:[[:space:]]*true" <<<"$out"
+                grep -Eq "rendererPolicy:[[:space:]]*'RENDER-CAREERBREAK-V3'" <<<"$out"
+                grep -Eq "resumeVersionId:[[:space:]]*'[^']+'" <<<"$out"
+                grep -Eq "tailoredResumeLink:[[:space:]]*'[^']+'" <<<"$out"
+                if grep -Eq "errorCode:[[:space:]]*'[^']+'" <<<"$out"; then echo 'Canary succeeded with non-empty errorCode.' >&2; exit 21; fi
+                echo "Exact canary $CANARY_QID succeeded in owner-worker context."
+                exit 0
+                ;;
+              failed|cancelled|dead_letter|dead-letter)
+                echo "Exact canary $CANARY_QID reached terminal failure status $status." >&2
+                exit 22
+                ;;
+              *)
+                echo "Exact canary $CANARY_QID not terminal yet (status=${status:-unknown}); poll $i/36."
+                sleep 15
+                ;;
+            esac
+          done
+          echo "Exact canary $CANARY_QID did not reach terminal state within 9 minutes; owner worker trigger freshness must be investigated." >&2
+          exit 23
