@@ -20,6 +20,7 @@ function rangeOf(name){const sig='function '+name+'(';const start=s.indexOf(sig)
 function replaceFunction(name,code){const r=rangeOf(name);if(!r)throw new Error('TRACE repair target missing '+name);s=s.slice(0,r.start)+code+s.slice(r.end);}
 function addBefore(anchor,token,code){if(s.includes(token))return;const i=s.indexOf(anchor);if(i<0)throw new Error('TRACE repair anchor missing '+anchor);s=s.slice(0,i)+code+'\n'+s.slice(i);}
 function runPatch(script,label){const r=spawnSync(process.execPath,[path.resolve(dir,script),root],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout||label+' failed');return r.stdout;}
+function runTest(script,label){const r=spawnSync(process.execPath,[path.resolve(dir,script),path.resolve(dir,'..')],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout||label+' failed');return r.stdout;}
 
 const bad=".replace(//$/,'')";
 const good=".replace(/[/]$/,'')";
@@ -49,12 +50,16 @@ runPatch('patch-renderer-guard-placement.mjs','guard placement');
 runPatch('patch-runtime-queue-quarantine-order.mjs','runtime queue ordering');
 runPatch('patch-trace-durability.mjs','trace durability');
 runPatch('patch-health-runtime-liveness.mjs','health runtime liveness');
+runTest('test-owned-edit-intake-admission.mjs','owned edit wakeup regression');
+runTest('test-owner-canary-fresh-replacement.mjs','fresh canary replacement regression');
+runPatch('patch-owned-edit-intake-admission.mjs','owned edit intake/apply admission');
+runPatch('patch-owner-canary-fresh-replacement.mjs','fresh owner canary replacement');
 s=fs.readFileSync(file,'utf8');
 if(!s.includes('RENDER-CAREERBREAK-V3'))throw new Error('renderer V3 missing');
 if(!s.includes('RENDER-CAREERBREAK-V2'))s+='\n// RENDER-CAREERBREAK-V2 compatibility marker; active contract RENDER-CAREERBREAK-V3.\n';
 if(!s.includes('PREVENTION-RECURRENCE-001'))s+='\nfunction rendererPreventionContract_(){return \'PREVENTION-RECURRENCE-001\';}\n';
-for(const token of ['TRACE-GOLDEN-V0-2','P1-A-E2E-CONTINUATION-3','P1-A-E2E-CONTINUATION-4','E2E-CURSOR-FAIRNESS-001','E2E-STRANDED-JD-001','QUEUE-NOJOB-QUARANTINE-001','ATOMIC_APPEND_VERIFY_RETIRE','HEALTH-RUNTIME-RESERVE-001','REGRESSION-HEALTH-FINAL-LOCK-001','CANARY-PRECONDITION-001'])if(!s.includes(token))throw new Error('Integrated release safety contract missing '+token);
+for(const token of ['TRACE-GOLDEN-V0-2','P1-A-E2E-CONTINUATION-3','P1-A-E2E-CONTINUATION-4','E2E-CURSOR-FAIRNESS-001','E2E-STRANDED-JD-001','QUEUE-NOJOB-QUARANTINE-001','ATOMIC_APPEND_VERIFY_RETIRE','HEALTH-RUNTIME-RESERVE-001','REGRESSION-HEALTH-FINAL-LOCK-001','CANARY-PRECONDITION-001','OWNED-EDIT-WAKEUP-001','CONTROL-PLANE-CANARY-FRESH-001'])if(!s.includes(token))throw new Error('Integrated release safety contract missing '+token);
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
 if(syntax.status!==0){const head=s.split('\n').slice(0,40).map((line,i)=>String(i+1).padStart(3,'0')+': '+line).join('\n');throw new Error('TRACE/runtime transformed source invalid: '+syntax.stderr+'\n--- transformed head ---\n'+head);}
-console.log(JSON.stringify({status:'PASS',file:target,contract:'TRACE-GOLDEN-V0-2',baseInstallerSkipped:hasTrace,generatedEscapeRepairs:count,generatedSyntax:true,dedupeNegativeGuard:true,uniqueIdGuard:true,duplicateEvidence:true,continuation:'P1-A-E2E-CONTINUATION-4',continuationCompat:'P1-A-E2E-CONTINUATION-3',cursorFairness:'E2E-CURSOR-FAIRNESS-001',strandedJd:'E2E-STRANDED-JD-001',renderer:'RENDER-CAREERBREAK-V3',rendererCanary:'CANARY-PRECONDITION-001',queueRuntime:'QUEUE-NOJOB-QUARANTINE-001',traceDurability:'TRACE-DURABLE-V1',healthRuntime:'HEALTH-RUNTIME-RESERVE-001',healthFinalLock:'REGRESSION-HEALTH-FINAL-LOCK-001',liveCanaryRequired:true},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,contract:'TRACE-GOLDEN-V0-2',baseInstallerSkipped:hasTrace,generatedEscapeRepairs:count,generatedSyntax:true,dedupeNegativeGuard:true,uniqueIdGuard:true,duplicateEvidence:true,continuation:'P1-A-E2E-CONTINUATION-4',continuationCompat:'P1-A-E2E-CONTINUATION-3',cursorFairness:'E2E-CURSOR-FAIRNESS-001',strandedJd:'E2E-STRANDED-JD-001',renderer:'RENDER-CAREERBREAK-V3',rendererCanary:'CANARY-PRECONDITION-001',queueRuntime:'QUEUE-NOJOB-QUARANTINE-001',traceDurability:'TRACE-DURABLE-V1',healthRuntime:'HEALTH-RUNTIME-RESERVE-001',healthFinalLock:'REGRESSION-HEALTH-FINAL-LOCK-001',ownedEdit:'OWNED-EDIT-WAKEUP-001',freshOwnerCanary:'CONTROL-PLANE-CANARY-FRESH-001',liveCanaryRequired:true},null,2));
