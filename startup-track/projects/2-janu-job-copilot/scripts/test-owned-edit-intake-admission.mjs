@@ -6,13 +6,16 @@ const project=process.argv[2]||path.resolve('startup-track/projects/2-janu-job-c
 const patch=path.join(project,'scripts','patch-owned-edit-intake-admission.mjs');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'owned-edit-'));
 const f=path.join(dir,'TrackerWorkflow.js');
-fs.writeFileSync(f,`const P12={VERSION:'1.3.8'};function enqueue_(){}function hash_(){}function upsertWorkerState_(){}function p1aQueueWorkerState_(){return{state:'NONE'}}function phase1OnEdit(e){return e;}function verifyReleaseIdentity(){}`);
+fs.writeFileSync(f,`const P12={VERSION:'1.3.8'};const JC={S:{Q:'__Processing Queue'}};function enqueue_(){return'Q-1'}function hash_(){return'h'}function upsertWorkerState_(){}function p1aQueueWorkerState_(){return{state:'NONE'}}function SH_(){return{getLastRow(){return 2},getLastColumn(){return 4},getRange(){return{getDisplayValues(){return[['Queue Job ID','Application ID','Worker Type','Status']]},getDisplayValue(){return''},setValue(){return this}}}}}function hm_(){return{'Queue Job ID':1,'Application ID':2,'Worker Type':3,'Status':4}}function phase1OnEdit(e){return e;}function verifyReleaseIdentity(){}`);
 function run(){const r=spawnSync(process.execPath,[patch,dir],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout);return r.stdout;}
 run();const once=fs.readFileSync(f,'utf8');run();const twice=fs.readFileSync(f,'utf8');if(once!==twice)throw new Error('Patch not idempotent');
-for(const t of ['OWNED-EDIT-INTAKE-001','OWNED-EDIT-APPLY-001','OWNED-EDIT-WAKEUP-001','function ownedSourceIntakeBootstrap_(','function ownedApplyAdmission_(','if(ownedImmediateEditContract_(e))return'])if(!once.includes(t))throw new Error('Missing '+t);
+for(const t of ['OWNED-EDIT-INTAKE-001','OWNED-EDIT-WAKEUP-001','OWNED-APPLY-STATE-MATRIX-001','OWNED-APPLY-QUEUE-PROOF-001','function ownedSourceIntakeBootstrap_(','function ownedApplyAdmission_(','if(ownedImmediateEditContract_(e))return'])if(!once.includes(t))throw new Error('Missing '+t);
 if(!once.includes("'Processing Status':'Queued for verification'"))throw new Error('Sources Inbox does not initialize processing status');
 if(!once.includes("'Captured By':'Janu'")||!once.includes("'Candidate Intent':'Apply'"))throw new Error('Sources Inbox bootstrap fields incomplete');
-if(!once.includes("enqueue_(id,'JD_RETRIEVE'")||!once.includes("enqueue_(id,'RESUME_GENERATE'"))throw new Error('Apply admission does not schedule system work');
+for(const worker of ["worker:'JD_RETRIEVE'","worker:'JD_PARSE_SCORE_MAP'","worker:'RESUME_GENERATE'","worker:'QA_FINALIZE'"])if(!once.includes(worker))throw new Error('Apply state worker missing '+worker);
+if(!once.includes('ownedEnsureQueueAdmission_(id,plan.worker'))throw new Error('Apply admission does not require queue admission');
+if(!once.includes('DETERMINISTIC:OWNED_APPLY_QUEUE_READBACK_FAILED'))throw new Error('Apply admission lacks queue readback failure');
+const admitAt=once.indexOf('ownedEnsureQueueAdmission_(id,plan.worker'),writeAt=once.indexOf("const writes={'Status':plan.status");if(admitAt<0||writeAt<0||admitAt>writeAt)throw new Error('Visible state can be written before queue proof');
 if(!once.includes("'yyyy-MM-dd HH:mm'")||!once.includes("+' IST'"))throw new Error('Operator timestamp format not canonicalized');
 const ck=spawnSync(process.execPath,['--check',f],{encoding:'utf8'});if(ck.status!==0)throw new Error(ck.stderr);
-console.log(JSON.stringify({status:'PASS',contract:'OWNED-EDIT-WAKEUP-001',intakeBootstrap:true,applyAdmission:true,timestampFormat:'yyyy-MM-dd HH:mm IST',idempotent:true}));
+console.log(JSON.stringify({status:'PASS',contract:'OWNED-EDIT-WAKEUP-001',intakeBootstrap:true,applyStateMatrix:'OWNED-APPLY-STATE-MATRIX-001',queueProof:'OWNED-APPLY-QUEUE-PROOF-001',timestampFormat:'yyyy-MM-dd HH:mm IST',idempotent:true}));
