@@ -1,7 +1,6 @@
-2026-08-29T23:16+05:30
-Authorize a fresh renderer canary for Metaforms 2026-08-04-002 only after production CD drains and current production provenance/readback remains valid.
-Do not reuse CANARY-FL060-METAFORMS-20260827-1818; it is terminal STALE_SEMANTIC_WORK evidence for FL-084.
-Require CANARY-EXACT-EXECUTION-001: freshly enqueue current-state RESUME_GENERATE, execute that exact freshly created Queue Job ID, require status=succeeded, attempts=1, RENDER-CAREERBREAK-V3, non-empty Resume Version ID and Tailored Resume Link.
-Aggregate jobsProcessed is never identity proof; stale/cancelled work counts as zero processed work under QUEUE-PROCESSED-ACCOUNTING-001 / STALE-WORK-COUNT-001.
-Any cancellation, stale semantic work, other queue item, missing artifact, or exact-ID mismatch is FAIL and must not open renderer recurrence/replay.
-Normal renderer backlog fan-out remains blocked until exact live proof and downstream QA/readback complete.
+2026-08-31T11:44+05:30
+Authorize one fresh renderer canary for Metaforms 2026-08-04-002 after production CD drains.
+Execution contract: CANARY-OWNER-WORKER-001. CI may enqueue and bind the exact Queue Job ID, but must not execute the Docs-heavy renderer through Execution API caller context.
+Normal owner-authorized worker trigger must execute the exact fresh RESUME_GENERATE canary. Require status=succeeded, attempts=1, RENDER-CAREERBREAK-V3, non-empty Resume Version ID and Tailored Resume Link, and empty Error Code.
+Require FL-080-CLOSED and FL-059-CLOSED preconditions. Any other queue item, stale semantic work, terminal failure, artifact mismatch, execution-context mismatch, or polling timeout is FAIL and must keep renderer recurrence/replay fail-closed.
+Normal renderer backlog remains blocked until exact owner-worker live proof and downstream artifact/QA readback complete.
