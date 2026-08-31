@@ -1,6 +1,6 @@
-2026-08-31T12:24+05:30
-Authorize the bounded Metaforms renderer canary after canonical owner-worker trigger topology repair and production CD drain.
-Execution contract: CANARY-OWNER-WORKER-001 + CANONICAL-WORKER-TRIGGER-001. CI may ensure trigger topology, enqueue/bind or reuse the existing zero-attempt exact canary Queue Job ID, but must not execute the Docs-heavy renderer through Execution API caller context.
-Exactly one phase1OneJobTick installable time trigger must be read back before observation. Normal owner-authorized worker execution must process the bound RESUME_GENERATE canary. Require status=succeeded, attempts=1, RENDER-CAREERBREAK-V3, non-empty Resume Version ID and Tailored Resume Link, and empty Error Code.
-Require FL-080-CLOSED and FL-059-CLOSED preconditions. Any trigger-topology failure, other queue item, stale semantic work, terminal failure, artifact mismatch, execution-context mismatch, or polling timeout is FAIL and must keep renderer recurrence/replay fail-closed.
-Normal renderer backlog remains blocked until exact owner-worker live proof and downstream artifact/Career-Break/QA readback complete.
+2026-08-31T13:55+05:30
+Authorize exactly one fresh bounded Metaforms renderer canary after verified production deployment of the independent_break structural renderer fix.
+Production proof: CD run 33372513318 succeeded; deployment provenance PASS; renderer_careerbreak_self_test PASS for RENDER-CAREERBREAK-LIVE-FIXTURE-002; renderer recurrence remains SELF_TEST_PASS_CANARY_PENDING and replay remains fail-closed.
+Execution contract: CANARY-OWNER-WORKER-001 + CANARY-EXACT-EXECUTION-001. CI may enqueue the fresh canary only; the normal owner-authorized worker trigger must execute RESUME_GENERATE.
+Require application 2026-08-04-002, RENDER-CAREERBREAK-V3, status=succeeded, attempts=1, non-empty Resume Version ID and Tailored Resume Link, empty Error Code, and exact artifact/readback agreement.
+Do not replay Q-20260831-120029-a5213ad8; it remains terminal failure evidence. Do not fan out or release normal renderer backlog unless this fresh canary succeeds and recurrence/replay gates explicitly read back CANARY_PASS.
