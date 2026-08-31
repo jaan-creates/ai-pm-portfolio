@@ -42,7 +42,7 @@ jobs:
       - name: Pull connected production source
         working-directory: .janu-admission-diagnostic
         run: clasp pull --user "$CLASP_USER"
-      - name: Emit stale-work and exact-canary processing path
+      - name: Emit Apply and exact-canary processing path
         shell: bash
         run: |
           node - <<'NODE'
@@ -55,18 +55,14 @@ jobs:
             for(let i=open;i<source.length;i++){
               const c=source[i],n=source[i+1]||'';
               if(line){if(c==='\n')line=false;continue;}
-              if(block){if(c==='*'&&n==='/'){block=false;i++;}continue;}
+              if(block){if(c==='*'&&n==='/'){block=false;i++;continue;}
               if(quote){if(esc){esc=false;continue;}if(c==='\\'){esc=true;continue;}if(c===quote)quote=null;continue;}
               if(c==='/'&&n==='/'){line=true;i++;continue;} if(c==='/'&&n==='*'){block=true;i++;continue;}
               if(c==='"'||c==="'"||c==='`'){quote=c;continue;} if(c==='{')depth++; else if(c==='}'&&--depth===0)return source.slice(start,i+1);
             }
             return 'UNTERMINATED';
           }
-          for(const name of ['processQ_','runQ_','nextQ_','workNeeded_','workNeededFromState_','rendererQuarantineBlocks_','rendererCanaryPreconditionsMet_','phase1OneJobTickCore_']) {
+          for(const name of ['ownedApplyAdmission_','p1aQueueWorkerState_','processQ_','runQ_','workNeeded_','workNeededFromState_','rendererQuarantineBlocks_','rendererCanaryPreconditionsMet_','rendererFreshCanaryEnqueue_','runOwnedRendererCanaryTick','rendererExactCanaryExecute_']) {
             console.log('\n=== '+name+' ===\n'+extract(name));
           }
-          const marker='STALE_SEMANTIC_WORK';
-          let at=source.indexOf(marker);
-          console.log('\n=== STALE_SEMANTIC_WORK CONTEXT ===');
-          while(at>=0){ console.log(source.slice(Math.max(0,at-1200),Math.min(source.length,at+1800))); at=source.indexOf(marker,at+marker.length); }
           NODE
