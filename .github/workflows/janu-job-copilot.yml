@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - janu-job-copilot/apps-script-ci
       - janu-job-copilot/p1a-release
     paths:
       - 'startup-track/projects/2-janu-job-copilot/scripts/**'
@@ -41,6 +40,18 @@ jobs:
     steps:
       - name: Checkout isolated Job Copilot branch
         uses: actions/checkout@v4
+      - name: Reject superseded PR deployment
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          event_head='${{ github.event.pull_request.head.sha }}'
+          remote_head="$(git ls-remote origin "refs/heads/${GITHUB_HEAD_REF}" | awk '{print $1}')"
+          test -n "$remote_head" || { echo 'Unable to resolve current remote PR head'; exit 18; }
+          if [ "$event_head" != "$remote_head" ]; then
+            echo "Superseded deployment blocked: event=$event_head current=$remote_head" >&2
+            exit 18
+          fi
+          echo "PR deployment head is current: $event_head"
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -71,7 +82,15 @@ jobs:
           printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
           chmod 600 "$LIVE_DIR/.clasp.json"
       - name: Confirm CI clasp identity
-        run: clasp show-authorized-user --user "$CLASP_USER"
+        shell: bash
+        run: |
+          set -o pipefail
+          out="$(clasp show-authorized-user --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          if grep -Eiq 'Not logged in|No credentials found' <<<"$out" || ! grep -q 'You are logged in as ' <<<"$out"; then
+            echo 'CI clasp named profile is not semantically authenticated.' >&2
+            exit 16
+          fi
       - name: Pull current production Apps Script
         working-directory: .janu-live
         run: clasp pull --user "$CLASP_USER"
@@ -111,7 +130,7 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-p1a-jd-worker.mjs" "$LIVE_DIR"
       - name: Add connected release provenance writeback
         run: node "$PROJECT_DIR/scripts/patch-release-provenance.mjs" "$LIVE_DIR"
-      - name: Add TRACE-GOLDEN-01 trace and same-fixture runner
+      - name: Add TRACE-GOLDEN, continuation, renderer quarantine and trace durability
         run: node "$PROJECT_DIR/scripts/patch-trace-golden-v0-runtime.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
@@ -152,11 +171,11 @@ jobs:
           for token in releaseProvenanceValidate_ releaseProvenanceContractSelfTest_ recordDeploymentProvenance runReleaseProvenanceContractSelfTest deployment_provenance_status deployment_git_commit deployment_source_sha256 REL-PROV-1; do
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Release provenance contract missing: $token"; exit 13; }
           done
-      - name: Validate TRACE-GOLDEN-01 contract
+      - name: Validate active TRACE, continuation, renderer, durability and runtime safety contracts
         shell: bash
         run: |
-          for token in traceGoldenTick_ traceRefreshGolden_ traceGoldenCompleteness_ runTraceGoldenSelfTest TRACE-GOLDEN-V0-1 'Trace Explorer' golden_trace_status; do
-            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "TRACE-GOLDEN-01 contract missing: $token"; exit 14; }
+          for token in traceGoldenTick_ traceRefreshGolden_ traceGoldenCompleteness_ runTraceGoldenSelfTest TRACE-GOLDEN-V0-2 P1-A-E2E-CONTINUATION-3 RENDER-CAREERBREAK-V2 RENDER-CAREERBREAK-001 PREVENTION-RECURRENCE-001 rendererQuarantineBlocks_ ATOMIC_APPEND_VERIFY_RETIRE golden_trace_lock_reset 'Trace Explorer' golden_trace_status QUEUE-NOJOB-QUARANTINE-001 HEALTH-RUNTIME-RESERVE-001 REGRESSION-HEALTH-FINAL-LOCK-001; do
+            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Active release/runtime contract missing: $token"; exit 14; }
           done
           grep -q "'Decision':'New'" /tmp/janu-job-copilot-combined.js
       - name: Build privacy-safe transformed-source manifest
@@ -194,28 +213,49 @@ jobs:
         working-directory: .janu-live
         shell: bash
         run: |
-          # These functions were just pushed in this workflow. Execute against current HEAD/dev source;
-          # --nondev targets the previously deployed executable and can hide newly pushed functions.
-          clasp run runReleaseProvenanceContractSelfTest --user "$CLASP_USER"
+          run_clasp_checked() {
+            local out rc
+            set +e
+            out="$(clasp run "$@" 2>&1)"
+            rc=$?
+            set -e
+            printf '%s\n' "$out"
+            if [ "$rc" -ne 0 ] || grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"; then
+              echo "Semantic clasp execution failure for: $*" >&2
+              return 15
+            fi
+          }
+          run_clasp_checked runReleaseProvenanceContractSelfTest --user "$CLASP_USER"
           PARAMS="$(node -e 'console.log(JSON.stringify([process.env.GITHUB_SHA,process.env.GITHUB_RUN_ID,process.env.GITHUB_RUN_ATTEMPT,process.env.DEPLOYED_SOURCE_HASH,process.env.EXPECTED_VERSION,process.env.EXPECTED_SUITE]))')"
           echo 'Persisting privacy-safe deployment provenance to connected product state.'
-          clasp run recordDeploymentProvenance --params "$PARAMS" --user "$CLASP_USER"
-      - name: Attempt P1-A self-test immediately
-        continue-on-error: true
+          run_clasp_checked recordDeploymentProvenance --params "$PARAMS" --user "$CLASP_USER"
+      - name: Require P1-A self-test on verified HEAD
         working-directory: .janu-live
-        run: clasp run runP1AContractSelfTest --nondev --user "$CLASP_USER"
-      - name: Attempt P1-B self-test immediately
-        continue-on-error: true
+        shell: bash
+        run: |
+          out="$(clasp run runP1AContractSelfTest --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+      - name: Require P1-B self-test on verified HEAD
         working-directory: .janu-live
-        run: clasp run runP1BContractSelfTest --nondev --user "$CLASP_USER"
-      - name: Attempt P1-C self-test immediately
-        continue-on-error: true
+        shell: bash
+        run: |
+          out="$(clasp run runP1BContractSelfTest --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+      - name: Require P1-C self-test on verified HEAD
         working-directory: .janu-live
-        run: clasp run runP1CContractSelfTest --nondev --user "$CLASP_USER"
-      - name: Attempt bounded health/control tick
-        continue-on-error: true
+        shell: bash
+        run: |
+          out="$(clasp run runP1CContractSelfTest --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+      - name: Require bounded health/control tick on verified HEAD
         working-directory: .janu-live
-        run: clasp run phase1HealthTick --nondev --user "$CLASP_USER"
+        shell: bash
+        run: |
+          started="$(date +%s)"
+          out="$(clasp run phase1HealthTick --user "$CLASP_USER" 2>&1)"; rc=$?
+          elapsed="$(( $(date +%s) - started ))"
+          printf '%s\n' "$out"
+          echo "Health tick elapsed seconds: $elapsed"
+          test "$rc" -eq 0
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+          test "$elapsed" -lt 240 || { echo "Health tick exceeded runtime budget: ${elapsed}s"; exit 17; }
       - name: Deployment summary
         if: always()
         shell: bash
@@ -225,16 +265,13 @@ jobs:
           echo "- Git commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "- GitHub Actions run: $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
           echo "- Verified transformed-source SHA-256: ${DEPLOYED_SOURCE_HASH:-not verified}" >> "$GITHUB_STEP_SUMMARY"
-          echo '- Verified deployment identity is persisted to connected Job Copilot Worker State only after post-push source-hash verification.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- clasp identity and runtime calls are semantically checked; known auth/API/execution/502 error text is a failed gate even when clasp exits zero.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- P1 self-tests and bounded health execute the same verified HEAD generation that CD pushed; versioned/nondev drift cannot satisfy the release gate.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Bounded health execution is a required release gate; a green job cannot mask runtime liveness failure.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Verified deployment identity is persisted to connected Job Copilot Worker State only after post-push source-hash verification and successful semantic execution.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Privacy-safe source manifest uploaded; source text is not published as an artifact.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1 contract telemetry is not treated as end-to-end feature completion.' >> "$GITHUB_STEP_SUMMARY"
           echo '- TRACE-GOLDEN-01 adds bounded same-fixture trace reconstruction and does not create an independent retrieval/provider path.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- P1-A includes runtime retrieval adapters, a bounded direct-official vacancy worker, and a RetrievalProvider-backed JD worker.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- JD recovery uses an official Ashby public posting adapter before generic page retrieval; paid search fallback remains disabled until P1-B runtime enforcement is complete.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Successful JD recovery requires canonical artifact/application readback and then queues the scoring stage.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Health-driven vacancy verification is limited to one stale active application per tick and cannot use paid provider fallback.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Stale official-Ashby JD blockers are retried at most one application per health tick; OpenAI parsing remains covered by existing budget/cost guards.' >> "$GITHUB_STEP_SUMMARY"
-          echo '- Applications vacancy/provenance columns are an explicit tracker schema migration.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Existing P0 release validator remains mandatory before push.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Documentation/governance changes are validated separately and do not trigger this production deploy workflow.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"

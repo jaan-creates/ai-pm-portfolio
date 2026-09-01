@@ -1,0 +1,4 @@
+2026-08-28T15:02+05:30
+Inspect connected Apps Script exact lookup semantics for golden trace application 2026-08-23-002 after score recovery returned NOT_NEEDED.
+Report find_, workNeededFromState_, jdScoreAdmissionRecoveryTick_, traceGoldenTick_, traceCreateGoldenApplication_, docText_, workerScore_.
+Read-only diagnostic only; no production mutation.

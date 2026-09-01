@@ -1,0 +1,144 @@
+name: Janu Job Copilot Authorized Canary
+
+on:
+  push:
+    branches:
+      - janu-job-copilot/apps-script-ci
+    paths:
+      - '.github/janu-job-copilot-canary-trigger.txt'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: janu-job-copilot-authorized-canary
+  cancel-in-progress: false
+
+jobs:
+  run-one-authorized-job:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LIVE_DIR: .janu-live
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout isolated Job Copilot branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Wait for production deploy queue to drain
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            active=0
+            for status in in_progress queued pending requested waiting; do
+              count="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/janu-job-copilot.yml/runs?branch=janu-job-copilot%2Fapps-script-ci&status=${status}&per_page=1" --jq '.total_count')"
+              active=$((active + count))
+            done
+            echo "Production CD active/queued count: $active"
+            if [ "$active" -eq 0 ]; then exit 0; fi
+            sleep 10
+          done
+          echo 'Production CD queue did not drain within 10 minutes.' >&2
+          exit 18
+      - name: Verify deployment credentials exist
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON" || { echo 'Missing JANU_CLASPRC_JSON'; exit 2; }
+          test -n "$CLASP_JSON" || { echo 'Missing JANU_CLASP_JSON'; exit 2; }
+      - name: Install clasp
+        run: npm install --global @google/clasp
+      - name: Prepare Apps Script execution workspace
+        shell: bash
+        run: |
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+      - name: Confirm CI clasp identity
+        shell: bash
+        run: |
+          out="$(clasp show-authorized-user --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          grep -q 'You are logged in as janu.bkurup@gmail.com.' <<<"$out"
+      - name: Pull exact connected production source
+        working-directory: .janu-live
+        run: clasp pull --user "$CLASP_USER"
+      - name: Assert owner-worker canary generation is deployed
+        shell: bash
+        run: |
+          for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 CANARY-OWNER-WORKER-001 OWNER_WORKER_TRIGGER 'function runRendererAuthorizedCanaryEnqueue()' 'function runRendererCanaryReadback('; do
+            grep -q "$token" "$LIVE_DIR/TrackerWorkflow.js" || { echo "Owner-worker canary runtime contract missing: $token"; exit 19; }
+          done
+      - name: Enqueue fresh authorized canary only
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set +e
+          out="$(clasp run runRendererAuthorizedCanaryEnqueue --user "$CLASP_USER" 2>&1)"
+          rc=$?
+          set -e
+          printf '%s\n' "$out"
+          test "$rc" -eq 0
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|CANARY_.*FAILED|CANARY_.*MISMATCH|CANARY_.*NOT_' <<<"$out"
+          grep -Eq 'pass:[[:space:]]*true' <<<"$out"
+          grep -q "contract: 'CANARY-OWNER-WORKER-001'" <<<"$out"
+          grep -Eq "status:[[:space:]]*'queued'" <<<"$out"
+          grep -Eq "workerType:[[:space:]]*'RESUME_GENERATE'" <<<"$out"
+          grep -Eq "canary:[[:space:]]*true" <<<"$out"
+          grep -Eq "rendererPolicy:[[:space:]]*'RENDER-CAREERBREAK-V3'" <<<"$out"
+          grep -Eq "runtimePrecondition:[[:space:]]*'FL-080-CLOSED'" <<<"$out"
+          grep -Eq "tracePrecondition:[[:space:]]*'FL-059-CLOSED'" <<<"$out"
+          qid="$(sed -n "s/.*queueJobId:[[:space:]]*'\([^']*\)'.*/\1/p" <<<"$out" | head -n1)"
+          test -n "$qid" || { echo 'Exact canary Queue Job ID missing from enqueue result.' >&2; exit 20; }
+          echo "CANARY_QID=$qid" >> "$GITHUB_ENV"
+          echo "Enqueued exact canary $qid; execution is intentionally delegated to the normal owner-authorized worker trigger."
+      - name: Await owner-worker terminal canary proof
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CANARY_QID:-}"
+          for i in $(seq 1 36); do
+            set +e
+            out="$(clasp run runRendererCanaryReadback --params "[\"$CANARY_QID\"]" --user "$CLASP_USER" 2>&1)"
+            rc=$?
+            set -e
+            printf '%s\n' "$out"
+            test "$rc" -eq 0
+            ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+            status="$(sed -n "s/.*status:[[:space:]]*'\([^']*\)'.*/\1/p" <<<"$out" | head -n1 | tr '[:upper:]' '[:lower:]')"
+            case "$status" in
+              succeeded)
+                grep -Eq "queueJobId:[[:space:]]*'$CANARY_QID'" <<<"$out"
+                grep -Eq 'attempts:[[:space:]]*1' <<<"$out"
+                grep -Eq "workerType:[[:space:]]*'RESUME_GENERATE'" <<<"$out"
+                grep -Eq "canary:[[:space:]]*true" <<<"$out"
+                grep -Eq "rendererPolicy:[[:space:]]*'RENDER-CAREERBREAK-V3'" <<<"$out"
+                grep -Eq "resumeVersionId:[[:space:]]*'[^']+'" <<<"$out"
+                grep -Eq "tailoredResumeLink:[[:space:]]*'[^']+'" <<<"$out"
+                if grep -Eq "errorCode:[[:space:]]*'[^']+'" <<<"$out"; then echo 'Canary succeeded with non-empty errorCode.' >&2; exit 21; fi
+                echo "Exact canary $CANARY_QID succeeded in owner-worker context."
+                exit 0
+                ;;
+              failed|cancelled|dead_letter|dead-letter)
+                echo "Exact canary $CANARY_QID reached terminal failure status $status." >&2
+                exit 22
+                ;;
+              *)
+                echo "Exact canary $CANARY_QID not terminal yet (status=${status:-unknown}); poll $i/36."
+                sleep 15
+                ;;
+            esac
+          done
+          echo "Exact canary $CANARY_QID did not reach terminal state within 9 minutes; owner worker trigger freshness must be investigated." >&2
+          exit 23

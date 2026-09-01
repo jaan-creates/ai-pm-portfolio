@@ -53,6 +53,12 @@ jobs:
         shell: bash
         run: |
           tmp="$(mktemp -d)"
+          printf '# Product\nChange: CS-20260824-033\n' > "$tmp/PRODUCT.md"
+          node "$PROJECT_DIR/scripts/validate-public-doc-privacy.mjs" "$tmp" >/tmp/privacy-id-positive.out 2>&1 || {
+            echo 'Privacy guard falsely rejected a canonical project/change ID'
+            cat /tmp/privacy-id-positive.out
+            exit 19
+          }
           printf '# Product\nPrivate contact: person@example.com\n' > "$tmp/PRODUCT.md"
           if node "$PROJECT_DIR/scripts/validate-public-doc-privacy.mjs" "$tmp" >/tmp/privacy-negative.out 2>&1; then
             echo 'Privacy guard failed to reject a known email fixture'
@@ -60,6 +66,13 @@ jobs:
             exit 20
           fi
           grep -q 'PUBLIC-DOC-PRIVACY-1' /tmp/privacy-negative.out
+          printf '# Product\nPrivate phone: +1 212 555 0199\n' > "$tmp/PRODUCT.md"
+          if node "$PROJECT_DIR/scripts/validate-public-doc-privacy.mjs" "$tmp" >/tmp/privacy-phone-negative.out 2>&1; then
+            echo 'Privacy guard failed to reject a phone-like fixture'
+            cat /tmp/privacy-phone-negative.out
+            exit 21
+          fi
+          grep -q 'phone-like-number' /tmp/privacy-phone-negative.out
 
       - name: Behavior-test deployment manifest
         shell: bash
@@ -73,11 +86,11 @@ jobs:
           grep -q "$h1" /tmp/deployment-manifest-test.json
           if grep -q 'function alpha' /tmp/deployment-manifest-test.json; then
             echo 'Deployment manifest leaked source text'
-            exit 21
+            exit 22
           fi
           printf 'function beta(){return 3;}\n' > "$tmp/B.gs"
           h2="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" --hash-only)"
-          test "$h1" != "$h2" || { echo 'Deployment hash did not change with source change'; exit 22; }
+          test "$h1" != "$h2" || { echo 'Deployment hash did not change with source change'; exit 23; }
 
       - name: Behavior-test release provenance patch
         run: node "$PROJECT_DIR/scripts/test-release-provenance-patch.mjs" "$PROJECT_DIR"
@@ -87,3 +100,24 @@ jobs:
 
       - name: Behavior-test TRACE-GOLDEN-01 patch
         run: node "$PROJECT_DIR/scripts/test-trace-golden-v0-patch.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test E2E continuation V4 fairness and stranded JD recovery
+        run: node "$PROJECT_DIR/scripts/test-p1a-e2e-continuation-v4.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test locked E2E V4 live entrypoint
+        run: node "$PROJECT_DIR/scripts/test-p1a-e2e-continuation-entrypoint.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test pre-decision JD admission
+        run: node "$PROJECT_DIR/scripts/test-jd-predecision-admission.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test renderer canary preconditions
+        run: node "$PROJECT_DIR/scripts/test-renderer-canary-preconditions.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test exact canary queue accounting and artifact proof
+        run: node "$PROJECT_DIR/scripts/test-canary-exact-execution.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test FL-080 queue-order prevention
+        run: node "$PROJECT_DIR/scripts/test-runtime-queue-quarantine-order.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test bounded health runtime and final release lock
+        run: node "$PROJECT_DIR/scripts/test-health-runtime-liveness.mjs" "$PROJECT_DIR"

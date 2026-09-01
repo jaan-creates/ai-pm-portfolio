@@ -1,0 +1,69 @@
+name: Janu Job Copilot Queue Admission Diagnostic
+
+on:
+  push:
+    branches:
+      - janu-job-copilot/apps-script-ci
+    paths:
+      - '.github/workflows/janu-job-copilot-enqueue-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      LIVE_DIR: .janu-live-diagnostic
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --global @google/clasp
+      - name: Prepare isolated runtime workspace
+        shell: bash
+        run: |
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+      - name: Pull target runtime
+        working-directory: .janu-live-diagnostic
+        run: clasp pull --user "$CLASP_USER"
+      - name: Print privacy-safe queue admission structure
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const s=fs.readFileSync('.janu-live-diagnostic/TrackerWorkflow.js','utf8');
+          function functionText(name){
+            const sig='function '+name+'(';
+            const start=s.indexOf(sig); if(start<0) return null;
+            const open=s.indexOf('{',start); let d=0,q=null,e=false,line=false,block=false,end=-1;
+            for(let i=open;i<s.length;i++){
+              const c=s[i],n=s[i+1]||'';
+              if(line){if(c==='\n')line=false;continue}
+              if(block){if(c==='*'&&n==='/'){block=false;i++}continue}
+              if(q){if(e){e=false;continue}if(c==='\\'){e=true;continue}if(c===q)q=null;continue}
+              if(c==='/'&&n==='/'){line=true;i++;continue}
+              if(c==='/'&&n==='*'){block=true;i++;continue}
+              if(c==='"'||c==="'"||c==='`'){q=c;continue}
+              if(c==='{')d++; else if(c==='}'&&--d===0){end=i+1;break}
+            }
+            if(end<0) throw new Error(name+' unterminated');
+            return s.slice(start,end);
+          }
+          function sanitize(x){return String(x||'').replace(/https?:\/\/[^'"\s)]+/g,'<URL>').replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'<EMAIL>').replace(/[A-Za-z0-9_-]{35,}/g,'<LONG_TOKEN>').slice(0,5000);}
+          const names=['enqueue_','queueMutationAllowed_','circuitOpen_','workNeeded_','workNeededFromState_'];
+          const out={contract:'QUEUE-ADMISSION-DIAG-009',predecisionMarker:s.includes('JD-PREDECISION-ADMISSION-001')};
+          for(const n of names){const t=functionText(n)||'';out[n]={present:!!t,signature:(t.match(/^function\s+[^\{]+/)||[])[0]||'',body:sanitize(t)};}
+          console.log(JSON.stringify(out,null,2));
+          NODE
+# Read-only diagnostic after live admission proof still failed; includes circuitOpen_ source to distinguish policy from circuit rejection.

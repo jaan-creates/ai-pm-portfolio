@@ -1,0 +1,4 @@
+2026-08-28T16:50+05:30
+After production CD drains, verify the deployed read-only canonical evidence authorization probe under janu-build.
+Confirm Google Docs/DocumentApp authorization before any further queue replay.
+No tracker mutation.
