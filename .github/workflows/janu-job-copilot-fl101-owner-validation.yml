@@ -1,0 +1,105 @@
+name: Janu Job Copilot FL-101 Owner Validation Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/recovery/fl101/**'
+      - '.github/workflows/janu-job-copilot-fl101-owner-validation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: janu-job-copilot-fl101-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-owner-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LIVE_DIR: .janu-live
+      PROJECT_DIR: startup-track/projects/2-janu-job-copilot
+      PATCH: startup-track/projects/2-janu-job-copilot/recovery/fl101/patch-owner-validation.mjs
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate patch syntax
+        run: node --check "$PATCH"
+      - name: Verify credentials and pull current live source
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON" || exit 2
+          test -n "$CLASP_JSON" || exit 2
+          npm install --global @google/clasp
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+          (cd "$LIVE_DIR" && clasp pull --user "$CLASP_USER")
+      - name: Require FL-099 exact3 baseline
+        shell: bash
+        run: |
+          grep -q 'RENDER-CAREERBREAK-EXACT3-001' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'RENDER-CAREERBREAK-EXACT3-LIVE-001' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q "VERSION:'1.3.8'\|VERSION: '1.3.8'\|VERSION: \"1.3.8\"" "$LIVE_DIR/TrackerWorkflow.js" || true
+      - name: Snapshot source
+        shell: bash
+        run: |
+          rm -rf /tmp/janu-fl101-pre && mkdir -p /tmp/janu-fl101-pre
+          find "$LIVE_DIR" -maxdepth 1 -type f \( -name '*.gs' -o -name '*.js' -o -name 'appsscript.json' \) -exec cp {} /tmp/janu-fl101-pre/ \;
+      - name: Apply owner-validation repair
+        run: node "$PATCH" "$LIVE_DIR"
+      - name: Validate transformed contracts
+        shell: bash
+        run: |
+          node --check "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'REGRESSION-OWNER-CONTEXT-001' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'REGRESSION-RESULT-TRUTH-001' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'CANARY-DEPLOYMENT-IDEMPOTENCY-001' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'FL101-OWNER-VALIDATION-HOOK-001' "$LIVE_DIR/TrackerWorkflow.js"
+      - name: Compute expected source hash
+        shell: bash
+        run: echo "EXPECTED_SOURCE_HASH=$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$LIVE_DIR" --hash-only)" >> "$GITHUB_ENV"
+      - name: Push repaired source
+        working-directory: .janu-live
+        run: clasp push --force --user "$CLASP_USER"
+      - name: Verify exact pushed hash or roll back
+        shell: bash
+        run: |
+          (cd "$LIVE_DIR" && clasp pull --user "$CLASP_USER")
+          ACTUAL="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$LIVE_DIR" --hash-only)"
+          if [ "$ACTUAL" != "$EXPECTED_SOURCE_HASH" ]; then
+            find "$LIVE_DIR" -maxdepth 1 -type f \( -name '*.gs' -o -name '*.js' -o -name 'appsscript.json' \) -delete
+            cp /tmp/janu-fl101-pre/* "$LIVE_DIR"/
+            (cd "$LIVE_DIR" && clasp push --force --user "$CLASP_USER")
+            echo "Hash mismatch; rolled back" >&2
+            exit 12
+          fi
+          echo "DEPLOYED_SOURCE_HASH=$ACTUAL" >> "$GITHUB_ENV"
+      - name: CI-safe exact3 smoke test
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set -o pipefail
+          out="$(clasp run runRendererCareerBreakExact3SelfTest --user "$CLASP_USER" 2>&1)"; rc=$?
+          printf '%s\n' "$out"
+          test "$rc" -eq 0
+          grep -Eq "pass: true|\"pass\": true" <<<"$out"
+          ! grep -Eiq 'Exception:|^Error:|Unable to run script function|Script function not found|permission to run' <<<"$out"
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          echo '## FL-101 owner validation deploy' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source hash: ${DEPLOYED_SOURCE_HASH:-not verified}" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Privileged P0 regression is intentionally NOT run under the under-scoped CI identity.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Owner phase1HealthTick executes the one-shot regression request and queues the deployment-bound canary only on pass=true.' >> "$GITHUB_STEP_SUMMARY"
