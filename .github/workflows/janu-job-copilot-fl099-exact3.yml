@@ -1,0 +1,157 @@
+name: Janu Job Copilot FL-099 Exact3 Recovery
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/recovery/fl099/**'
+      - '.github/workflows/janu-job-copilot-fl099-exact3.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: janu-job-copilot-fl099-production
+  cancel-in-progress: false
+
+jobs:
+  recover-fl099:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LIVE_DIR: .janu-live
+      PROJECT_DIR: startup-track/projects/2-janu-job-copilot
+      PATCH: startup-track/projects/2-janu-job-copilot/recovery/fl099/patch-fl099-exact3.mjs
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate recovery patch syntax
+        run: node --check "$PATCH"
+
+      - name: Verify deployment credentials
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON" || { echo 'Missing JANU_CLASPRC_JSON'; exit 2; }
+          test -n "$CLASP_JSON" || { echo 'Missing JANU_CLASP_JSON'; exit 2; }
+
+      - name: Install clasp and prepare live workspace
+        shell: bash
+        run: |
+          npm install --global @google/clasp
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+          clasp show-authorized-user --user "$CLASP_USER"
+          (cd "$LIVE_DIR" && clasp pull --user "$CLASP_USER")
+
+      - name: Require current 1.3.8 production baseline
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const s=fs.readFileSync('.janu-live/TrackerWorkflow.js','utf8');
+          const m=s.match(/P12\s*=\s*Object\.freeze\(\{[\s\S]*?VERSION\s*:\s*['"]([^'"]+)['"][\s\S]*?SUITE\s*:\s*['"]([^'"]+)['"]/);
+          if(!m||m[1]!=='1.3.8'||m[2]!=='p0-regression-v19') throw new Error('FL-099 baseline drift: '+JSON.stringify(m&&m.slice(1)));
+          NODE
+
+      - name: Snapshot exact pre-repair source
+        shell: bash
+        run: |
+          rm -rf /tmp/janu-fl099-pre
+          mkdir -p /tmp/janu-fl099-pre
+          find "$LIVE_DIR" -maxdepth 1 -type f \( -name '*.gs' -o -name '*.js' -o -name 'appsscript.json' \) -exec cp {} /tmp/janu-fl099-pre/ \;
+          test -s /tmp/janu-fl099-pre/TrackerWorkflow.js
+
+      - name: Apply FL-099 exact-three composition repair
+        run: node "$PATCH" "$LIVE_DIR"
+
+      - name: Verify exact-three contract in transformed source
+        shell: bash
+        run: |
+          node --check "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'RENDER-CAREERBREAK-EXACT3-001' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'RENDER-CAREERBREAK-EXACT3-LIVE-001' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'FL099-CANARY-RERENDER-001' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'FL099-EXACT3-HEALTH-001' "$LIVE_DIR/TrackerWorkflow.js"
+
+      - name: Compute transformed source hash
+        shell: bash
+        run: |
+          node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$LIVE_DIR" > /tmp/fl099-manifest.json
+          echo "EXPECTED_SOURCE_HASH=$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$LIVE_DIR" --hash-only)" >> "$GITHUB_ENV"
+
+      - name: Push repaired source
+        working-directory: .janu-live
+        run: clasp push --force --user "$CLASP_USER"
+
+      - name: Verify source hash or roll back
+        shell: bash
+        run: |
+          (cd "$LIVE_DIR" && clasp pull --user "$CLASP_USER")
+          ACTUAL="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$LIVE_DIR" --hash-only)"
+          if [ "$ACTUAL" != "$EXPECTED_SOURCE_HASH" ]; then
+            echo "FL-099 deployed hash mismatch: expected=$EXPECTED_SOURCE_HASH actual=$ACTUAL" >&2
+            find "$LIVE_DIR" -maxdepth 1 -type f \( -name '*.gs' -o -name '*.js' -o -name 'appsscript.json' \) -delete
+            cp /tmp/janu-fl099-pre/* "$LIVE_DIR"/
+            (cd "$LIVE_DIR" && clasp push --force --user "$CLASP_USER")
+            exit 12
+          fi
+          echo "DEPLOYED_SOURCE_HASH=$ACTUAL" >> "$GITHUB_ENV"
+
+      - name: Require exact-three self-test on deployed generation
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set -o pipefail
+          out="$(clasp run runRendererCareerBreakExact3SelfTest --user "$CLASP_USER" 2>&1)"; rc=$?
+          printf '%s\n' "$out"
+          test "$rc" -eq 0
+          ! grep -Eiq 'Exception:|^Error:|Unable to run script function|Script function not found|permission to run' <<<"$out"
+
+      - name: Require full P0 regression on changed generation
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set -o pipefail
+          out="$(clasp run runPhase1_2RegressionSuite --user "$CLASP_USER" 2>&1)"; rc=$?
+          printf '%s\n' "$out"
+          test "$rc" -eq 0
+          ! grep -Eiq 'Exception:|^Error:|Unable to run script function|Script function not found|permission to run' <<<"$out"
+
+      - name: Persist changed deployment provenance
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          PARAMS="$(node -e 'console.log(JSON.stringify([process.env.GITHUB_SHA,process.env.GITHUB_RUN_ID,process.env.GITHUB_RUN_ATTEMPT,process.env.DEPLOYED_SOURCE_HASH,"1.3.8","p0-regression-v19"]))')"
+          clasp run recordDeploymentProvenance --params "$PARAMS" --user "$CLASP_USER"
+
+      - name: Enqueue exactly one changed-deployment Metaforms canary
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set -o pipefail
+          out="$(clasp run runRendererAuthorizedCanaryEnqueue --user "$CLASP_USER" 2>&1)"; rc=$?
+          printf '%s\n' "$out"
+          test "$rc" -eq 0
+          ! grep -Eiq 'Exception:|^Error:|Unable to run script function|Script function not found|permission to run|CANARY_ALREADY_ACTIVE|CANARY_REPEAT_BLOCKED' <<<"$out"
+
+      - name: Recovery summary
+        if: always()
+        shell: bash
+        run: |
+          echo '## FL-099 exact-three recovery' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source hash: ${DEPLOYED_SOURCE_HASH:-not verified}" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Contract: RENDER-CAREERBREAK-EXACT3-001.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Regression: RENDER-CAREERBREAK-EXACT3-LIVE-001 plus full p0-regression-v19.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Canary: enqueue-only under changed deployment; owner worker performs execution.' >> "$GITHUB_STEP_SUMMARY"
