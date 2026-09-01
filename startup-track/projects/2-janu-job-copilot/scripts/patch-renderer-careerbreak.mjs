@@ -66,6 +66,7 @@ replaceRange('phase1HealthTick',old=>{old=old.replaceAll('RENDER-CAREERBREAK-V2'
 if(!s.includes('function rendererPreventionContract_('))addBefore('function rendererReplayBlocked_(','function rendererPreventionContract_(...)',"function rendererPreventionContract_(){return 'PREVENTION-RECURRENCE-001|RENDER-CAREERBREAK-EXACT3-001';}");
 if(!s.includes('RENDER-CAREERBREAK-V2'))s+='\n// RENDER-CAREERBREAK-V2 compatibility marker; active RENDER-CAREERBREAK-V3.\n';
 if(!s.includes('RENDER-CAREERBREAK-001'))s+='\n// RENDER-CAREERBREAK-001 compatibility regression retained; active exact-cardinality regression RENDER-CAREERBREAK-EXACT3-LIVE-001.\n';
+if(!s.includes(LIVE_REGRESSION))s+='\n// '+LIVE_REGRESSION+' compatibility marker; superseded by exact-cardinality semantic-duplicate fixture.\n';
 if(!s.includes(EXACT_CONTRACT))s+='\n// '+EXACT_CONTRACT+': final Career Break section emits exactly three approved canonical bullets.\n';
 if(!s.includes(EXACT_REGRESSION))s+='\n// '+EXACT_REGRESSION+': production-shaped fixture includes duplicate project summaries and must collapse to exact canonical 3.\n';
 
