@@ -1,0 +1,26 @@
+[
+  {
+    "id": "fixture-standing-desk",
+    "title": "Quiet electric standing desk",
+    "intent": "buy",
+    "source": "product",
+    "saved_at": "2026-08-04T10:00:00Z",
+    "search_document": "standing desk quiet motor home office buy product"
+  },
+  {
+    "id": "fixture-shoulder-reel",
+    "title": "Shoulder mobility sequence for desk-heavy days",
+    "intent": "try",
+    "source": "instagram_reel",
+    "saved_at": "2026-08-16T10:00:00Z",
+    "search_document": "Instagram reel shoulder pain mobility stretch desk posture physiotherapy"
+  },
+  {
+    "id": "fixture-pasta",
+    "title": "One-pan tomato pasta",
+    "intent": "cook",
+    "source": "recipe",
+    "saved_at": "2026-08-21T10:00:00Z",
+    "search_document": "easy weeknight dinner pasta tomato one pan recipe cook"
+  }
+]

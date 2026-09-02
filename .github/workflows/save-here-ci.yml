@@ -1,0 +1,39 @@
+name: Save Here CI
+
+on:
+  pull_request:
+    paths:
+      - "startup-track/projects/3-Save-Here/**"
+      - ".github/workflows/save-here-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "startup-track/projects/3-Save-Here/**"
+      - ".github/workflows/save-here-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: startup-track/projects/3-Save-Here
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: pnpm
+          cache-dependency-path: startup-track/projects/3-Save-Here/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm security:public
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build

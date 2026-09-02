@@ -1,0 +1,22 @@
+{
+  "name": "@save-recall/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "pnpm --dir ../.. exec eslint packages/domain/src packages/domain/tests --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.30",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}
