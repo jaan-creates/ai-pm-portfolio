@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { captureInputSchema, inferContentType, normalizeUrl } from "@save-recall/domain";
-import { readBearerToken, tokenDigest } from "@/lib/capture-token";
+import { assessCaptureTokenAccess, readBearerToken, tokenDigest } from "@/lib/capture-token";
 import { createAdminClient } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -33,8 +33,23 @@ export async function POST(request: Request) {
     .is("revoked_at", null)
     .maybeSingle();
 
-  const expired = deviceToken?.expires_at && new Date(deviceToken.expires_at) <= new Date();
-  if (tokenError || !deviceToken || expired || deviceToken.device_id !== parsed.data.device.id) {
+  const tokenAccess = assessCaptureTokenAccess({
+    lookupFailed: tokenError !== null,
+    tokenFound: deviceToken !== null,
+    expiresAt: deviceToken?.expires_at ?? null,
+    storedDeviceId: deviceToken?.device_id ?? null,
+    requestedDeviceId: parsed.data.device.id,
+  });
+
+  if (tokenAccess === "unavailable") {
+    console.error("capture_token_lookup_failed", { code: tokenError?.code });
+    return NextResponse.json(
+      { error: "capture_temporarily_unavailable" },
+      { status: 503, headers: { "Retry-After": "5" } },
+    );
+  }
+
+  if (tokenAccess === "invalid" || !deviceToken) {
     return NextResponse.json({ error: "invalid_capture_token" }, { status: 401 });
   }
 
