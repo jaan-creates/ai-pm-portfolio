@@ -28,23 +28,38 @@ const governedDocs = [
   'MONITORING_ALERTS.md'
 ];
 
+function looksLikeStructuredProjectId(text, match) {
+  const start = match.index ?? 0;
+  const value = match[0];
+  const prefix = text.slice(Math.max(0, start - 24), start);
+  const suffix = text.slice(start + value.length, start + value.length + 16);
+  // Canonical governance/change IDs contain a YYYYMMDD sequence plus a short
+  // ordinal, e.g. CS-20260824-033. The phone regex sees only the numeric tail.
+  // Treat those as identifiers only when the surrounding source has an explicit
+  // project-ID prefix. Raw 10+ digit strings still fail closed as phone-like.
+  const idPrefix = /(?:^|[^A-Z0-9])(?:CS|FL|REG|REL|TRACE|DEPLOY|OP|Q|INT|E2E|PDF|MYACTION|SUBMIT|RENDER|QUEUE|HEALTH|IDENTITY)-$/i;
+  if (idPrefix.test(prefix) && /^20\d{6}-\d{2,6}(?:\b|[-_])/i.test(value + suffix)) return true;
+  return false;
+}
+
 const checks = [
   {
     name: 'email-address',
     re: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
-    allow: new Set([])
+    allow: () => false
   },
   {
     // Require at least ten digits while allowing common separators. This avoids
-    // flagging ordinary ISO dates such as 2026-08-23.
+    // flagging ordinary ISO dates such as 2026-08-23. Context is inspected so
+    // canonical project/change identifiers do not become false phone positives.
     name: 'phone-like-number',
     re: /\+?\d(?:[\s().-]*\d){9,}/g,
-    allow: new Set([])
+    allow: (text, match) => looksLikeStructuredProjectId(text, match)
   },
   {
     name: 'private-application-id',
     re: /\b20\d{2}-\d{2}-\d{2}-\d{3}\b/g,
-    allow: new Set([])
+    allow: () => false
   }
 ];
 
@@ -55,7 +70,7 @@ for (const file of governedDocs) {
   const text = fs.readFileSync(p, 'utf8');
   for (const check of checks) {
     for (const match of text.matchAll(check.re)) {
-      if (!check.allow.has(match[0])) {
+      if (!check.allow(text, match)) {
         failures.push({file, type: check.name, value: match[0]});
       }
     }
