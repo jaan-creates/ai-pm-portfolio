@@ -1,0 +1,22 @@
+{
+  "name": "save-recall",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=24.19.0 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @save-recall/web dev",
+    "build": "pnpm --filter @save-recall/web build",
+    "lint": "pnpm -r lint",
+    "security:public": "node scripts/check-public-safety.mjs",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "check": "pnpm security:public && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "eslint": "9.39.1",
+    "eslint-config-next": "16.3.4"
+  }
+}

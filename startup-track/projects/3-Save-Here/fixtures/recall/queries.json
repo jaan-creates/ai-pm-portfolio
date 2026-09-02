@@ -1,0 +1,23 @@
+[
+  {
+    "query": "that standing desk I wanted to buy last month",
+    "expected_item_id": "fixture-standing-desk",
+    "acceptable_rank": 5,
+    "language": "en",
+    "memory_axis": ["object", "intent", "time"]
+  },
+  {
+    "query": "the reel with exercises for shoulder pain",
+    "expected_item_id": "fixture-shoulder-reel",
+    "acceptable_rank": 5,
+    "language": "en",
+    "memory_axis": ["source", "topic", "visual"]
+  },
+  {
+    "query": "quick pasta dinner in one pan",
+    "expected_item_id": "fixture-pasta",
+    "acceptable_rank": 5,
+    "language": "en",
+    "memory_axis": ["purpose", "topic"]
+  }
+]

@@ -1,0 +1,21 @@
+Summary,Issue Type,Description,Priority,Labels,Fix Version
+Foundation and safe delivery,Epic,"Create the reproducible repository, CI, data model, security baseline, and operating workflow.",Highest,platform,0.1 Capture
+Durable URL and text capture,Epic,"Save URL and text input without depending on extraction or AI.",Highest,capture,0.1 Capture
+Rich evidence capture,Epic,"Attach screenshots, images, PDFs, and recordings with durable storage.",High,capture,0.1 Capture
+Deterministic extraction,Epic,"Extract only accessible source data and expose limitations truthfully.",High,extraction,0.2 Understand
+AI understanding and correction,Epic,"Create searchable structured meaning with provenance and owner correction.",High,enrichment,0.2 Understand
+Hybrid retrieval,Epic,"Find saved items by fuzzy memory, intent, source, object, and time.",Highest,search,0.3 Recall
+Lifecycle and weekly review,Epic,"Help the owner act on saves instead of accumulating a graveyard.",High,lifecycle,0.4 Act
+Ownership and pilot,Epic,"Export, restore, observe, and validate the product with real use.",Highest,operations,1.0 Personal Pilot
+Scaffold monorepo and CI,Task,"Pin runtime versions; add install, lint, typecheck, test, and build checks.",Highest,platform,0.1 Capture
+Create Supabase schema and RLS,Story,"As the owner, my items and assets are inaccessible to every other identity.",Highest,security,0.1 Capture
+Implement capture-only device tokens,Story,"As the owner, I can revoke an iPhone Shortcut without exposing my login session.",Highest,security,0.1 Capture
+Implement idempotent URL and text capture,Story,"As the owner, a repeated mobile request never loses or accidentally duplicates a save.",Highest,capture,0.1 Capture
+Build mobile library shell,Story,"As the owner, I can see captured items and their truthful processing state on my phone.",High,web,0.1 Capture
+Create English recall corpus,Task,"Add synthetic items and natural fuzzy queries before tuning retrieval.",High,quality,0.1 Capture
+Implement signed asset upload,Story,"As the owner, I can attach evidence without routing large files through the web server.",High,capture,0.1 Capture
+Implement Instagram graded adapter,Story,"As the owner, public posts enrich when possible and restricted posts remain useful link-only cards.",High,instagram,0.2 Understand
+Implement screenshot understanding,Story,"As the owner, visible text and objects in a screenshot become searchable without invented audio.",High,enrichment,0.2 Understand
+Implement hybrid search,Story,"As the owner, approximate English recall returns the expected item in the top five.",Highest,search,0.3 Recall
+Implement in-app weekly review,Story,"As the owner, aging and actionable saves return to my attention in under ten minutes.",High,lifecycle,0.4 Act
+Implement portable export and restore,Story,"As the owner, I can leave the service without losing original evidence or meaning.",Highest,ownership,1.0 Personal Pilot
