@@ -19,6 +19,21 @@ describe("captureInputSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("generates an ID when an iPhone Shortcut omits capture_id", () => {
+    const result = captureInputSchema.safeParse({
+      device: base.device,
+      input_type: "url",
+      shared_url: "https://example.com/shortcut",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.capture_id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
+    }
+  });
+
   it("rejects a URL capture without a URL", () => {
     const result = captureInputSchema.safeParse({ ...base, input_type: "url" });
     expect(result.success).toBe(false);
