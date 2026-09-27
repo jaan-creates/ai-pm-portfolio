@@ -50,7 +50,7 @@ export const processingStatuses = [
 
 export const captureInputSchema = z
   .object({
-    capture_id: z.string().uuid(),
+    capture_id: z.string().uuid().default(() => globalThis.crypto.randomUUID()),
     input_type: z.enum(["url", "text"]),
     shared_url: z.string().url().max(4096).nullish(),
     shared_text: z.string().trim().min(1).max(50_000).nullish(),
