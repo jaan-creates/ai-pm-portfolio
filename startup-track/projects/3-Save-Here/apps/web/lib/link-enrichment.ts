@@ -50,7 +50,7 @@ export function isSafePublicUrl(value: string) {
 }
 
 export function extractLinkMetadata(html: string, sourceUrl: string): LinkMetadata {
-  const titleTag = /<title[^>]*>([\\s\\S]*?)<\\/title>/i.exec(html)?.[1] ?? "";
+  const titleTag = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1] ?? "";
   const title = metaContent(html, "og:title") || metaContent(html, "twitter:title") || decodeEntities(titleTag);
   const description = metaContent(html, "og:description") || metaContent(html, "twitter:description") || metaContent(html, "description");
   const image = metaContent(html, "og:image") || metaContent(html, "twitter:image") || metaContent(html, "twitter:image:src");

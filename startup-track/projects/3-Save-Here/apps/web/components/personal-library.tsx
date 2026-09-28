@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, ExternalLink, LogOut, RefreshCw, Search, Settings2, Sparkles, UserRound, X } from "lucide-react";
+import { Download, ExternalLink, LogOut, RefreshCw, Search, Settings2, Sparkles, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AiMetadata = {
