@@ -86,7 +86,7 @@ export function extractLinkMetadata(html: string, sourceUrl: string): LinkMetada
 
 async function requestPublicHtml(url: string, redirectsLeft = 3): Promise<{ html: string; finalUrl: string } | null> {
   if (!isSafePublicUrl(url)) return null;
-  let parsed = new URL(url);
+  const parsed = new URL(url);
   const address = await resolvePublicAddress(parsed.hostname).catch(() => null);
   if (!address) return null;
   const transport = parsed.protocol === "https:" ? await import("node:https") : await import("node:http");
