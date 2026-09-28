@@ -7,6 +7,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 type AiMetadata = {
   preview_image_url?: string;
   preview_description?: string;
+  suggested_tags?: string[];
   thumbnail_url?: string;
   image_url?: string;
   [key: string]: unknown;
@@ -185,7 +186,7 @@ export function PersonalLibrary() {
           const previewUrl = previewFrom(item);
           const hasTitle = Boolean(item.title?.trim());
           const source = item.source_domain ?? displayLabel(item.content_type);
-          const topics = (item.topics ?? []).filter(Boolean).slice(0, 4);
+          const topics = [...(item.topics ?? []), ...(item.ai_metadata?.suggested_tags ?? [])].filter((topic, index, all) => topic && all.indexOf(topic) === index).slice(0, 5);
           const previewDescription = typeof item.ai_metadata?.preview_description === "string" ? item.ai_metadata.preview_description.trim() : "";
           return (
             <article className="media-card" key={item.id}>
