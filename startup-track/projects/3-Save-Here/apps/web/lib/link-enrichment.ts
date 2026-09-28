@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const MAX_HTML_BYTES = 1_000_000;
-const FETCH_TIMEOUT_MS = 1_200;\nconst SAFE_METADATA_HOSTS = new Set(["amazon.com", "amazon.in", "flipkart.com", "github.com", "instagram.com", "medium.com", "twitter.com", "wikipedia.org", "x.com", "youtu.be", "youtube.com"]);
+const FETCH_TIMEOUT_MS = 1_200;
+const SAFE_METADATA_HOSTS = new Set(["amazon.com", "amazon.in", "flipkart.com", "github.com", "instagram.com", "medium.com", "twitter.com", "wikipedia.org", "x.com", "youtu.be", "youtube.com"]);
 
 export type LinkMetadata = {
   title: string | null;
@@ -50,7 +51,9 @@ function isPrivateIp(address: string) {
 export function isSafePublicUrl(value: string) {
   try {
     const url = new URL(value);
-    return (url.protocol === "https:" || url.protocol === "http:") && !isPrivateHostname(url.hostname) && !isPrivateIp(url.hostname);
+    const hostname = url.hostname.toLowerCase();
+    const allowedHost = [...SAFE_METADATA_HOSTS].some((host) => hostname === host || hostname.endsWith(`.${host}`));
+    return allowedHost && (url.protocol === "https:" || url.protocol === "http:") && !isPrivateHostname(hostname) && !isPrivateIp(hostname);
   } catch {
     return false;
   }
