@@ -151,10 +151,10 @@ export async function enrichCapturedItem(
   ownerId: string,
   itemId: string,
   sourceUrl: string | null,
-) {
-  if (!sourceUrl) return;
+): Promise<boolean> {
+  if (!sourceUrl) return false;
   const metadata = await fetchMetadata(sourceUrl);
-  if (!metadata || (!metadata.title && !metadata.description && !metadata.imageUrl)) return;
+  if (!metadata || (!metadata.title && !metadata.description && !metadata.imageUrl)) return false;
 
   const { data: item } = await client
     .from("items")
@@ -162,7 +162,7 @@ export async function enrichCapturedItem(
     .eq("id", itemId)
     .eq("owner_id", ownerId)
     .maybeSingle();
-  if (!item) return;
+  if (!item) return false;
 
   const currentMetadata = item.ai_metadata && typeof item.ai_metadata === "object" ? item.ai_metadata : {};
   const nextMetadata = {
@@ -174,7 +174,7 @@ export async function enrichCapturedItem(
   };
   const nextTitle = item.title ?? metadata.title;
   const nextSearch = [nextTitle, metadata.description, item.user_note, item.search_document].filter(Boolean).join("\n");
-  await client
+  const { error: updateError } = await client
     .from("items")
     .update({
       title: nextTitle,
@@ -186,4 +186,5 @@ export async function enrichCapturedItem(
     })
     .eq("id", itemId)
     .eq("owner_id", ownerId);
+  return !updateError;
 }
