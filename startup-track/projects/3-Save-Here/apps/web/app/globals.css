@@ -709,3 +709,10 @@ button {
     animation: none !important;
   }
 }
+
+
+/* Private sign-in experience */
+.auth-screen{min-height:100svh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 12%,rgba(203,229,106,.14),transparent 24rem),radial-gradient(circle at 92% 85%,rgba(241,185,88,.09),transparent 22rem),var(--background)}
+.auth-card{width:min(100%,470px);padding:clamp(28px,6vw,56px);background:linear-gradient(145deg,rgba(40,51,41,.9),rgba(24,32,25,.96));border:1px solid var(--line-strong);border-radius:28px;box-shadow:var(--shadow)}
+.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:42px;color:var(--text);font-size:15px;font-weight:800;letter-spacing:-.02em}.auth-brand-mark{width:38px;height:38px;display:grid;place-items:center;color:#182010;background:var(--accent);border-radius:12px;box-shadow:0 10px 26px rgba(203,229,106,.16)}
+.auth-card h1{max-width:380px;margin:0 0 14px;font-family:var(--font-serif),Georgia,serif;font-size:clamp(39px,8vw,58px);font-weight:500;line-height:.97;letter-spacing:-.045em}.auth-card .auth-lede{margin:0 0 30px;color:var(--muted);font-size:14px;line-height:1.6}.auth-card form{display:grid;gap:10px}.auth-card label{color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.auth-card input{width:100%;height:50px;padding:0 14px;color:var(--text);background:#101511;border:1px solid var(--line-strong);border-radius:12px;outline:0}.auth-card input:focus{border-color:rgba(203,229,106,.65);box-shadow:0 0 0 4px rgba(203,229,106,.09)}.auth-card .capture-button{margin-top:8px;min-height:50px}.auth-footnote{margin:18px 0 0;color:#71806f;font-size:11px;line-height:1.5}.auth-message{margin:18px 0 0;padding:12px 14px;color:#dfe9c0;background:rgba(203,229,106,.08);border:1px solid rgba(203,229,106,.18);border-radius:12px;font-size:12px;line-height:1.45}@media(max-width:560px){.auth-screen{place-items:start center;padding:16px}.auth-card{margin-top:7vh;padding:28px 22px;border-radius:22px}.auth-brand{margin-bottom:34px}}
