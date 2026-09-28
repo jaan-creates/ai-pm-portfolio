@@ -1,5 +1,5 @@
-import { LibraryShell } from "@/components/library-shell";
+import { AuthGate } from "@/components/auth-gate";
 
 export default function Home() {
-  return <LibraryShell />;
+  return <AuthGate />;
 }
