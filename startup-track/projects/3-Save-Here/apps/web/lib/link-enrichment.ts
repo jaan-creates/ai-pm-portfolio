@@ -32,21 +32,35 @@ function metaContent(html: string, name: string) {
 }
 
 function isPrivateHostname(hostname: string) {
-  const host = hostname.toLowerCase().replace(/[\[\]]/g, "");
-  if (host === "localhost" || host.endsWith(".local") || host === "::1") return true;
-  const octets = host.split(".").map(Number);
+  const host = hostname.toLowerCase().replace(/[\\[\\]]/g, "");
+  return host === "localhost" || host.endsWith(".local") || host === "::1";
+}
+
+function isPrivateIp(address: string) {
+  const value = address.toLowerCase();
+  if (value === "::1" || value.startsWith("fc") || value.startsWith("fd") || value.startsWith("fe8") || value.startsWith("fe9") || value.startsWith("fea") || value.startsWith("feb")) return true;
+  const mapped = value.match(/^::ffff:(\\d+\\.\\d+\\.\\d+\\.\\d+)$/)?.[1] ?? value;
+  const octets = mapped.split(".").map(Number);
   if (octets.length !== 4 || octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)) return false;
   return octets[0] === 10 || octets[0] === 127 || (octets[0] === 192 && octets[1] === 168) ||
-    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) || (octets[0] === 169 && octets[1] === 254);
+    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) || (octets[0] === 169 && octets[1] === 254) ||
+    (octets[0] === 0);
 }
 
 export function isSafePublicUrl(value: string) {
   try {
     const url = new URL(value);
-    return (url.protocol === "https:" || url.protocol === "http:") && !isPrivateHostname(url.hostname);
+    return (url.protocol === "https:" || url.protocol === "http:") && !isPrivateHostname(url.hostname) && !isPrivateIp(url.hostname);
   } catch {
     return false;
   }
+}
+
+async function resolvePublicAddress(hostname: string) {
+  const { lookup } = await import("node:dns/promises");
+  const addresses = await lookup(hostname, { all: true, verbatim: true });
+  if (!addresses.length || addresses.some((entry) => isPrivateIp(entry.address))) return null;
+  return addresses[0];
 }
 
 export function extractLinkMetadata(html: string, sourceUrl: string): LinkMetadata {
@@ -70,26 +84,63 @@ export function extractLinkMetadata(html: string, sourceUrl: string): LinkMetada
   };
 }
 
-async function fetchMetadata(url: string) {
+async function requestPublicHtml(url: string, redirectsLeft = 3): Promise<{ html: string; finalUrl: string } | null> {
   if (!isSafePublicUrl(url)) return null;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const response = await fetch(url, {
-      headers: { accept: "text/html,application/xhtml+xml", "user-agent": "SaveHereBot/0.1 (+personal-library)" },
-      redirect: "follow",
-      signal: controller.signal,
+  let parsed = new URL(url);
+  const address = await resolvePublicAddress(parsed.hostname).catch(() => null);
+  if (!address) return null;
+  const transport = parsed.protocol === "https:" ? await import("node:https") : await import("node:http");
+  return new Promise((resolve) => {
+    const request = transport.get({
+      hostname: address.address,
+      port: parsed.port || undefined,
+      path: `${parsed.pathname}${parsed.search}`,
+      headers: { accept: "text/html,application/xhtml+xml", "user-agent": "SaveHereBot/0.1 (+personal-library)", host: parsed.host },
+      servername: parsed.hostname,
+      lookup: (_hostname, _options, callback) => callback(null, address.address, address.family),
+      timeout: FETCH_TIMEOUT_MS,
+    }, (response) => {
+      const status = response.statusCode ?? 0;
+      const location = response.headers.location;
+      if (status >= 300 && status < 400 && location && redirectsLeft > 0) {
+        response.resume();
+        const nextUrl = new URL(location, parsed).toString();
+        void requestPublicHtml(nextUrl, redirectsLeft - 1).then(resolve);
+        return;
+      }
+      if (status < 200 || status >= 300 || !String(response.headers["content-type"] ?? "").includes("text/html")) {
+        response.resume();
+        resolve(null);
+        return;
+      }
+      const length = Number(response.headers["content-length"] ?? 0);
+      if (length > MAX_HTML_BYTES) {
+        response.resume();
+        resolve(null);
+        return;
+      }
+      const chunks: Buffer[] = [];
+      let size = 0;
+      response.on("data", (chunk: Buffer) => {
+        size += chunk.length;
+        if (size > MAX_HTML_BYTES) {
+          request.destroy();
+          resolve(null);
+        } else {
+          chunks.push(chunk);
+        }
+      });
+      response.on("end", () => resolve({ html: Buffer.concat(chunks).toString("utf8"), finalUrl: parsed.toString() }));
+      response.on("error", () => resolve(null));
     });
-    if (!response.ok || !response.headers.get("content-type")?.includes("text/html")) return null;
-    const length = Number(response.headers.get("content-length") ?? 0);
-    if (length > MAX_HTML_BYTES) return null;
-    const html = (await response.text()).slice(0, MAX_HTML_BYTES);
-    return extractLinkMetadata(html, response.url || url);
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
+    request.on("timeout", () => request.destroy());
+    request.on("error", () => resolve(null));
+  });
+}
+
+async function fetchMetadata(url: string) {
+  const result = await requestPublicHtml(url);
+  return result ? extractLinkMetadata(result.html, result.finalUrl) : null;
 }
 
 export async function enrichCapturedItem(
