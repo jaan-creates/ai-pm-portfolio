@@ -53,6 +53,8 @@ export function PersonalLibrary() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reprocessingId, setReprocessingId] = useState<string | null>(null);
+  const [viewFilter, setViewFilter] = useState<"all" | "active" | "completed" | "reference">("all");
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
   const loadItems = useCallback(async () => {
     if (!supabase) return;
@@ -74,17 +76,20 @@ export function PersonalLibrary() {
 
   const filtered = useMemo(() => {
     const value = query.trim().toLowerCase();
-    if (!value) return items;
-    return items.filter((item) => [
-      item.title,
-      item.user_note,
-      item.source_domain,
-      item.original_url,
-      item.content_type,
-      item.intent,
-      ...(item.topics ?? []),
-    ].some((field) => field?.toLowerCase().includes(value)));
-  }, [items, query]);
+    return items.filter((item) => {
+      const matchesStatus = viewFilter === "all" || (viewFilter === "active" ? item.status === "pending" : item.status === viewFilter);
+      const matchesQuery = !value || [
+        item.title,
+        item.user_note,
+        item.source_domain,
+        item.original_url,
+        item.content_type,
+        item.intent,
+        ...(item.topics ?? []),
+      ].some((field) => field?.toLowerCase().includes(value));
+      return matchesStatus && matchesQuery;
+    });
+  }, [items, query, viewFilter]);
 
   async function signOut() {
     if (supabase) await supabase.auth.signOut();
@@ -166,6 +171,9 @@ export function PersonalLibrary() {
         <label className="search-box"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by what you remember…" aria-label="Search your saved items" /></label>
         <button className="refresh-button" onClick={() => void loadItems()} disabled={busy}><RefreshCw size={16} /> Refresh</button>
       </div>
+      <div className="view-filters" aria-label="Library views">
+        {(["all", "active", "completed", "reference"] as const).map((filter) => <button key={filter} className={viewFilter === filter ? "view-filter active" : "view-filter"} onClick={() => setViewFilter(filter)}>{filter === "all" ? "Everything" : displayLabel(filter)}</button>)}
+      </div>
 
       {error && <p className="auth-message" role="alert">{error}</p>}
       {busy && <div className="library-loading">Loading your saves…</div>}
@@ -192,12 +200,27 @@ export function PersonalLibrary() {
                 {item.user_note && <><span className="card-context-label">Your context</span><p className="personal-note">{item.user_note}</p></>}
                 {topics.length > 0 && <div className="suggested-tags" aria-label="Suggested tags">{topics.map((topic) => <span className="suggested-tag" key={topic}>{topic}</span>)}</div>}
                 <div className="personal-card-foot"><span>{new Date(item.saved_at).toLocaleDateString()}</span><span className="personal-card-foot-actions">{item.capture_quality === "link_only" && url && <button className="reprocess-button" onClick={() => void reprocessItem(item.id)} disabled={reprocessingId === item.id}>{reprocessingId === item.id ? "Refreshing…" : "Refresh details"}</button>}{url && <a href={url} target="_blank" rel="noreferrer">Open source <ExternalLink size={14} /></a>}</span></div>
-                <div className="lifecycle-actions" aria-label="Save actions"><button onClick={() => void updateItemStatus(item.id, "completed")} aria-label="Mark as done">Done</button><button onClick={() => void updateItemStatus(item.id, "reference")} aria-label="Keep as reference">Reference</button><button onClick={() => void deleteItem(item.id)} aria-label="Remove save">Remove</button></div>
+                <div className="lifecycle-actions" aria-label="Save actions"><button onClick={() => setSelectedItem(item)} aria-label="View save details">Details</button><button onClick={() => void updateItemStatus(item.id, "completed")} aria-label="Mark as done">Done</button><button onClick={() => void updateItemStatus(item.id, "reference")} aria-label="Keep as reference">Reference</button><button onClick={() => void deleteItem(item.id)} aria-label="Remove save">Remove</button></div>
               </div>
             </article>
           );
         })}
       </div>
+
+      {selectedItem && (
+        <div className="detail-backdrop" role="presentation" onClick={() => setSelectedItem(null)}>
+          <section className="detail-panel" role="dialog" aria-modal="true" aria-label="Save details" onClick={(event) => event.stopPropagation()}>
+            <button className="icon-button detail-close" onClick={() => setSelectedItem(null)} aria-label="Close details"><X size={17} /></button>
+            <p className="kicker">Saved detail</p>
+            <h2>{selectedItem.title || "Untitled save"}</h2>
+            <p className="detail-source">{selectedItem.source_domain || displayLabel(selectedItem.content_type)} · {displayLabel(selectedItem.status)}</p>
+            {selectedItem.user_note && <div className="detail-section"><span className="card-context-label">Your context</span><p>{selectedItem.user_note}</p></div>}
+            {typeof selectedItem.ai_metadata?.preview_description === "string" && <div className="detail-section"><span className="detail-label">Extracted description</span><p>{selectedItem.ai_metadata.preview_description}</p></div>}
+            <div className="detail-section detail-facts"><span>Saved {new Date(selectedItem.saved_at).toLocaleString()}</span><span>{displayLabel(selectedItem.intent)} · {displayLabel(selectedItem.capture_quality)}</span></div>
+            {(() => { const detailUrl = selectedItem.original_url ?? selectedItem.canonical_url; return detailUrl ? <a className="detail-open" href={detailUrl} target="_blank" rel="noreferrer">Open original source <ExternalLink size={14} /></a> : null; })()}
+          </section>
+        </div>
+      )}
     </main>
   );
 }
