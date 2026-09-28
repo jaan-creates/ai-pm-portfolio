@@ -10,6 +10,27 @@ export type LinkMetadata = {
   imageUrl: string | null;
 };
 
+const TAG_RULES: Array<[string, RegExp]> = [
+  ["recipe", /\\b(recipe|cook|cooking|ingredients|meal|oats|sandwich|dessert)\\b/i],
+  ["fitness", /\\b(fitness|workout|gym|exercise|training|squat|press|yoga)\\b/i],
+  ["shopping", /\\b(buy|shop|price|deal|product|review)\\b/i],
+  ["travel", /\\b(travel|trip|hotel|flight|visit|tour)\\b/i],
+  ["learning", /\\b(learn|guide|tutorial|course|how[- ]to|explained)\\b/i],
+  ["news", /\\b(news|report|analysis|politics|history)\\b/i],
+];
+
+export function deriveSuggestedTags(sourceUrl: string, title: string | null, description: string | null) {
+  const url = new URL(sourceUrl);
+  const haystack = [title, description, url.pathname].filter(Boolean).join(" ");
+  const tags = new Set<string>();
+  if (url.hostname.includes("instagram.com")) tags.add(url.pathname.includes("/reel/") ? "Instagram Reel" : "Instagram");
+  else if (url.hostname === "x.com" || url.hostname.endsWith(".twitter.com")) tags.add("X post");
+  else if (url.hostname.includes("youtube.com") || url.hostname === "youtu.be") tags.add("Video");
+  else tags.add("Web page");
+  for (const [tag, pattern] of TAG_RULES) if (pattern.test(haystack)) tags.add(tag);
+  return [...tags].slice(0, 5);
+}
+
 function decodeEntities(value: string) {
   return value
     .replace(/&amp;/gi, "&")
@@ -165,10 +186,12 @@ export async function enrichCapturedItem(
   if (!item) return false;
 
   const currentMetadata = item.ai_metadata && typeof item.ai_metadata === "object" ? item.ai_metadata : {};
+  const suggestedTags = deriveSuggestedTags(sourceUrl, metadata.title, metadata.description);
   const nextMetadata = {
     ...currentMetadata,
     ...(metadata.description ? { preview_description: metadata.description } : {}),
     ...(metadata.imageUrl ? { preview_image_url: metadata.imageUrl } : {}),
+    suggested_tags: suggestedTags,
     metadata_source: "public_page",
     metadata_fetched_at: new Date().toISOString(),
   };
@@ -179,6 +202,7 @@ export async function enrichCapturedItem(
     .update({
       title: nextTitle,
       ai_metadata: nextMetadata,
+      topics: suggestedTags,
       search_document: nextSearch,
       capture_quality: metadata.imageUrl || metadata.description || metadata.title ? "metadata" : "link_only",
       processing_status: "partial",
