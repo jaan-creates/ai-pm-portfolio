@@ -6,6 +6,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AiMetadata = {
   preview_image_url?: string;
+  preview_description?: string;
   thumbnail_url?: string;
   image_url?: string;
   [key: string]: unknown;
@@ -153,6 +154,7 @@ export function PersonalLibrary() {
           const hasTitle = Boolean(item.title?.trim());
           const source = item.source_domain ?? displayLabel(item.content_type);
           const topics = (item.topics ?? []).filter(Boolean).slice(0, 4);
+          const previewDescription = typeof item.ai_metadata?.preview_description === "string" ? item.ai_metadata.preview_description.trim() : "";
           return (
             <article className="media-card" key={item.id}>
               <div className={previewUrl ? "media-card-visual has-preview" : "media-card-visual visual-fallback"} style={previewUrl ? { backgroundImage: `url("${previewUrl}")` } : undefined}>
@@ -161,7 +163,8 @@ export function PersonalLibrary() {
               </div>
               <div className="media-card-copy">
                 <div className="personal-card-top"><span>{displayLabel(item.content_type)}</span><span className={"quality " + (item.capture_quality === "link_only" ? "partial" : "ready")}>{item.capture_quality === "link_only" ? "Link only" : displayLabel(item.processing_status)}</span></div>
-                {hasTitle && <h2>{item.title}</h2>}
+                {hasTitle && <h2 title={item.title ?? undefined}>{item.title}</h2>}
+                {previewDescription && <p className="metadata-summary">{previewDescription}</p>}
                 {item.user_note && <><span className="card-context-label">Your context</span><p className="personal-note">{item.user_note}</p></>}
                 {topics.length > 0 && <div className="suggested-tags" aria-label="Suggested tags">{topics.map((topic) => <span className="suggested-tag" key={topic}>{topic}</span>)}</div>}
                 <div className="personal-card-foot"><span>{new Date(item.saved_at).toLocaleDateString()}</span><span className="personal-card-foot-actions">{item.capture_quality === "link_only" && url && <button className="reprocess-button" onClick={() => void reprocessItem(item.id)} disabled={reprocessingId === item.id}>{reprocessingId === item.id ? "Refreshing…" : "Refresh details"}</button>}{url && <a href={url} target="_blank" rel="noreferrer">Open source <ExternalLink size={14} /></a>}</span></div>
