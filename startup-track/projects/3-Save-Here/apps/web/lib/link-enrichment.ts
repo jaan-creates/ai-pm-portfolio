@@ -11,12 +11,12 @@ export type LinkMetadata = {
 };
 
 const TAG_RULES: Array<[string, RegExp]> = [
-  ["recipe", /\\b(recipe|cook|cooking|ingredients|meal|oats|sandwich|dessert)\\b/i],
-  ["fitness", /\\b(fitness|workout|gym|exercise|training|squat|press|yoga)\\b/i],
-  ["shopping", /\\b(buy|shop|price|deal|product|review)\\b/i],
-  ["travel", /\\b(travel|trip|hotel|flight|visit|tour)\\b/i],
-  ["learning", /\\b(learn|guide|tutorial|course|how[- ]to|explained)\\b/i],
-  ["news", /\\b(news|report|analysis|politics|history)\\b/i],
+  ["recipe", /\b(recipe|cook|cooking|ingredients|meal|oats|sandwich|dessert)\b/i],
+  ["fitness", /\b(fitness|workout|gym|exercise|training|squat|press|yoga)\b/i],
+  ["shopping", /\b(buy|shop|price|deal|product|review)\b/i],
+  ["travel", /\b(travel|trip|hotel|flight|visit|tour)\b/i],
+  ["learning", /\b(learn|guide|tutorial|course|how[- ]to|explained)\b/i],
+  ["news", /\b(news|report|analysis|politics|history)\b/i],
 ];
 
 export function deriveSuggestedTags(sourceUrl: string, title: string | null, description: string | null) {
