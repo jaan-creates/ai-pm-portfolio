@@ -17,6 +17,6 @@ describe("deterministic link enrichment", () => {
   it("rejects local and private destinations", () => {
     expect(isSafePublicUrl("http://localhost:3000")).toBe(false);
     expect(isSafePublicUrl("http://192.168.1.20/item")).toBe(false);
-    expect(isSafePublicUrl("https://example.com/item")).toBe(true);
+    expect(isSafePublicUrl("https://github.com/item")).toBe(true);\n    expect(isSafePublicUrl("https://example.com/item")).toBe(false);
   });
 });

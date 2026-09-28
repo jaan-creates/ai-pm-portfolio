@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const MAX_HTML_BYTES = 1_000_000;
-const FETCH_TIMEOUT_MS = 1_200;
+const FETCH_TIMEOUT_MS = 1_200;\nconst SAFE_METADATA_HOSTS = new Set(["amazon.com", "amazon.in", "flipkart.com", "github.com", "instagram.com", "medium.com", "twitter.com", "wikipedia.org", "x.com", "youtu.be", "youtube.com"]);
 
 export type LinkMetadata = {
   title: string | null;
