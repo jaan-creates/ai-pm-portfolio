@@ -50,6 +50,7 @@ export function PersonalLibrary() {
   const [busy, setBusy] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reprocessingId, setReprocessingId] = useState<string | null>(null);
 
   const loadItems = useCallback(async () => {
     if (!supabase) return;
@@ -86,6 +87,27 @@ export function PersonalLibrary() {
   async function signOut() {
     if (supabase) await supabase.auth.signOut();
   }
+
+  async function reprocessItem(itemId: string) {
+    if (!supabase) return;
+    setReprocessingId(itemId);
+    setError(null);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) {
+      setError("Your session expired. Please sign in again.");
+      setReprocessingId(null);
+      return;
+    }
+    const response = await fetch(`/v1/items/${itemId}/reprocess`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) setError("Details could not be refreshed for this save.");
+    else await loadItems();
+    setReprocessingId(null);
+  }
+
 
   return (
     <main className="personal-library">
@@ -142,7 +164,7 @@ export function PersonalLibrary() {
                 {hasTitle && <h2>{item.title}</h2>}
                 {item.user_note && <><span className="card-context-label">Your context</span><p className="personal-note">{item.user_note}</p></>}
                 {topics.length > 0 && <div className="suggested-tags" aria-label="Suggested tags">{topics.map((topic) => <span className="suggested-tag" key={topic}>{topic}</span>)}</div>}
-                <div className="personal-card-foot"><span>{new Date(item.saved_at).toLocaleDateString()}</span>{url && <a href={url} target="_blank" rel="noreferrer">Open source <ExternalLink size={14} /></a>}</div>
+                <div className="personal-card-foot"><span>{new Date(item.saved_at).toLocaleDateString()}</span><span className="personal-card-foot-actions">{item.capture_quality === "link_only" && url && <button className="reprocess-button" onClick={() => void reprocessItem(item.id)} disabled={reprocessingId === item.id}>{reprocessingId === item.id ? "Refreshing…" : "Refresh details"}</button>}{url && <a href={url} target="_blank" rel="noreferrer">Open source <ExternalLink size={14} /></a>}</span></div>
               </div>
             </article>
           );
