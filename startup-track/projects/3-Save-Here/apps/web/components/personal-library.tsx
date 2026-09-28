@@ -22,6 +22,7 @@ type Item = {
   content_type: string;
   intent: string;
   capture_quality: string;
+  status: string;
   processing_status: string;
   saved_at: string;
   topics: string[] | null;
@@ -58,7 +59,7 @@ export function PersonalLibrary() {
     setBusy(true);
     setError(null);
     const [{ data, error: loadError }, { data: userData }] = await Promise.all([
-      supabase.from("items").select("id,title,user_note,original_url,canonical_url,source_domain,content_type,intent,capture_quality,processing_status,saved_at,topics,ai_metadata").is("deleted_at", null).order("saved_at", { ascending: false }),
+      supabase.from("items").select("id,title,user_note,original_url,canonical_url,source_domain,content_type,intent,capture_quality,processing_status,status,saved_at,topics,ai_metadata").is("deleted_at", null).order("saved_at", { ascending: false }),
       supabase.auth.getUser(),
     ]);
     setProfileEmail(userData.user?.email ?? "");
@@ -87,6 +88,29 @@ export function PersonalLibrary() {
 
   async function signOut() {
     if (supabase) await supabase.auth.signOut();
+  }
+
+  async function updateItemStatus(itemId: string, status: "pending" | "completed" | "reference") {
+    if (!supabase) return;
+    setError(null);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) {
+      setError("Your session expired. Please sign in again.");
+      return;
+    }
+    const response = await fetch(`/v1/items/${itemId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (!response.ok) setError("That lifecycle update could not be saved.");
+    else await loadItems();
+  }
+
+  async function deleteItem(itemId: string) {
+    if (!window.confirm("Remove this save from your library?")) return;
+    await updateItemStatus(itemId, "deleted" as never);
   }
 
   async function reprocessItem(itemId: string) {
@@ -168,6 +192,7 @@ export function PersonalLibrary() {
                 {item.user_note && <><span className="card-context-label">Your context</span><p className="personal-note">{item.user_note}</p></>}
                 {topics.length > 0 && <div className="suggested-tags" aria-label="Suggested tags">{topics.map((topic) => <span className="suggested-tag" key={topic}>{topic}</span>)}</div>}
                 <div className="personal-card-foot"><span>{new Date(item.saved_at).toLocaleDateString()}</span><span className="personal-card-foot-actions">{item.capture_quality === "link_only" && url && <button className="reprocess-button" onClick={() => void reprocessItem(item.id)} disabled={reprocessingId === item.id}>{reprocessingId === item.id ? "Refreshing…" : "Refresh details"}</button>}{url && <a href={url} target="_blank" rel="noreferrer">Open source <ExternalLink size={14} /></a>}</span></div>
+                <div className="lifecycle-actions" aria-label="Save actions"><button onClick={() => void updateItemStatus(item.id, "completed")} aria-label="Mark as done">Done</button><button onClick={() => void updateItemStatus(item.id, "reference")} aria-label="Keep as reference">Reference</button><button onClick={() => void deleteItem(item.id)} aria-label="Remove save">Remove</button></div>
               </div>
             </article>
           );
