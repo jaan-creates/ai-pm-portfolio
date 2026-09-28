@@ -730,3 +730,6 @@ button {
 .metadata-summary{display:-webkit-box;overflow:hidden;margin:12px 0 0;color:#b8c3b2;font-size:12px;line-height:1.5;-webkit-box-orient:vertical;-webkit-line-clamp:3}
 .visual-fallback{min-height:150px}.visual-fallback span{font-size:18px}.visual-fallback small{font-size:10px}.media-card-copy{min-height:190px}
 @media(max-width:560px){.media-card-copy h2{-webkit-line-clamp:3;max-height:calc(3 * 1.05em)}.metadata-summary{-webkit-line-clamp:2}}
+
+
+.lifecycle-actions{display:flex;gap:7px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.lifecycle-actions button{padding:6px 8px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:8px;font-size:10px;cursor:pointer}.lifecycle-actions button:hover{color:var(--text);border-color:var(--line-strong)}.lifecycle-actions button:last-child{margin-left:auto;color:#d99b8b;border-color:rgba(229,139,117,.22)}
