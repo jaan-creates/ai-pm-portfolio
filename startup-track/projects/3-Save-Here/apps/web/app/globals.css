@@ -723,3 +723,10 @@ button {
 
 
 .reprocess-button{padding:5px 8px;color:var(--muted);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;font-size:10px;cursor:pointer}.reprocess-button:hover:not(:disabled){color:var(--text);border-color:var(--line-strong)}.reprocess-button:disabled{cursor:wait;opacity:.65}.personal-card-foot-actions{display:inline-flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+
+
+/* Recall card readability: metadata should support the save, not overpower it. */
+.media-card-copy h2{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:4;max-height:calc(4 * 1.05em)}
+.metadata-summary{display:-webkit-box;overflow:hidden;margin:12px 0 0;color:#b8c3b2;font-size:12px;line-height:1.5;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+.visual-fallback{min-height:150px}.visual-fallback span{font-size:18px}.visual-fallback small{font-size:10px}.media-card-copy{min-height:190px}
+@media(max-width:560px){.media-card-copy h2{-webkit-line-clamp:3;max-height:calc(3 * 1.05em)}.metadata-summary{-webkit-line-clamp:2}}
