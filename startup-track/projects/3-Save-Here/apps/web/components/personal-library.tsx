@@ -12,8 +12,7 @@ export function PersonalLibrary() {
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const loadItems = useCallback(async () => { if (!supabase) return; setBusy(true); setError(null); const { data, error: loadError } = await supabase.from("items").select("id,title,user_note,original_url,canonical_url,source_domain,content_type,intent,capture_quality,processing_status,saved_at").is("deleted_at", null).order("saved_at", { ascending: false }); if (loadError) setError("Your library could not be loaded yet."); else setItems((data ?? []) as Item[]); setBusy(false); }
-  }, [supabase]);
+  const loadItems = useCallback(async () => { if (!supabase) return; setBusy(true); setError(null); const { data, error: loadError } = await supabase.from("items").select("id,title,user_note,original_url,canonical_url,source_domain,content_type,intent,capture_quality,processing_status,saved_at").is("deleted_at", null).order("saved_at", { ascending: false }); if (loadError) setError("Your library could not be loaded yet."); else setItems((data ?? []) as Item[]); setBusy(false); }, [supabase]);
   // The initial fetch synchronizes this client with Supabase after hydration.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadItems(); }, [loadItems]);
