@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { captureInputSchema, inferContentType, normalizeUrl } from "@save-recall/domain";
 import { assessCaptureTokenAccess, readBearerToken, tokenDigest } from "@/lib/capture-token";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { enrichCapturedItem } from "@/lib/link-enrichment";
 
 export const runtime = "nodejs";
 
@@ -76,6 +77,10 @@ export async function POST(request: Request) {
     .from("device_tokens")
     .update({ last_used_at: new Date().toISOString() })
     .eq("id", deviceToken.id);
+
+  if (data?.item_id && canonicalUrl) {
+    await enrichCapturedItem(admin.client, deviceToken.owner_id, data.item_id, canonicalUrl);
+  }
 
   return NextResponse.json(data, { status: data.result === "created" ? 201 : 200 });
 }
