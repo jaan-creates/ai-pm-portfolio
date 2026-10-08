@@ -1,4 +1,6 @@
-2026-10-08T19:40+05:30
-Retry exactly one fresh bounded Metaforms renderer canary after transient DETERMINISTIC:CANARY_LOCKED on run 37788938367. This retry is authorized only because the previous attempt created no new canary queue row and failed before enqueue.
-Use application 2026-08-04-002 only. Preserve CANARY-REPEAT-GUARD-001 and changed-deployment identity. Require a new Queue Job ID, RESUME_GENERATE succeeded, attempts=1, empty error, exact three canonical Career Break bullets, zero duplicate project-summary bullets, zero EV-* leakage, and downstream QA/readback.
-Do not retry any non-lock canary failure. Normal RESUME_GENERATE backlog remains quarantined until proof passes.
+2026-10-08T22:10+05:30
+Authorize one fresh bounded Metaforms renderer canary after owner-scope recovery and current Worker Runtime HEALTHY/CLOSED readback.
+Execution must use isolated runOwnedRendererCanaryTick trigger only; do not enable or rely on the broad phase1OneJobTick worker.
+Retry DETERMINISTIC:CANARY_LOCKED only as a transient lock collision. Preserve CANARY-REPEAT-GUARD-001 and exact changed-deployment identity.
+Application 2026-08-04-002 only. Require a new Queue Job ID, RESUME_GENERATE succeeded, attempts=1, empty error, exact three canonical Career Break bullets, zero duplicate project-summary bullets, zero EV-* leakage, then downstream QA/readback.
+Normal RESUME_GENERATE backlog remains quarantined until proof passes.
