@@ -140,6 +140,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-trace-golden-v0-runtime.mjs" "$LIVE_DIR"
       - name: Prevent stale owner-validation health starvation
         run: node "$PROJECT_DIR/scripts/patch-health-owner-validation-starvation.mjs" "$LIVE_DIR"
+      - name: Split renderer release risk from global regression gate
+        run: node "$PROJECT_DIR/scripts/patch-renderer-release-gate.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
