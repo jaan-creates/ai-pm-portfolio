@@ -4,6 +4,7 @@ import {spawnSync} from 'node:child_process';
 
 const root=process.argv[2]||'.janu-live';
 const CONTRACT='RENDERER-RELEASE-GATE-SPLIT-001';
+// PRECHANGE-RISK-RENDERER-GATE-SPLIT-001: preserve global fail-closed behavior for uncontained blockers while isolating canary-only renderer risk behind executable quarantine.
 const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
 const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function enforceReleaseBlockerHealth_(')&&t.includes('function rendererQuarantineBlocks_(');});
 if(!target)throw new Error('renderer release gate target not found');
