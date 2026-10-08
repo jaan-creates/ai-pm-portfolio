@@ -120,6 +120,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/live-source-manifest.mjs" "$LIVE_DIR"
       - name: Inspect safe target worker structure
         run: node "$PROJECT_DIR/scripts/live-target-structure.mjs" "$LIVE_DIR"
+      - name: Inspect health budget guard structure
+        run: node "$PROJECT_DIR/scripts/inspect-health-budget-guard.mjs" "$LIVE_DIR"
       - name: Validate required Apps Script OAuth scopes
         run: node "$PROJECT_DIR/scripts/patch-appsscript-oauth-scopes.mjs" "$LIVE_DIR" --check
       - name: Apply additive P1-A contracts
