@@ -101,6 +101,10 @@ jobs:
           mkdir -p /tmp/janu-predeploy
           find "$LIVE_DIR" -maxdepth 1 -type f \( -name '*.gs' -o -name '*.js' -o -name 'appsscript.json' \) -exec cp {} /tmp/janu-predeploy/ \;
           test -n "$(find /tmp/janu-predeploy -maxdepth 1 -type f -print -quit)" || { echo 'Pre-deploy source backup is empty'; exit 2; }
+      - name: Test OAuth scope freshness patch
+        run: node "$PROJECT_DIR/scripts/test-appsscript-oauth-scopes.mjs"
+      - name: Ensure required Apps Script OAuth scopes
+        run: node "$PROJECT_DIR/scripts/patch-appsscript-oauth-scopes.mjs" "$LIVE_DIR"
       - name: Assert accepted P0 baseline
         shell: bash
         run: |
@@ -116,6 +120,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/live-source-manifest.mjs" "$LIVE_DIR"
       - name: Inspect safe target worker structure
         run: node "$PROJECT_DIR/scripts/live-target-structure.mjs" "$LIVE_DIR"
+      - name: Validate required Apps Script OAuth scopes
+        run: node "$PROJECT_DIR/scripts/patch-appsscript-oauth-scopes.mjs" "$LIVE_DIR" --check
       - name: Apply additive P1-A contracts
         run: node "$PROJECT_DIR/scripts/patch-p1a.mjs" "$LIVE_DIR"
       - name: Apply P1-A runtime provider adapters
