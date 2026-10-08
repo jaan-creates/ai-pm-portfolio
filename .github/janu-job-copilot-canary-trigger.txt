@@ -1,6 +1,4 @@
-2026-10-08T19:30+05:30
-Authorize exactly one fresh bounded Metaforms renderer canary after current target readback proves global Regression Gate HEALTHY/CLOSED and Renderer Release DEGRADED/OPEN under RENDERER-RELEASE-GATE-SPLIT-001.
-Verified production deployment: commit 435035591263a01d21696fea7f563d4f3d1cab3f, source SHA-256 43785ff5d3f5593b6e516c5603170da9f9f195d6a2ee5d3d581ac47dd0ef577b, CD run 37788373849.
-Application 2026-08-04-002 only. Require RENDER-CAREERBREAK-V3 and exact changed-deployment canary. The prior successful queue execution Q-20260831-191646-b5d3fadc is NOT acceptance evidence because artifact readback contains five Career Break bullets; FL-099 requires exact three.
-Require a new Queue Job ID, RESUME_GENERATE terminal succeeded, attempts=1, empty error, non-empty Resume Version ID/Tailored Resume Link, exactly three canonical Career Break bullets with no duplicate project-summary bullets, zero EV-* leakage in resume/application pack, then downstream QA/readback.
-Normal RESUME_GENERATE backlog remains quarantined until exact canary artifact and QA proof pass.
+2026-10-08T19:40+05:30
+Retry exactly one fresh bounded Metaforms renderer canary after transient DETERMINISTIC:CANARY_LOCKED on run 37788938367. This retry is authorized only because the previous attempt created no new canary queue row and failed before enqueue.
+Use application 2026-08-04-002 only. Preserve CANARY-REPEAT-GUARD-001 and changed-deployment identity. Require a new Queue Job ID, RESUME_GENERATE succeeded, attempts=1, empty error, exact three canonical Career Break bullets, zero duplicate project-summary bullets, zero EV-* leakage, and downstream QA/readback.
+Do not retry any non-lock canary failure. Normal RESUME_GENERATE backlog remains quarantined until proof passes.

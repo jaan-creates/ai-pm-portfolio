@@ -83,12 +83,27 @@ jobs:
         working-directory: .janu-live
         shell: bash
         run: |
-          set +e
-          out="$(clasp run runRendererAuthorizedCanaryEnqueue --user "$CLASP_USER" 2>&1)"
-          rc=$?
-          set -e
-          printf '%s\n' "$out"
-          test "$rc" -eq 0
+          set -euo pipefail
+          out=''
+          rc=1
+          for i in $(seq 1 30); do
+            set +e
+            out="$(clasp run runRendererAuthorizedCanaryEnqueue --user "$CLASP_USER" 2>&1)"
+            rc=$?
+            set -e
+            printf '%s\n' "$out"
+            if [ "$rc" -eq 0 ]; then
+              break
+            fi
+            if grep -q 'DETERMINISTIC:CANARY_LOCKED' <<<"$out"; then
+              echo "Canary enqueue lock collision; bounded retry $i/30."
+              sleep 15
+              continue
+            fi
+            echo 'Non-retryable canary enqueue failure.' >&2
+            exit "$rc"
+          done
+          test "$rc" -eq 0 || { echo 'Canary enqueue lock remained busy after bounded retries.' >&2; exit 24; }
           ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|CANARY_.*FAILED|CANARY_.*MISMATCH|CANARY_.*NOT_' <<<"$out"
           grep -Eq 'pass:[[:space:]]*true' <<<"$out"
           grep -q "contract: 'CANARY-OWNER-WORKER-001'" <<<"$out"
