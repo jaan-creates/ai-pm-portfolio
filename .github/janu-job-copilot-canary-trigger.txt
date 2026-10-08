@@ -1,5 +1,6 @@
-2026-10-08T22:47+05:30
-Authorize exactly one fresh Metaforms renderer canary after production deployment bound CANARY-DEPLOYMENT-IDEMPOTENCY-001.
-Verified production provenance before trigger: deployment commit bfb214ffdeee39f089522ea0816c5f6da4f40dbd; source SHA-256 e105f9c0296da45ff53d77add0e1573edbb0778d7ea4305c687c9febf0c92af3; Regression Gate HEALTHY/CLOSED; Worker Runtime HEALTHY/CLOSED.
-Application 2026-08-04-002 only. Require new deployment-bound Queue Job ID, isolated owner canary execution, RESUME_GENERATE succeeded, attempts=1, empty error, exact three canonical Career Break bullets, zero duplicate project-summary bullets, zero EV/internal leakage, then downstream QA/readback.
+2026-10-08T23:08+05:30
+Authorize exactly one fresh Metaforms renderer canary after CANARY-DEPLOYMENT-IDEMPOTENCY-001 and CANARY-SEMANTIC-FRESHNESS-OVERRIDE-001 are deployed.
+Verified production provenance: commit ac875b12e957821d1168ddfa160f24b15451795c; source SHA-256 fd6a18e670c5ea4053a01d308c4fbd6a89a4a64abb22daa1dbb4f9e8eab42f66; Regression Gate HEALTHY/CLOSED; Worker Runtime HEALTHY/CLOSED.
+Application 2026-08-04-002 only. Changed-deployment validation rerender may bypass normal lifecycle freshness only when the strict canary payload, deployment identity, owner-worker context, exact renderer policy and preconditions all match.
+Require new Queue Job ID, isolated owner canary trigger, RESUME_GENERATE succeeded attempts=1 empty error, exact three canonical Career Break bullets, zero duplicate project-summary bullets, zero EV/internal leakage, then downstream QA/readback.
 Do not enable broad worker or replay normal RESUME_GENERATE backlog.
