@@ -1,6 +1,5 @@
-2026-10-08T22:10+05:30
-Authorize one fresh bounded Metaforms renderer canary after owner-scope recovery and current Worker Runtime HEALTHY/CLOSED readback.
-Execution must use isolated runOwnedRendererCanaryTick trigger only; do not enable or rely on the broad phase1OneJobTick worker.
-Retry DETERMINISTIC:CANARY_LOCKED only as a transient lock collision. Preserve CANARY-REPEAT-GUARD-001 and exact changed-deployment identity.
-Application 2026-08-04-002 only. Require a new Queue Job ID, RESUME_GENERATE succeeded, attempts=1, empty error, exact three canonical Career Break bullets, zero duplicate project-summary bullets, zero EV-* leakage, then downstream QA/readback.
-Normal RESUME_GENERATE backlog remains quarantined until proof passes.
+2026-10-08T22:47+05:30
+Authorize exactly one fresh Metaforms renderer canary after production deployment bound CANARY-DEPLOYMENT-IDEMPOTENCY-001.
+Verified production provenance before trigger: deployment commit bfb214ffdeee39f089522ea0816c5f6da4f40dbd; source SHA-256 e105f9c0296da45ff53d77add0e1573edbb0778d7ea4305c687c9febf0c92af3; Regression Gate HEALTHY/CLOSED; Worker Runtime HEALTHY/CLOSED.
+Application 2026-08-04-002 only. Require new deployment-bound Queue Job ID, isolated owner canary execution, RESUME_GENERATE succeeded, attempts=1, empty error, exact three canonical Career Break bullets, zero duplicate project-summary bullets, zero EV/internal leakage, then downstream QA/readback.
+Do not enable broad worker or replay normal RESUME_GENERATE backlog.
