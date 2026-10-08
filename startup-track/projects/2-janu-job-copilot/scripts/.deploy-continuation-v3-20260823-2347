@@ -1,0 +1,2 @@
+Controlled isolated deployment trigger for continuation v3 / FL-055 verification.
+No runtime logic; remove or leave inert after deployment evidence is read back.

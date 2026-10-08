@@ -1,0 +1,2 @@
+Controlled redeploy trigger for TRACE-GOLDEN-V0-2 + P1-A-E2E-CONTINUATION-3 + RENDER-CAREERBREAK-V2 + TRACE-DURABLE-V1.
+Live acceptance remains fail-closed until Worker State readback proves exact commit/source hash, renderer self-test PASS, and durable TRACE behavior.

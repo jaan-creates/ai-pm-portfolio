@@ -7,10 +7,11 @@ const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');re
 if(!target)throw new Error('TrackerWorkflow source not found');
 const file=path.join(root,target);const s=fs.readFileSync(file,'utf8');
 
-// Compatibility shim only. The authoritative downstream recovery contract is now
-// P1-A-E2E-CONTINUATION-2 in patch-p1a-e2e-continuation.mjs. Keeping this file as
-// a no-op preserves deployment-chain compatibility while preventing a second health
-// hook or any dependency on the private orchestrateOne_ call signature.
-for(const token of ['function p1aQueueWorkerState_(','function p1aTailoringNeedsResume_(','P1-A-E2E-CONTINUATION-2'])if(!s.includes(token))throw new Error('Authoritative E2E continuation v2 contract missing before compatibility shim: '+token);
+// Compatibility shim only. The authoritative downstream recovery contract is
+// owned by patch-p1a-e2e-continuation.mjs. This shim must accept the current
+// authoritative continuation contract and must never force a downgrade.
+for(const token of ['function p1aQueueWorkerState_(','function p1aTailoringNeedsResume_('])if(!s.includes(token))throw new Error('Authoritative E2E continuation helper missing before compatibility shim: '+token);
+const authoritative=s.includes('P1-A-E2E-CONTINUATION-3')?'P1-A-E2E-CONTINUATION-3':(s.includes('P1-A-E2E-CONTINUATION-2')?'P1-A-E2E-CONTINUATION-2':'');
+if(!authoritative)throw new Error('Authoritative E2E continuation contract missing before compatibility shim');
 if(s.includes('function p1eDownstreamContinuationTick_(')||s.includes('function p1eContinueTailoringForApp_('))throw new Error('Legacy duplicate P1-E continuation functions still present in transformed source');
-console.log(JSON.stringify({status:'PASS',file:target,changed:false,contract:'P1-E-SHIM-2',authoritativeContract:'P1-A-E2E-CONTINUATION-2',duplicateHook:false,orchestratorDependency:false},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:false,contract:'P1-E-SHIM-3',authoritativeContract:authoritative,acceptsV3:true,downgrade:false,duplicateHook:false,orchestratorDependency:false},null,2));

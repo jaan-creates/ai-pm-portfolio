@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+
+const projectDir=process.argv[2]||path.resolve('startup-track/projects/2-janu-job-copilot');
+const patch=path.join(projectDir,'scripts','patch-health-control-plane-isolation.mjs');
+const text=fs.readFileSync(patch,'utf8');
+for(const token of ['HEALTH-CONTROL-PLANE-001','HEALTH-CONSISTENCY-001','JD-RECOVERY-ISOLATION-001','180000'])if(!text.includes(token))throw new Error('Patch contract missing '+token);
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'janu-health-control-'));
+const source=`const P12=Object.freeze({VERSION:'1.3.8',SUITE:'p0-regression-v19'});function SH_(){return null}function hm_(){return {}}function healthSet_(){}function upsertWorkerState_(){}function enforceReleaseBlockerHealth_(){return {blocked:true}}function healthRuntimeCheckpoint_(){return 1}function p1aJdRecoveryMaintenanceTick_(){return {status:'X'}}function healthFinalReleaseLock_(){if(false)healthSet_('Regression Gate','DEGRADED','OPEN','WORKER_RUNTIME_OPEN','stale',1,'old');return {blocked:true}}function phase1HealthTick(){const __healthStartedAt=Date.now();healthRuntimeOptionalStage_('jd-recovery',__healthStartedAt,function(){return p1aJdRecoveryMaintenanceTick_();});try{healthFinalReleaseLock_();}finally{healthRuntimeCheckpoint_('COMPLETE',__healthStartedAt,'COMPLETE')}}function healthRuntimeOptionalStage_(s,t,f){return f()}function verifyReleaseIdentity(){return true}`;
+const file=path.join(tmp,'TrackerWorkflow.js');fs.writeFileSync(file,source);
+const run=spawnSync(process.execPath,[patch,tmp],{encoding:'utf8'});if(run.status!==0)throw new Error(run.stderr||run.stdout);
+const out=fs.readFileSync(file,'utf8');
+const start=out.indexOf('function phase1HealthTick('),end=out.indexOf('function ',start+20);const tick=out.slice(start,end>start?end:out.length);
+if(tick.includes('p1aJdRecoveryMaintenanceTick_('))throw new Error('JD recovery mutation remained in health tick');
+if(!tick.includes('jd-recovery:ISOLATED'))throw new Error('Isolation telemetry missing');
+const jdStart=out.indexOf('function phase1JdRecoveryTick(');if(jdStart<0||!out.slice(jdStart,jdStart+500).includes('p1aJdRecoveryMaintenanceTick_('))throw new Error('Standalone JD recovery entrypoint missing');
+for(const token of ['function healthConsistencyDecision_(','HEALTH_STATE_INCONSISTENT','WORKER_RUNTIME_OPEN','runHealthControlPlaneSelfTest','health_runtime_slo_ms'])if(!out.includes(token))throw new Error('Transformed source missing '+token);
+const decision=out.match(/function healthConsistencyDecision_\(runtime\)\{[\s\S]*?\n?\}/);if(!decision)throw new Error('healthConsistencyDecision_ source missing');
+const vmSource=`${decision[0]};[healthConsistencyDecision_({found:true,status:'HEALTHY',circuit:'CLOSED'}).kind,healthConsistencyDecision_({found:true,status:'DEGRADED',circuit:'OPEN'}).kind,healthConsistencyDecision_({found:true,status:'HEALTHY',circuit:'OPEN'}).kind,healthConsistencyDecision_({found:false}).kind]`;
+const evalRun=spawnSync(process.execPath,['-e',`console.log(JSON.stringify(eval(${JSON.stringify(vmSource)})))`],{encoding:'utf8'});if(evalRun.status!==0)throw new Error(evalRun.stderr);const got=JSON.parse(evalRun.stdout.trim());const want=['OK','RUNTIME_OPEN','INCONSISTENT','INCONSISTENT'];if(JSON.stringify(got)!==JSON.stringify(want))throw new Error('Consistency decision regression '+JSON.stringify(got));
+const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error(syntax.stderr);
+console.log(JSON.stringify({status:'PASS',contract:'HEALTH-CONTROL-PLANE-001',consistency:'HEALTH-CONSISTENCY-001',jdIsolation:'JD-RECOVERY-ISOLATION-001',healthSloMs:180000,decisionFixtures:want.length,healthMutatesJdRecovery:false,syntax:true},null,2));

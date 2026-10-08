@@ -1,0 +1,41 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import vm from 'node:vm';
+import {spawnSync} from 'node:child_process';
+
+const projectDir=process.argv[2]||path.resolve('startup-track/projects/2-janu-job-copilot');
+const patch=path.join(projectDir,'scripts','patch-renderer-canary-preconditions.mjs');
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'janu-canary-preconditions-'));
+const target=path.join(tmp,'TrackerWorkflow.js');
+const source=`const P12={};
+function rendererWorkerStateValue_(){return '';}
+function rendererQuarantineBlocks_(appId,type,payload){if(String(type)!=='RESUME_GENERATE')return false;payload=payload||{};const rec=rendererWorkerStateValue_('renderer_recurrence_gate'),rep=rendererWorkerStateValue_('renderer_replay_gate');if(rec==='CANARY_PASS'&&rep==='CANARY_PASS')return false;const canary=rendererWorkerStateValue_('renderer_canary_application_id'),self=rendererWorkerStateValue_('renderer_careerbreak_self_test');return !(String(appId)===String(canary)&&self==='PASS'&&String(payload.rendererPolicy||'')==='RENDER-CAREERBREAK-V3');}
+function SH_(){return {getLastRow(){return 1;},getRange(){return {createTextFinder(){return {matchEntireCell(){return this;},findNext(){return null;}}},getDisplayValue(){return '';}}}};}
+function hm_(){return {};}
+`;
+fs.writeFileSync(target,source);
+function apply(){const r=spawnSync(process.execPath,[patch,tmp],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout||'canary patch failed');return r.stdout;}
+apply();const once=fs.readFileSync(target,'utf8');apply();const twice=fs.readFileSync(target,'utf8');
+if(once!==twice)throw new Error('CANARY-PRECONDITION-001 patch is not idempotent');
+const syntax=spawnSync(process.execPath,['--check',target],{encoding:'utf8'});if(syntax.status!==0)throw new Error(syntax.stderr);
+for(const token of ['CANARY-PRECONDITION-001','rendererCanaryStateDecision_','rendererCanaryPreconditionsMet_','FL-080-CLOSED','FL-059-CLOSED','180000','HEALTH_STATE_INCONSISTENT'])if(!twice.includes(token))throw new Error('missing '+token);
+const sandbox={};vm.createContext(sandbox);vm.runInContext(twice,sandbox);
+const base={configuredCanary:true,payload:{canary:true,rendererPolicy:'RENDER-CAREERBREAK-V3',preconditions:{runtime:'FL-080-CLOSED',trace:'FL-059-CLOSED'}},selfTest:'PASS',recurrence:'SELF_TEST_PASS_CANARY_PENDING',runtimeStatus:'HEALTHY',runtimeCircuit:'CLOSED',regressionErrorCode:'RELEASE_BLOCKER_OPEN',healthElapsedMs:150000,traceSelfTest:'PASS',goldenTraceStatus:'PASS',fl059Status:'Closed / Prevention Effective'};
+const decide=x=>sandbox.rendererCanaryStateDecision_(Object.assign({},base,x||{}));
+if(decide()!==true)throw new Error('known-good canary state must pass');
+const negatives=[
+  {payload:{canary:false,rendererPolicy:'RENDER-CAREERBREAK-V3',preconditions:{runtime:'FL-080-CLOSED',trace:'FL-059-CLOSED'}}},
+  {healthElapsedMs:180001},
+  {fl059Status:'Open / Fix Required'},
+  {runtimeCircuit:'OPEN'},
+  {regressionErrorCode:'WORKER_RUNTIME_OPEN'},
+  {regressionErrorCode:'HEALTH_STATE_INCONSISTENT'},
+  {recurrence:'BLOCKED_SELF_TEST_FAIL'},
+  {traceSelfTest:'FAIL'},
+  {goldenTraceStatus:'INTAKE_ACCEPTED'},
+  {payload:{canary:true,rendererPolicy:'RENDER-CAREERBREAK-V3',preconditions:{runtime:'FL-080-CLOSED',trace:'OPEN'}}}
+];
+for(const x of negatives)if(decide(x)!==false)throw new Error('unsafe canary state passed '+JSON.stringify(x));
+if(!twice.match(/function rendererQuarantineBlocks_[\s\S]*rendererCanaryPreconditionsMet_/))throw new Error('quarantine does not consume executable canary gate');
+console.log(JSON.stringify({status:'PASS',contract:'CANARY-PRECONDITION-001',idempotent:true,syntax:true,positiveFixture:true,negativeFixtures:negatives.length,healthMaxMs:180000,traceClosureRequired:true,healthConsistencyRequired:true},null,2));
