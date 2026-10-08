@@ -121,3 +121,6 @@ jobs:
 
       - name: Behavior-test bounded health runtime and final release lock
         run: node "$PROJECT_DIR/scripts/test-health-runtime-liveness.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test renderer release gate isolation
+        run: node "$PROJECT_DIR/scripts/test-renderer-release-gate.mjs" "$PROJECT_DIR"
