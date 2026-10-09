@@ -140,7 +140,7 @@ jobs:
           grep -Eq "lease:[[:space:]]*'ACTIVE'" <<<"$out"
           echo "Armed canonical scheduler canary lease for $CANARY_QID."
       - name: Execute bounded canonical owner-worker canary handoff
-        working-directory: "$LIVE_DIR"
+        working-directory: .janu-live
         shell: bash
         run: |
           set -euo pipefail
