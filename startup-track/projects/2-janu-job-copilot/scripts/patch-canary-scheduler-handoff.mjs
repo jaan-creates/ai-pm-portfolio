@@ -39,9 +39,10 @@ putFn('rendererCanaryControlPlaneTick',controlFn,'function phase1HealthTick(');
 const statusFn="function runRendererCanaryControlStatus(){const renderQid=String(rendererWorkerStateValue_('renderer_canary_pending_queue_id')||''),qaid=String(rendererWorkerStateValue_('renderer_canary_qa_queue_id')||''),render=renderQid?rendererCanaryQueueReadback_(renderQid):{found:false},qa=qaid?rendererCanaryQueueReadback_(qaid):{found:false};return{contract:'CANARY-SCHEDULER-HANDOFF-001',renderQueueJobId:renderQid,qaQueueJobId:qaid,render:render.status||'',qa:qa.status||'',atsQaStatus:qa.atsQaStatus||'',artifactProofStatus:String(rendererWorkerStateValue_('renderer_canary_artifact_proof')||''),recurrence:String(rendererWorkerStateValue_('renderer_recurrence_gate')||''),replay:String(rendererWorkerStateValue_('renderer_replay_gate')||'')};}";
 putFn('runRendererCanaryControlStatus',statusFn,'function verifyReleaseIdentity()');
 
-const phase=rangeOf('phase1HealthTick');if(!phase)throw new Error('phase1HealthTick missing');
-const phaseBody=s.slice(phase.start,phase.end);
-if(!phaseBody.includes('rendererCanaryControlPlaneTick'))s=s.slice(0,phase.open+1)+"try{rendererCanaryControlPlaneTick();}catch(e){upsertWorkerState_('renderer_canary_control_plane','FAIL',String((e&&e.stack)||e).slice(0,1500));}"+s.slice(phase.open+1);
+function wireScheduler(name,required){const phase=rangeOf(name);if(!phase){if(required)throw new Error(name+' missing');return;}const body=s.slice(phase.start,phase.end);if(!body.includes('rendererCanaryControlPlaneTick'))s=s.slice(0,phase.open+1)+"try{rendererCanaryControlPlaneTick();}catch(e){upsertWorkerState_('renderer_canary_control_plane','FAIL',String((e&&e.stack)||e).slice(0,1500));}"+s.slice(phase.open+1);}
+wireScheduler('phase1HealthTick',true);
+wireScheduler('phase1OneJobTickCore_',false);
+wireScheduler('phase1OneJobTick',false);
 
 for(const token of ['CANARY-SCHEDULER-HANDOFF-001','function armRendererCanaryExecutionLease(','function rendererCanaryControlPlaneTick(','function runRendererCanaryControlStatus(','renderer_canary_execution_lease_until','renderer_canary_qa_queue_id','CANARY_PASS'])if(!s.includes(token))throw new Error('Scheduler handoff contract missing '+token);
 fs.writeFileSync(file,s);
