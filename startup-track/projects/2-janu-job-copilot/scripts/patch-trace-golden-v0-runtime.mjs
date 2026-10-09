@@ -45,6 +45,7 @@ runPatch('patch-p1a-e2e-continuation.mjs','continuation v3 baseline');
 runPatch('patch-p1a-e2e-continuation-v4.mjs','continuation v4 fairness and stranded JD recovery');
 const rendererTest=spawnSync(process.execPath,[path.resolve(dir,'test-renderer-careerbreak.mjs'),path.resolve(dir,'..')],{encoding:'utf8'});if(rendererTest.status!==0)throw new Error(rendererTest.stderr||rendererTest.stdout||'renderer regression failed');
 runPatch('patch-renderer-careerbreak.mjs','renderer');
+runPatch('patch-renderer-project-dedupe.mjs','renderer project dedupe');
 runPatch('patch-renderer-canary-preconditions.mjs','renderer canary preconditions');
 runPatch('patch-renderer-guard-placement.mjs','guard placement');
 runPatch('patch-runtime-queue-quarantine-order.mjs','runtime queue ordering');
