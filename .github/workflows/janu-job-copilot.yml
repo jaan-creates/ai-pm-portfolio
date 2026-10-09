@@ -148,6 +148,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-health-owner-validation-starvation.mjs" "$LIVE_DIR"
       - name: Split renderer release risk from global regression gate
         run: node "$PROJECT_DIR/scripts/patch-renderer-release-gate.mjs" "$LIVE_DIR"
+      - name: Apply capture-first candidate evidence contract
+        run: node "$PROJECT_DIR/scripts/patch-candidate-evidence-capture-first.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -180,6 +182,12 @@ jobs:
         run: |
           for token in nextResumeRevision_ revisionDecision_ classifyJobOutcomeEmail_ outcomeMatchScore_ outcomeMatchDecision_ contactDiscoveryRoute_ contactCandidateDecision_ p1cContractSelfTest_ runP1CContractSelfTest p1c_self_test; do
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "P1-C contract missing: $token"; exit 11; }
+          done
+      - name: Validate capture-first candidate evidence contract
+        shell: bash
+        run: |
+          for token in CANDIDATE-EVIDENCE-CAPTURE-FIRST-001 CANDIDATE-EVIDENCE-CANONICAL-ONLY-001 candidateEvidenceCanonicalText_ candidateEvidenceCaptureDecision_ runCandidateEvidenceCaptureSelfTest runCandidateEvidenceCaptureReadback candidate_evidence_capture_self_test; do
+            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Capture-first candidate evidence contract missing: $token"; exit 24; }
           done
       - name: Validate release provenance contract
         shell: bash
@@ -260,6 +268,17 @@ jobs:
         shell: bash
         run: |
           out="$(clasp run runP1CContractSelfTest --user "$CLASP_USER" 2>&1)"; rc=$?; printf '%s\n' "$out"; test "$rc" -eq 0; ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+      - name: Require candidate evidence capture/readback on verified HEAD
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          for fn in runCandidateEvidenceCaptureSelfTest runCandidateEvidenceCaptureReadback; do
+            out="$(clasp run "$fn" --user "$CLASP_USER" 2>&1)"; rc=$?
+            printf '%s\n' "$out"
+            test "$rc" -eq 0
+            ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+            grep -Eq 'pass:[[:space:]]*true' <<<"$out"
+          done
       - name: Require bounded health/control tick on verified HEAD
         working-directory: .janu-live
         shell: bash
