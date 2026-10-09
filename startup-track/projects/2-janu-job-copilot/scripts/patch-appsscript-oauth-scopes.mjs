@@ -22,6 +22,22 @@ const SERVICE_SCOPES=[
   ['FormApp','https://www.googleapis.com/auth/forms']
 ];
 
+
+const rendererFiles=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
+const rendererTarget=rendererFiles.find(f=>fs.readFileSync(path.join(root,f),'utf8').includes('function render_('));
+if(rendererTarget){
+  const rendererPath=path.join(root,rendererTarget);
+  let rendererSource=fs.readFileSync(rendererPath,'utf8');
+  if(!rendererSource.includes('function runRendererDocumentAuthProbe(')){
+    const probe="function runRendererDocumentAuthProbe(){let sh=SH_('__Worker State'),m=hm_(sh),id='';if(sh.getLastRow()>=2&&m['Key']&&m['Value']){const f=sh.getRange(2,m['Key'],sh.getLastRow()-1,1).createTextFinder('resume_template_doc_id').matchEntireCell(true).findNext();if(f)id=String(sh.getRange(f.getRow(),m['Value']).getDisplayValue()||'').trim();}if(!id)throw new Error('DETERMINISTIC:RENDERER_DOCUMENT_AUTH_TEMPLATE_ID_MISSING');const d=DocumentApp.openById(id);if(!d)throw new Error('DETERMINISTIC:RENDERER_DOCUMENT_AUTH_OPEN_EMPTY');return{pass:true,contract:'RENDERER-DOCUMENT-AUTH-PREFLIGHT-001',templateIdPresent:true};}";
+    const anchor=rendererSource.indexOf('function verifyReleaseIdentity()');
+    if(anchor<0)throw new Error('Renderer auth probe anchor missing');
+    rendererSource=rendererSource.slice(0,anchor)+probe+'\n'+rendererSource.slice(anchor);
+    fs.writeFileSync(rendererPath,rendererSource);
+  }
+  if(!rendererSource.includes('RENDERER-DOCUMENT-AUTH-PREFLIGHT-001'))throw new Error('Renderer auth preflight marker missing');
+}
+
 const source=fs.readdirSync(root)
   .filter(f=>f.endsWith('.gs')||f.endsWith('.js'))
   .map(f=>fs.readFileSync(path.join(root,f),'utf8'))
