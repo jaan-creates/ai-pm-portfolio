@@ -62,7 +62,7 @@ replaceRange('render_',old=>{
   if(!old.includes("careerBlock('{{CAREER_BREAK}}',ex.independent_break"))throw new Error('${EXACT_REGRESSION}: transformed render_ does not bind independent_break');
   if(!old.includes('rendererCareerBreakExperienceLines_({experiences:[e]})'))throw new Error('${EXACT_REGRESSION}: final renderer bypasses exact-three selector');
   old=old.replace(/(?:rendererCareerBreakPruneAndAssert_\(b\);){2,}/g,'rendererCareerBreakPruneAndAssert_(b);');
-  if(!old.includes('RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003')){const ri=old.lastIndexOf('return ');if(ri<0)throw new Error('final render return anchor missing');old=old.slice(0,ri)+"rendererCareerBreakPruneAndAssert_(b);/* RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003 */\\n"+old.slice(ri);}
+  if(!old.includes('RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003')){const ri=old.lastIndexOf('}');if(ri<0)throw new Error('final render close anchor missing');old=old.slice(0,ri)+"rendererCareerBreakPruneAndAssert_(b);/* RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003 */\\n"+old.slice(ri);}
   return old;
 });
 
