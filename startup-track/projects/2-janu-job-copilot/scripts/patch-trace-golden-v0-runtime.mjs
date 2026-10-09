@@ -58,6 +58,15 @@ runTest('test-canary-artifact-qa.mjs','canary artifact and QA proof regression')
 runPatch('patch-canary-artifact-qa.mjs','canary artifact and QA proof');
 runPatch('patch-canary-scheduler-handoff.mjs','canonical scheduler handoff');
 s=fs.readFileSync(file,'utf8');
+// Reassert TRACE-GOLDEN continuation wiring after every additive patch so later transforms cannot silently remove the scheduler handoff.
+const healthRange=rangeOf('phase1HealthTick');
+if(!healthRange)throw new Error('TRACE health tick missing after integrated patches');
+const healthBody=s.slice(healthRange.start,healthRange.end);
+if(!healthBody.includes('traceGoldenTick_();')){
+  const healthOpen=s.indexOf('{',healthRange.start);
+  const traceHandoff="try{traceGoldenTick_();}catch(e){upsertWorkerState_('golden_trace_status','FAIL',String((e&&e.stack)||e).slice(0,1500));}";
+  s=s.slice(0,healthOpen+1)+traceHandoff+s.slice(healthOpen+1);
+}
 if(!s.includes('RENDER-CAREERBREAK-V3'))throw new Error('renderer V3 missing');
 if(!s.includes('RENDER-CAREERBREAK-V2'))s+='\n// RENDER-CAREERBREAK-V2 compatibility marker; active contract RENDER-CAREERBREAK-V3.\n';
 if(!s.includes('PREVENTION-RECURRENCE-001'))s+='\nfunction rendererPreventionContract_(){return \'PREVENTION-RECURRENCE-001\';}\n';
