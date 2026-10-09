@@ -1,3 +1,3 @@
-2026-10-09T19:55+05:30
-Renderer release gate after forceOwnerAuthorization refresh: deterministic Docs preflight, then one bounded owner-worker canary for Metaforms 2026-08-04-002 only.
-No backlog replay; require exact artifact/version/QA readback before unlock.
+2026-10-09T20:30+05:30
+Renderer release canary using owner-owned trigger execution after OAuth refresh.
+Metaforms 2026-08-04-002 only; exact artifact/version/QA proof required; no backlog replay.
