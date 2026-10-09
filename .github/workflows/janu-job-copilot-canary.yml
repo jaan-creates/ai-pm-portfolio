@@ -88,44 +88,59 @@ jobs:
           printf '%s\\n' "$out"
           ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
           echo 'Bounded health control-plane refresh completed; renderer enqueue will re-evaluate the 180000ms liveness margin.'
-      - name: Enqueue fresh authorized canary only
+      - name: Enqueue or recover one authorized canary only
         working-directory: .janu-live
         shell: bash
         run: |
           set -euo pipefail
-          out=''
-          rc=1
-          for i in $(seq 1 30); do
-            set +e
-            out="$(clasp run runRendererAuthorizedCanaryEnqueue --user "$CLASP_USER" 2>&1)"
-            rc=$?
-            set -e
+          recovery_qid="$(sed -n 's/^Recovery queue ID: //p' "$GITHUB_WORKSPACE/.github/janu-job-copilot-canary-trigger.txt" | head -n1)"
+          if [ -n "$recovery_qid" ]; then
+            out="$(clasp run runRendererCanaryReadback --params "[\"$recovery_qid\"]" --user "$CLASP_USER" 2>&1)"
             printf '%s\n' "$out"
-            if grep -q 'DETERMINISTIC:CANARY_LOCKED' <<<"$out"; then
-              echo "Canary enqueue lock collision; bounded retry $i/30."
-              sleep 15
-              continue
-            fi
-            if [ "$rc" -eq 0 ]; then
-              break
-            fi
-            echo 'Non-retryable canary enqueue failure.' >&2
-            exit "$rc"
-          done
-          test "$rc" -eq 0 || { echo 'Canary enqueue lock remained busy after bounded retries.' >&2; exit 24; }
-          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|CANARY_.*FAILED|CANARY_.*MISMATCH|CANARY_.*NOT_' <<<"$out"
-          grep -Eq 'pass:[[:space:]]*true' <<<"$out"
-          grep -q "contract: 'CANARY-OWNER-WORKER-001'" <<<"$out"
-          grep -Eq "status:[[:space:]]*'queued'" <<<"$out"
-          grep -Eq "workerType:[[:space:]]*'RESUME_GENERATE'" <<<"$out"
-          grep -Eq "canary:[[:space:]]*true" <<<"$out"
-          grep -Eq "rendererPolicy:[[:space:]]*'RENDER-CAREERBREAK-V3'" <<<"$out"
-          grep -Eq "runtimePrecondition:[[:space:]]*'FL-080-CLOSED'" <<<"$out"
-          grep -Eq "tracePrecondition:[[:space:]]*'FL-059-CLOSED'" <<<"$out"
-          qid="$(sed -n "s/.*queueJobId:[[:space:]]*'\([^']*\)'.*/\1/p" <<<"$out" | head -n1)"
-          test -n "$qid" || { echo 'Exact canary Queue Job ID missing from enqueue result.' >&2; exit 20; }
+            ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+            grep -Eq "queueJobId:[[:space:]]*'$recovery_qid'" <<<"$out"
+            grep -Eq "status:[[:space:]]*'queued'" <<<"$out"
+            grep -Eq "attempts:[[:space:]]*0" <<<"$out"
+            grep -Eq "canary:[[:space:]]*true" <<<"$out"
+            grep -Eq "rendererPolicy:[[:space:]]*'RENDER-CAREERBREAK-V3'" <<<"$out"
+            grep -Eq "executionContext:[[:space:]]*'OWNER_WORKER_TRIGGER'" <<<"$out"
+            qid="$recovery_qid"
+            echo "Recovering isolated queued canary $qid; no second enqueue permitted."
+          else
+            out=''
+            rc=1
+            for i in $(seq 1 30); do
+              set +e
+              out="$(clasp run runRendererAuthorizedCanaryEnqueue --user "$CLASP_USER" 2>&1)"
+              rc=$?
+              set -e
+              printf '%s\n' "$out"
+              if grep -q 'DETERMINISTIC:CANARY_LOCKED' <<<"$out"; then
+                echo "Canary enqueue lock collision; bounded retry $i/30."
+                sleep 15
+                continue
+              fi
+              if [ "$rc" -eq 0 ]; then
+                break
+              fi
+              echo 'Non-retryable canary enqueue failure.' >&2
+              exit "$rc"
+            done
+            test "$rc" -eq 0 || { echo 'Canary enqueue lock remained busy after bounded retries.' >&2; exit 24; }
+            ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|CANARY_.*FAILED|CANARY_.*MISMATCH|CANARY_.*NOT_' <<<"$out"
+            grep -Eq 'pass:[[:space:]]*true' <<<"$out"
+            grep -q "contract: 'CANARY-OWNER-WORKER-001'" <<<"$out"
+            grep -Eq "status:[[:space:]]*'queued'" <<<"$out"
+            grep -Eq "workerType:[[:space:]]*'RESUME_GENERATE'" <<<"$out"
+            grep -Eq "canary:[[:space:]]*true" <<<"$out"
+            grep -Eq "rendererPolicy:[[:space:]]*'RENDER-CAREERBREAK-V3'" <<<"$out"
+            grep -Eq "runtimePrecondition:[[:space:]]*'FL-080-CLOSED'" <<<"$out"
+            grep -Eq "tracePrecondition:[[:space:]]*'FL-059-CLOSED'" <<<"$out"
+            qid="$(sed -n "s/.*queueJobId:[[:space:]]*'\\([^']*\\)'.*/\\1/p" <<<"$out" | head -n1)"
+            test -n "$qid" || { echo 'Exact canary Queue Job ID missing from enqueue result.' >&2; exit 20; }
+          fi
           echo "CANARY_QID=$qid" >> "$GITHUB_ENV"
-          echo "Enqueued exact canary $qid; scheduling isolated owner canary trigger."
+          echo "Authorized canary queue ID: $qid"
       - name: Arm canonical scheduler canary lease
         working-directory: .janu-live
         shell: bash
