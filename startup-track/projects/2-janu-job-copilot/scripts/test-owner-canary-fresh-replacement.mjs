@@ -28,7 +28,7 @@ if(overrideFn('OTHER','RESUME_GENERATE',{canary:true,rendererPolicy:'RENDER-CARE
 const enqueueSource=extract('enqueue_');
 if(!enqueueSource.includes('CANARY-ENQUEUE-SEMANTIC-OVERRIDE-001'))throw new Error('enqueue semantic canary override marker missing');
 const makeEnqueue=(override,workNeeded)=>new Function('JC','queueMutationAllowed_','workNeeded_','rendererCanarySemanticFreshOverride_','SH_','semanticKey_','hash_','Utilities','now_','return ('+enqueueSource+');')(
-  {W:{PDF:'PDF_CAPTURE'}},()=>true,()=>workNeeded,()=>override,
+  {W:{PDF:'PDF_CAPTURE'},S:{Q:'Q'}},()=>true,()=>workNeeded,()=>override,
   ()=>({getDataRange(){return{getDisplayValues(){return [['h']]} }},appendRow(){}}),
   ()=>'SEM',x=>'H:'+x,{formatDate:()=> '20261009',getUuid:()=> '12345678-aaaa'},()=>new Date()
 );
