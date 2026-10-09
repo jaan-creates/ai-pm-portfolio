@@ -76,9 +76,20 @@ jobs:
       - name: Assert owner-worker canary generation is deployed
         shell: bash
         run: |
-          for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 CANARY-OWNER-WORKER-001 OWNER_WORKER_TRIGGER 'function runRendererAuthorizedCanaryEnqueue()' 'function runOwnedRendererCanaryTick()' 'function runRendererCanaryReadback(' 'function runRendererCanaryQaEnqueue(' 'function runRendererCanaryQaExecute(' 'function runRendererCanaryReleaseFinalize(' 'function armRendererCanaryExecutionLease(' 'function rendererCanaryControlPlaneTick(' 'function runRendererCanaryControlStatus(' CANARY-ARTIFACT-QA-PROOF-001 CANARY-SCHEDULER-HANDOFF-001; do
+          for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 CANARY-OWNER-WORKER-001 OWNER_WORKER_TRIGGER 'function runRendererAuthorizedCanaryEnqueue()' 'function runOwnedRendererCanaryTick()' 'function runRendererCanaryReadback(' 'function runRendererCanaryQaEnqueue(' 'function runRendererCanaryQaExecute(' 'function runRendererCanaryReleaseFinalize(' 'function armRendererCanaryExecutionLease(' 'function rendererCanaryControlPlaneTick(' 'function runRendererCanaryControlStatus(' CANARY-ARTIFACT-QA-PROOF-001 CANARY-SCHEDULER-HANDOFF-001 RENDERER-DOCUMENT-AUTH-PREFLIGHT-001 'function runRendererDocumentAuthProbe('; do
             grep -q "$token" "$LIVE_DIR/TrackerWorkflow.js" || { echo "Owner-worker canary runtime contract missing: $token"; exit 19; }
           done
+      - name: Require renderer Docs authorization preflight
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$(clasp run runRendererDocumentAuthProbe --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+          grep -Eq 'pass:[[:space:]]*true' <<<"$out"
+          grep -q "contract:[[:space:]]*'RENDERER-DOCUMENT-AUTH-PREFLIGHT-001'" <<<"$out"
+
       - name: Refresh bounded health control-plane gate
         working-directory: .janu-live
         shell: bash
