@@ -79,6 +79,16 @@ jobs:
           for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 CANARY-OWNER-WORKER-001 OWNER_WORKER_TRIGGER 'function runRendererAuthorizedCanaryEnqueue()' 'function runOwnedRendererCanaryTick()' 'function runRendererCanaryReadback(' 'function runRendererCanaryQaEnqueue(' 'function runRendererCanaryQaExecute(' 'function runRendererCanaryReleaseFinalize(' 'function armRendererCanaryExecutionLease(' 'function rendererCanaryControlPlaneTick(' 'function runRendererCanaryControlStatus(' CANARY-ARTIFACT-QA-PROOF-001 CANARY-SCHEDULER-HANDOFF-001; do
             grep -q "$token" "$LIVE_DIR/TrackerWorkflow.js" || { echo "Owner-worker canary runtime contract missing: $token"; exit 19; }
           done
+      - name: Refresh bounded health control-plane gate
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$(clasp run phase1HealthTick --user "$CLASP_USER" 2>&1)"
+          printf '%s\\n' "$out"
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+          grep -Eq 'COMPLETE|HEALTHY' <<<"$out"
+          echo 'Bounded health control-plane refresh completed; renderer enqueue will re-evaluate the 180000ms liveness margin.'
       - name: Enqueue fresh authorized canary only
         working-directory: .janu-live
         shell: bash
