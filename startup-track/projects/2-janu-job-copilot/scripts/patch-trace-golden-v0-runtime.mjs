@@ -56,6 +56,7 @@ runPatch('patch-owned-edit-intake-admission.mjs','owned edit intake/apply admiss
 runPatch('patch-owner-canary-fresh-replacement.mjs','fresh owner canary replacement');
 runTest('test-canary-artifact-qa.mjs','canary artifact and QA proof regression');
 runPatch('patch-canary-artifact-qa.mjs','canary artifact and QA proof');
+runPatch('patch-canary-scheduler-handoff.mjs','canonical scheduler handoff');
 s=fs.readFileSync(file,'utf8');
 if(!s.includes('RENDER-CAREERBREAK-V3'))throw new Error('renderer V3 missing');
 if(!s.includes('RENDER-CAREERBREAK-V2'))s+='\n// RENDER-CAREERBREAK-V2 compatibility marker; active contract RENDER-CAREERBREAK-V3.\n';
