@@ -26,6 +26,7 @@ try{
  const a=ctx.f(base);if(a.global.length||a.contained.length!==2||!a.rendererPending)throw new Error('contained renderer fixture failed '+JSON.stringify(a));
  const b=ctx.f({...base,rawIds:['FL-060','FL-X']});if(b.global.length!==1||b.global[0]!=='FL-X')throw new Error('global blocker escaped '+JSON.stringify(b));
  const c=ctx.f({...base,regressionPass:false,rawIds:['FL-060']});if(c.ready||c.global.length!==1)throw new Error('incomplete evidence did not fail closed '+JSON.stringify(c));
+ const d=ctx.f({...base,quarantineActive:false,recurrence:'CANARY_PASS',replay:'CANARY_PASS'});if(!d.ready||!d.verifiedCanary||d.rendererPending||d.global.length||d.contained.length!==2)throw new Error('verified canary did not close renderer release '+JSON.stringify(d));
  for(const token of ['RENDERER-RELEASE-GATE-SPLIT-001','Renderer Release','renderer_release_containment'])if(!out.includes(token))throw new Error('missing '+token);
- console.log(JSON.stringify({status:'PASS',contract:'RENDERER-RELEASE-GATE-SPLIT-001',containedRenderer:true,globalStillBlocks:true,incompleteEvidenceBlocks:true}));
+ console.log(JSON.stringify({status:'PASS',contract:'RENDERER-RELEASE-GATE-SPLIT-001',containedRenderer:true,globalStillBlocks:true,incompleteEvidenceBlocks:true,verifiedCanaryCloses:true}));
 }finally{fs.rmSync(dir,{recursive:true,force:true});}
