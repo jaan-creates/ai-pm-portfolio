@@ -1,6 +1,3 @@
-2026-10-09T09:42+05:30
-Run the full bounded Metaforms renderer certification on the latest controlled branch after the production CD queue drains.
-Application 2026-08-04-002 only. Prior queue Q-20261009-092308-581f8428 is negative evidence: it succeeded but its generated Google Doc had five Career Break bullets.
-Require a current-runtime-source canary, exact three canonical Career Break bullets in the persisted Google Doc, zero duplicate Morning Brief/Job Copilot project-summary bullets, zero EV/internal tag leakage, then exact QA_FINALIZE succeeded attempts=1 with ATS QA Passed.
-Only after both artifact proof and QA pass may runRendererCanaryReleaseFinalize set renderer recurrence/replay gates to CANARY_PASS and close Renderer Release.
-Do not enable the broad phase1OneJobTick worker or replay normal RESUME_GENERATE backlog.
+2026-10-09T10:01+05:30
+Metaforms renderer release verification after current liveness gates closed.
+Application 2026-08-04-002 only; one bounded canary plus QA/readback; no backlog replay.
