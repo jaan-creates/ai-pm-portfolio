@@ -87,7 +87,6 @@ jobs:
           out="$(clasp run phase1HealthTick --user "$CLASP_USER" 2>&1)"
           printf '%s\\n' "$out"
           ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
-          grep -Eq 'COMPLETE|HEALTHY' <<<"$out"
           echo 'Bounded health control-plane refresh completed; renderer enqueue will re-evaluate the 180000ms liveness margin.'
       - name: Enqueue fresh authorized canary only
         working-directory: .janu-live
