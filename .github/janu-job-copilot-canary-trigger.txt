@@ -1,5 +1,6 @@
-2026-10-09T09:24+05:30
-Authorize exact Metaforms renderer canary execution without ScriptApp trigger mutation.
-Current runtime source SHA before this control-only commit: b03e703b76649c687ee97ea9dfb11f208680dbf718f68da5dbda13a9e8943d24.
-Reuse the already queued exact canary only if it remains queued/attempts=0 and the deployed Apps Script source hash remains unchanged after the control-only CD. Execute through runOwnedRendererCanaryTick in the canonical CI owner context; do not install ScriptApp triggers and do not enable the broad worker.
-Application 2026-08-04-002 only. Require RESUME_GENERATE succeeded, attempts=1, empty error, exact three canonical Career Break bullets, zero duplicate project-summary bullets, zero EV/internal leakage, then downstream QA/readback.
+2026-10-09T09:39+05:30
+Authorize exactly one fresh Metaforms renderer canary against the current source after RENDER-CAREERBREAK-ARTIFACT-EXACT3-001 deployment.
+Application 2026-08-04-002 only. The prior queue Q-20261009-092308-581f8428 succeeded but its live Google Doc proved five Career Break bullets, so it is negative evidence and must not certify renderer release.
+Require current-source canary payload, RESUME_GENERATE succeeded attempts=1 empty error, and live document readback exactly three canonical Career Break bullets with no Morning Brief/Job Copilot duplicate summary bullets and no EV/internal leakage.
+Execute through runOwnedRendererCanaryTick via clasp; no ScriptApp trigger mutation and no broad phase1OneJobTick worker.
+Normal RESUME_GENERATE backlog remains quarantined until artifact + QA proof pass.
