@@ -32,6 +32,7 @@ replaceRange('nextQ_',old=>{
   const orderedGuard="if(v[i][3]!=='queued'||(nx&&nx>t))continue;/* "+CONTRACT+" cheap local eligibility before sheet-backed quarantine */";
   if(old.includes(orderedGuard)&&old.indexOf('rendererQuarantineBlocks_(')>old.indexOf(orderedGuard))return old;
   if(!old.includes('rendererQuarantineBlocks_(')){
+    if(old.includes(ABSENT))return old;
     const open=old.indexOf('{');
     return old.slice(0,open+1)+'/* '+CONTRACT+' '+ABSENT+' no sheet-backed quarantine in selection path */'+old.slice(open+1);
   }
