@@ -1,6 +1,6 @@
-2026-10-09T09:39+05:30
-Authorize exactly one fresh Metaforms renderer canary against the current source after RENDER-CAREERBREAK-ARTIFACT-EXACT3-001 deployment.
-Application 2026-08-04-002 only. The prior queue Q-20261009-092308-581f8428 succeeded but its live Google Doc proved five Career Break bullets, so it is negative evidence and must not certify renderer release.
-Require current-source canary payload, RESUME_GENERATE succeeded attempts=1 empty error, and live document readback exactly three canonical Career Break bullets with no Morning Brief/Job Copilot duplicate summary bullets and no EV/internal leakage.
-Execute through runOwnedRendererCanaryTick via clasp; no ScriptApp trigger mutation and no broad phase1OneJobTick worker.
-Normal RESUME_GENERATE backlog remains quarantined until artifact + QA proof pass.
+2026-10-09T09:42+05:30
+Run the full bounded Metaforms renderer certification on the latest controlled branch after the production CD queue drains.
+Application 2026-08-04-002 only. Prior queue Q-20261009-092308-581f8428 is negative evidence: it succeeded but its generated Google Doc had five Career Break bullets.
+Require a current-runtime-source canary, exact three canonical Career Break bullets in the persisted Google Doc, zero duplicate Morning Brief/Job Copilot project-summary bullets, zero EV/internal tag leakage, then exact QA_FINALIZE succeeded attempts=1 with ATS QA Passed.
+Only after both artifact proof and QA pass may runRendererCanaryReleaseFinalize set renderer recurrence/replay gates to CANARY_PASS and close Renderer Release.
+Do not enable the broad phase1OneJobTick worker or replay normal RESUME_GENERATE backlog.
