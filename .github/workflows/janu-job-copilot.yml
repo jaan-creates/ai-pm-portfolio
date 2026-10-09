@@ -152,6 +152,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-renderer-release-gate.mjs" "$LIVE_DIR"
       - name: Apply capture-first candidate evidence contract
         run: node "$PROJECT_DIR/scripts/patch-candidate-evidence-capture-first.mjs" "$LIVE_DIR"
+      - name: Apply sourcing scheduler liveness contract
+        run: node "$PROJECT_DIR/scripts/patch-sourcing-scheduler-health.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -190,6 +192,12 @@ jobs:
         run: |
           for token in CANDIDATE-EVIDENCE-CAPTURE-FIRST-001 CANDIDATE-EVIDENCE-CANONICAL-ONLY-001 candidateEvidenceCanonicalText_ candidateEvidenceCaptureDecision_ runCandidateEvidenceCaptureSelfTest runCandidateEvidenceCaptureReadback candidate_evidence_capture_self_test; do
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Capture-first candidate evidence contract missing: $token"; exit 24; }
+          done
+      - name: Validate sourcing scheduler liveness contract
+        shell: bash
+        run: |
+          for token in SOURCING-HEALTH-BLOCKER-PRECEDENCE-001 SOURCING-RECOVERY-NOT-LIVENESS-001 SOURCING-DATE-GAP-001 SOURCING-SCHEDULED-LABEL-001 sourcingScheduledSuccess_ sourcingExpectedGapDates_ sourcing_scheduler_health; do
+            grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Sourcing scheduler liveness contract missing: $token"; exit 25; }
           done
       - name: Validate release provenance contract
         shell: bash

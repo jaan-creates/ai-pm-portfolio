@@ -127,3 +127,6 @@ jobs:
 
       - name: Behavior-test capture-first candidate evidence contract
         run: node "$PROJECT_DIR/scripts/test-candidate-evidence-capture-first.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test sourcing scheduler health
+        run: node "$PROJECT_DIR/scripts/test-sourcing-scheduler-health.mjs" "$PROJECT_DIR"
