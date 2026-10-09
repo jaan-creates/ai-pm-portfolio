@@ -25,11 +25,11 @@ try{
  function makeDoc(lines,allText){return{getBody(){return{getNumChildren(){return lines.length},getChild(i){const x=lines[i];return{getType(){return x.type},getText(){return x.text}}},getText(){return allText||lines.map(x=>x.text).join('\n')}}}}}
  const ElementType={LIST_ITEM:'LIST_ITEM',PARAGRAPH:'PARAGRAPH'};
  const good=[{type:'PARAGRAPH',text:'Independent Product Building & Career Break'},{type:'PARAGRAPH',text:'Sep 2024 – Present | Bengaluru, India'},{type:'LIST_ITEM',text:'A'},{type:'LIST_ITEM',text:'B'},{type:'LIST_ITEM',text:'C'},{type:'PARAGRAPH',text:'LEADERSHIP & COMMUNITY'}];
- const ctx={DocumentApp:{ElementType,openById(){return makeDoc(good)}},rendererCareerBreakApprovedLines_:()=>['A','B','C']};vm.createContext(ctx);vm.runInContext(docId+'\n'+proof+';this.proof=rendererCanaryArtifactProof_;',ctx);
+ const exportText=lines=>lines.map(x=>x.text).join('\n'); const ctx={canonicalEvidenceText_:()=>exportText(good),rendererCareerBreakApprovedLines_:()=>['A','B','C']};vm.createContext(ctx);vm.runInContext(docId+'\n'+proof+';this.proof=rendererCanaryArtifactProof_;',ctx);
  const g=ctx.proof('https://docs.google.com/document/d/DOC123/edit');if(!g.pass||g.careerBreakBulletCount!==3)throw new Error('known-good artifact proof failed');
- ctx.DocumentApp.openById=()=>makeDoc(good.slice(0,5).concat([{type:'LIST_ITEM',text:'DUP1'},{type:'LIST_ITEM',text:'DUP2'},{type:'PARAGRAPH',text:'LEADERSHIP & COMMUNITY'}]));
+ ctx.canonicalEvidenceText_=()=>exportText(good.slice(0,5).concat([{type:'LIST_ITEM',text:'DUP1'},{type:'LIST_ITEM',text:'DUP2'},{type:'PARAGRAPH',text:'LEADERSHIP & COMMUNITY'}]));
  let dup=false;try{ctx.proof('https://docs.google.com/document/d/DOC123/edit')}catch(e){dup=/EXACT3_MISMATCH/.test(String(e));}if(!dup)throw new Error('five-bullet duplicate artifact was not rejected');
- ctx.DocumentApp.openById=()=>makeDoc(good,'hello EV-GLOROOTS-004');
+ ctx.canonicalEvidenceText_=()=> 'Independent Product Building & Career Break\nSep 2024 – Present | Bengaluru, India\nA\nB\nC\nLEADERSHIP & COMMUNITY\nhello EV-GLOROOTS-004';
  let leak=false;try{ctx.proof('https://docs.google.com/document/d/DOC123/edit')}catch(e){leak=/INTERNAL_TAG_LEAK/.test(String(e));}if(!leak)throw new Error('internal evidence leak was not rejected');
  const ck=spawnSync(process.execPath,['--check',path.join(dir,'TrackerWorkflow.js')],{encoding:'utf8'});if(ck.status!==0)throw new Error(ck.stderr);
  console.log(JSON.stringify({status:'PASS',contract:'CANARY-ARTIFACT-QA-PROOF-001',exact3Accepted:true,fiveBulletsRejected:true,internalTagRejected:true,qaRequired:true}));
