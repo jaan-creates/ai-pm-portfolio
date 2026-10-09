@@ -1,3 +1,3 @@
-2026-10-09T14:02+05:30
-Metaforms renderer release verification after changed-deployment recovery repair.
+2026-10-09T15:05+05:30
+Metaforms renderer release verification after non-list legacy career-break pruning repair.
 Application 2026-08-04-002 only; one bounded canary plus artifact/version/QA readback; no backlog replay.
