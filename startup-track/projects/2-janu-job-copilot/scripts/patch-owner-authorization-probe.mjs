@@ -9,9 +9,16 @@ if(!target)throw new Error('Owner authorization function missing');
 const file=path.join(root,target);let s=fs.readFileSync(file,'utf8');
 const re=/function forceOwnerAuthorization\(\)[\s\S]*?\}/;
 if(!re.test(s))throw new Error('Owner authorization function body missing');
-const fn="function forceOwnerAuthorization(){ScriptApp.requireAllScopes(ScriptApp.AuthMode.FULL);const triggers=ScriptApp.getProjectTriggers();return{pass:true,contract:'OWNER-AUTHORIZATION-SCOPE-PROBE-001',triggerCount:triggers.length};}";
+const fn=[
+  'function forceOwnerAuthorization(){',
+  'ScriptApp.requireAllScopes(ScriptApp.AuthMode.FULL);',
+  'ScriptApp.getProjectTriggers();',
+  "return 'OWNER-AUTHORIZATION-SCOPE-PROBE-001';",
+  '}'
+].join('');
 s=s.replace(re,fn);
 if(!s.includes('OWNER-AUTHORIZATION-SCOPE-PROBE-001'))throw new Error('owner auth scope probe missing');
 fs.writeFileSync(file,s);
-const ck=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(ck.status!==0)throw new Error(ck.stderr||'syntax failure');
+const ck=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
+if(ck.status!==0)throw new Error(ck.stderr||'syntax failure');
 console.log(JSON.stringify({status:'PASS',contract:'OWNER-AUTHORIZATION-SCOPE-PROBE-001',file:target},null,2));
