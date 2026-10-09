@@ -16,7 +16,7 @@ try{
     "function upsertWorkerState_(){}",
     "function enqueue_(){}",
     "function hash_(){}"
-  ].join('\\n');
+  ].join('\n');
   fs.writeFileSync(path.join(dir,'TrackerWorkflow.js'),src);
   const patch=path.resolve(path.dirname(new URL(import.meta.url).pathname),'patch-canary-scheduler-handoff.mjs');
   const r=spawnSync(process.execPath,[patch,dir],{encoding:'utf8'});
