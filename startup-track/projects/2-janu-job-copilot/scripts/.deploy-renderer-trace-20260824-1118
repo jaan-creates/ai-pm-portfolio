@@ -1,0 +1,6 @@
+Controlled Job Copilot Apps Script deployment trigger.
+
+Pre-change learning retrieved: FL-058, FL-059, FL-060, FL-063 through FL-071.
+Expected transformed contracts: TRACE-GOLDEN-V0-2; P1-A-E2E-CONTINUATION-3; RENDER-CAREERBREAK-V2.
+Required regressions/guards: TRACE dedupe/id; trace durable publication; continuation starvation/latest-attempt; RENDER-CAREERBREAK-001; PREVENTION-RECURRENCE-001; renderer quarantine; release-blocker health precedence.
+Rollout containment: no normal RESUME_GENERATE fan-out. After exact deployment provenance and self-test readback, authorize only Metaforms 2026-08-04-002 as canary. Backlog unlock only after exact rendered-artifact/readback proof.

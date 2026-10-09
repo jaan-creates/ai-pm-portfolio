@@ -1,0 +1,75 @@
+name: Janu Job Copilot One Job Proof
+
+on:
+  push:
+    branches:
+      - janu-job-copilot/apps-script-ci
+    paths:
+      - '.github/workflows/janu-job-copilot-one-job-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: janu-job-copilot-one-job-proof
+  cancel-in-progress: false
+
+jobs:
+  run-once:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      LIVE_DIR: .janu-one-job-proof
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+    steps:
+      - name: Checkout controlled branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify credentials
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON" || { echo 'Missing JANU_CLASPRC_JSON'; exit 2; }
+          test -n "$CLASP_JSON" || { echo 'Missing JANU_CLASP_JSON'; exit 2; }
+      - name: Install clasp
+        run: npm install --global @google/clasp
+      - name: Prepare isolated runtime workspace
+        shell: bash
+        run: |
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+      - name: Confirm canonical runtime identity
+        shell: bash
+        run: |
+          out="$(clasp show-authorized-user --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          grep -q 'You are logged in as janu.bkurup@gmail.com.' <<<"$out"
+      - name: Pull target runtime
+        working-directory: .janu-one-job-proof
+        run: clasp pull --user "$CLASP_USER"
+      - name: Assert worker entrypoint exists
+        shell: bash
+        run: |
+          grep -q 'function phase1OneJobTick(' "$LIVE_DIR/TrackerWorkflow.js"
+          grep -q 'function phase1OneJobTickCore_' "$LIVE_DIR/TrackerWorkflow.js"
+      - name: Execute exactly one worker tick
+        working-directory: .janu-one-job-proof
+        shell: bash
+        run: |
+          set +e
+          out="$(clasp run phase1OneJobTick --nondev --user "$CLASP_USER" 2>&1)"
+          rc=$?
+          set -e
+          printf '%s\n' "$out"
+          test "$rc" -eq 0
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+
+# execution checkpoint: stability proof after Worker Runtime circuit heal

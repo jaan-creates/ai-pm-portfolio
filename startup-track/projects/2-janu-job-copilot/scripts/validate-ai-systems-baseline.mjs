@@ -12,13 +12,15 @@ const required = {
   'SYSTEM_MAP.md': ['## 1. System classification', '## 3. Harness/control plane', '## 6. Durable state', '## 12. Product outcome loops'],
   'AUTONOMY_CONTRACT.md': ['## AI/system may autonomously', '## Explicit approval currently required', '## Stop conditions', '## External communication boundary'],
   'BUILD_NOTES.md': ['## 2026-08-23 — Add the AI Systems Lab operating baseline'],
-  'RELEASE_NOTES.md': ['## Unreleased — AI Systems Lab operating baseline', '## Release-note decision template'],
+  'RELEASE_NOTES.md': ['## Status labels', '## Release-note decision template'],
+  'OPERATOR_CHANGELOG.md': ['## Logging rule going forward'],
   'TRACE_SCHEMA.md': ['## Required trace fields', '## Required span fields', '## Trace vs Audit vs Failure Learning'],
   'TELEMETRY_PRIVACY.md': ['## Never record in generic traces/logs', '## Prefer'],
   'EVAL_PLAN.md': ['## Public/private eval boundary', '## 2. Core capability evals', '## 4. Product outcome evals', '## 10. Promotion gate'],
   'BASELINE_SCORECARD.md': ['## Public/private scorecard rule', '## 1. Current live conclusion', '## 2. Baseline by outcome layer', '## 6. Comparison rule'],
   'FAILURE_TAXONOMY.md': ['## Classes', '## Severity', '## Learning conversion rule'],
-  'ITERATION_EVIDENCE_GATE.md': ['## Required closeout decisions', '## Material-change closeout template'],
+  'PRECHANGE_RISK_GATE.md': ['## Required pre-change pass', '## Predictive sibling-risk checklist', '## Acceptance invariant'],
+  'ITERATION_EVIDENCE_GATE.md': ['## Required closeout decisions', '## Material-change closeout template', 'Pre-change risk retrieval'],
   'MEMORY_POLICY.md': ['## What is not memory', '## Memory types', '## Outcome-learning candidates', '## Retrieval evaluation'],
   'LAB_IMPROVEMENT_LEDGER.md': ['## Entry template', '## JC-LAB-001', '## JC-LAB-002'],
   'TOOLS_AND_ENVIRONMENTS.md': ['## Environments', '## Tool / control-surface map', '## Exact current capability gap'],
@@ -47,7 +49,9 @@ if (failures.length) {
 
 console.log(JSON.stringify({
   status: 'PASS',
-  contract: 'AI-SYSTEMS-LAB-PRODUCT-BASELINE-0.5',
+  contract: 'AI-SYSTEMS-LAB-PRODUCT-BASELINE-0.6',
   projectDir,
-  requiredFiles: Object.keys(required).length
+  requiredFiles: Object.keys(required).length,
+  predictiveLearningGate: true,
+  canonicalReleaseNotes: 'RELEASE_NOTES.md'
 }, null, 2));
