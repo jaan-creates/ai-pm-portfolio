@@ -164,6 +164,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-candidate-evidence-capture-first.mjs" "$LIVE_DIR"
       - name: Apply sourcing scheduler liveness contract
         run: node "$PROJECT_DIR/scripts/patch-sourcing-scheduler-health.mjs" "$LIVE_DIR"
+      - name: Converge final CI-safe canary handoff
+        run: node "$PROJECT_DIR/scripts/patch-canary-ci-handoff-final.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
