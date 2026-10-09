@@ -1,4 +1,3 @@
 2026-10-09T21:25+05:30
-Renderer release canary recovery after exact Career Break + project dedupe CD repair.
+Final renderer release canary after explicit owner trigger-scope probe.
 Metaforms 2026-08-04-002 only; exact artifact/version/QA proof required; no backlog replay.
-Recovery queue ID: Q-20261009-220024-710d262d
