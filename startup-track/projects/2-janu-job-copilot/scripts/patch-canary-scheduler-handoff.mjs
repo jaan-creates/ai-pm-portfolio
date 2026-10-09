@@ -43,6 +43,7 @@ function wireScheduler(name,required){const phase=rangeOf(name);if(!phase){if(re
 wireScheduler('phase1HealthTick',true);
 wireScheduler('phase1OneJobTickCore_',false);
 wireScheduler('phase1OneJobTick',false);
+wireScheduler('runP0ClosureStep_',false);
 
 for(const token of ['CANARY-SCHEDULER-HANDOFF-001','function armRendererCanaryExecutionLease(','function rendererCanaryControlPlaneTick(','function runRendererCanaryControlStatus(','renderer_canary_execution_lease_until','renderer_canary_qa_queue_id','CANARY_PASS'])if(!s.includes(token))throw new Error('Scheduler handoff contract missing '+token);
 fs.writeFileSync(file,s);
