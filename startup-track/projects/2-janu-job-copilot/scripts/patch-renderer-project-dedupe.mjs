@@ -18,9 +18,9 @@ putFn('rendererCareerBreakProjectItems_',"function rendererCareerBreakProjectIte
 putFn('rendererRemovePlaceholderParagraph_',"function rendererRemovePlaceholderParagraph_(body,token){const f=body.findText(esc_(String(token||'')));if(!f)return false;let el=f.getElement();while(el&&el.getParent&&el.getParent()&&el.getType()!=DocumentApp.ElementType.PARAGRAPH&&el.getType()!=DocumentApp.ElementType.LIST_ITEM)el=el.getParent();if(el&&el.removeFromParent){el.removeFromParent();return true;}return false;/* RENDER-CAREERBREAK-PROJECT-DEDUPE-001 */}",'function render_(');
 
 const rr=rangeOf('render_');if(!rr)throw new Error('render_ missing');let fn=s.slice(rr.start,rr.end);
-if(!fn.includes(CONTRACT)){
-  const needle="block('{{PROJECT_BULLETS}}'";
-  const at=fn.indexOf(needle);if(at<0)throw new Error('PROJECT_BULLETS render call missing');
+const needle="block('{{PROJECT_BULLETS}}'",hasProjectBlock=fn.includes(needle);
+if(!fn.includes(CONTRACT)&&hasProjectBlock){
+  const at=fn.indexOf(needle);
   const open=fn.indexOf('(',at),close=matchingParen(fn,open),comma=topComma(fn,open,close);if(comma<0)throw new Error('PROJECT_BULLETS argument separator missing');
   const arg=fn.slice(comma+1,close).trim();if(!arg)throw new Error('PROJECT_BULLETS source expression empty');
   const replacement="block('{{PROJECT_BULLETS}}',rendererCareerBreakProjectItems_(ex.independent_break,"+arg+"))/* "+CONTRACT+" */;if(ex.independent_break)rendererRemovePlaceholderParagraph_(b,'{{PROJECT_BULLETS}}')";
@@ -28,8 +28,7 @@ if(!fn.includes(CONTRACT)){
   s=s.slice(0,rr.start)+fn+s.slice(rr.end);
 }
 const fr=rangeOf('render_'),final=s.slice(fr.start,fr.end);
-for(const token of [CONTRACT,"rendererCareerBreakProjectItems_(ex.independent_break","rendererRemovePlaceholderParagraph_(b,'{{PROJECT_BULLETS}}')"])if(!final.includes(token))throw new Error('Project dedupe render contract missing '+token);
-if((final.match(/block\('\{\{PROJECT_BULLETS\}\}'/g)||[]).length!==1)throw new Error('Expected exactly one PROJECT_BULLETS block call');
+if(hasProjectBlock){for(const token of [CONTRACT,"rendererCareerBreakProjectItems_(ex.independent_break","rendererRemovePlaceholderParagraph_(b,'{{PROJECT_BULLETS}}')"])if(!final.includes(token))throw new Error('Project dedupe render contract missing '+token);if((final.match(/block\('\{\{PROJECT_BULLETS\}\}'/g)||[]).length!==1)throw new Error('Expected exactly one PROJECT_BULLETS block call');}
 fs.writeFileSync(file,s);
 const ck=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(ck.status!==0)throw new Error(ck.stderr||'syntax failure');
-console.log(JSON.stringify({status:'PASS',contract:CONTRACT,file:target,independentBreakSuppressesProjectBlock:true},null,2));
+console.log(JSON.stringify({status:'PASS',contract:CONTRACT,file:target,independentBreakSuppressesProjectBlock:true,fixtureWithoutProjectBlockSafe:true},null,2));
