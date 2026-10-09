@@ -124,6 +124,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/inspect-health-budget-guard.mjs" "$LIVE_DIR"
       - name: Inspect Worker Runtime opener structure
         run: node "$PROJECT_DIR/scripts/inspect-worker-runtime-opener.mjs" "$LIVE_DIR"
+      - name: Inspect renderer API surface
+        run: node "$PROJECT_DIR/scripts/inspect-renderer-api-surface.mjs" "$LIVE_DIR"
       - name: Inspect queue semantic guard structure
         run: node "$PROJECT_DIR/scripts/inspect-runq-semantic-guard.mjs" "$LIVE_DIR"
       - name: Inspect enqueue idempotency structure
