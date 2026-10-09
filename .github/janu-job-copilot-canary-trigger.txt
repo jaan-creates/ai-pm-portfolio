@@ -1,3 +1,4 @@
 2026-10-09T21:25+05:30
 Renderer release canary after canonical Career Break binding repair.
 Metaforms 2026-08-04-002 only; exact artifact/version/QA proof required; no backlog replay.
+Recovery queue ID: Q-20261009-203819-969c6e5b
