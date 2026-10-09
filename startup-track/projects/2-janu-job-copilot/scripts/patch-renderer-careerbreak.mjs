@@ -24,7 +24,7 @@ function addBefore(a,t,c){if(s.includes(t))return;const i=s.indexOf(a);if(i<0)th
 
 const approvedJson=JSON.stringify(APPROVED);
 const helpers=`function rendererWorkerStateValue_(key){const sh=SH_('__Worker State'),m=hm_(sh);if(sh.getLastRow()<2||!m['Key']||!m['Value'])return'';const f=sh.getRange(2,m['Key'],sh.getLastRow()-1,1).createTextFinder(String(key)).matchEntireCell(true).findNext();return f?String(sh.getRange(f.getRow(),m['Value']).getDisplayValue()||''):'';}
-function rendererCareerBreakLines_(value){const raw=String(value||'').replace(/\\r/g,'\n');return raw.split(/\n+/).map(x=>stripInternalEvidenceTags_(String(x||'')).replace(/^\\s*(?:[•●▪◦*\\-]|\\d+[.)])\\s*/, '').trim()).filter(Boolean);}
+function rendererCareerBreakLines_(value){const raw=String(value||'').replace(/\\r/g,'\\n');return raw.split(/\\n+/).map(x=>stripInternalEvidenceTags_(String(x||'')).replace(/^\\s*(?:[•●▪◦*\\-]|\\d+[.)])\\s*/, '').trim()).filter(Boolean);}
 function rendererCareerBreakApprovedLines_(){return ${approvedJson}.slice();}
 function rendererCareerBreakExperience_(d){const xs=d&&Array.isArray(d.experiences)?d.experiences:[];for(const e of xs)if(String(e&&e.key||'').toLowerCase()==='independent_break')return e||null;return null;}
 function rendererCareerBreakExperienceLines_(d){const e=rendererCareerBreakExperience_(d);if(!e)return[];const raw=(e.bullets||[]).map(x=>stripInternalEvidenceTags_(String(x&&x.text||'')).trim()).filter(Boolean),approved=rendererCareerBreakApprovedLines_();for(const need of approved)if(raw.indexOf(need)<0)throw new Error('DETERMINISTIC:RENDER_CAREERBREAK_CANONICAL_MISSING:'+need.slice(0,100));return approved.slice();}
