@@ -62,7 +62,7 @@ replaceRange('render_',old=>{
   if(!old.includes("careerBlock('{{CAREER_BREAK}}',ex.independent_break"))throw new Error('${EXACT_REGRESSION}: transformed render_ does not bind independent_break');
   if(!old.includes('rendererCareerBreakExperienceLines_({experiences:[e]})'))throw new Error('${EXACT_REGRESSION}: final renderer bypasses exact-three selector');
   old=old.replace(/(?:rendererCareerBreakPruneAndAssert_\(b\);){2,}/g,'rendererCareerBreakPruneAndAssert_(b);');
-  if(!old.includes('RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003')){const ri=old.lastIndexOf('return');if(ri<0)throw new Error('final render return anchor missing');old=old.slice(0,ri)+"rendererCareerBreakPruneAndAssert_(b);/* RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003 */\n"+old.slice(ri);}
+  if(!old.includes('RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003')){const open=old.indexOf('{');let depth=0,quote=null,escaped=false,ri=-1;for(let i=open;i<old.length;i++){const c=old[i];if(quote){if(escaped){escaped=false;continue}if(c==='\\\\'){escaped=true;continue}if(c===quote)quote=null;continue}if(c==='"'||c==="'"||c==='\`'){quote=c;continue}if(c==='{'){depth++;continue}if(c==='}'){depth--;continue}if(depth===1&&old.slice(i,i+6)==='return'&&!/[A-Za-z0-9_$]/.test(old[i-1]||'')&&!/[A-Za-z0-9_$]/.test(old[i+6]||'')){ri=i;break}}if(ri<0)throw new Error('top-level render return anchor missing');old=old.slice(0,ri)+"rendererCareerBreakPruneAndAssert_(b);/* RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003 */\\n"+old.slice(ri);}
   return old;
 });
 
