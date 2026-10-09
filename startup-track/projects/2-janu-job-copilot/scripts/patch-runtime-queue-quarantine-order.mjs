@@ -31,6 +31,10 @@ function replaceRange(name,fn){const r=rangeOf(name);if(!r)throw new Error(name+
 replaceRange('nextQ_',old=>{
   const orderedGuard="if(v[i][3]!=='queued'||(nx&&nx>t))continue;/* "+CONTRACT+" cheap local eligibility before sheet-backed quarantine */";
   if(old.includes(orderedGuard)&&old.indexOf('rendererQuarantineBlocks_(')>old.indexOf(orderedGuard))return old;
+  if(!old.includes('rendererQuarantineBlocks_(')){
+    const open=old.indexOf('{');
+    return old.slice(0,open+1)+'/* '+CONTRACT+' '+ABSENT+' no sheet-backed quarantine in selection path */'+old.slice(open+1);
+  }
   const bad="let qp={};try{qp=v[i][13]?JSON.parse(String(v[i][13])):{}}catch(e){qp={};}if(rendererQuarantineBlocks_(app,String(v[i][2]||''),qp))continue;if(v[i][3]==='queued'";
   if(!old.includes(bad))throw new Error('FL-080 queue/quarantine anchor missing or already malformed; refuse unsafe rewrite');
   const fixed="if(v[i][3]!=='queued'||(nx&&nx>t))continue;/* "+CONTRACT+" cheap local eligibility before sheet-backed quarantine */let qp={};try{qp=v[i][13]?JSON.parse(String(v[i][13])):{}}catch(e){qp={};}if(rendererQuarantineBlocks_(app,String(v[i][2]||''),qp))continue;if(v[i][3]==='queued'";
