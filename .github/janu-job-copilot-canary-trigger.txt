@@ -1,3 +1,4 @@
-2026-10-09T20:45+05:30
-Renderer release canary using owner-owned trigger execution after CI auth-gate removal.
-Metaforms 2026-08-04-002 only; exact artifact/version/QA proof required; no backlog replay.
+2026-10-09T20:55+05:30
+Renderer release canary owner-trigger recovery after CI scope refresh.
+Metaforms 2026-08-04-002 only; exact artifact/version/QA proof required; no second enqueue.
+Recovery queue ID: Q-20261009-195344-f64722e7
