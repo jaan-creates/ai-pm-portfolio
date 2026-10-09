@@ -60,6 +60,7 @@ replaceRange('render_',old=>{
   }
   if(!old.includes("careerBlock('{{CAREER_BREAK}}',ex.independent_break"))throw new Error('${EXACT_REGRESSION}: transformed render_ does not bind independent_break');
   if(!old.includes('rendererCareerBreakExperienceLines_({experiences:[e]})'))throw new Error('${EXACT_REGRESSION}: final renderer bypasses exact-three selector');
+  old=old.replace(/(?:rendererCareerBreakPruneAndAssert_\(b\);){2,}/g,'rendererCareerBreakPruneAndAssert_(b);');
   return old;
 });
 
