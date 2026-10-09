@@ -24,7 +24,7 @@ function addBefore(a,t,c){if(s.includes(t))return;const i=s.indexOf(a);if(i<0)th
 
 const approvedJson=JSON.stringify(APPROVED);
 const helpers=`function rendererWorkerStateValue_(key){const sh=SH_('__Worker State'),m=hm_(sh);if(sh.getLastRow()<2||!m['Key']||!m['Value'])return'';const f=sh.getRange(2,m['Key'],sh.getLastRow()-1,1).createTextFinder(String(key)).matchEntireCell(true).findNext();return f?String(sh.getRange(f.getRow(),m['Value']).getDisplayValue()||''):'';}
-function rendererCareerBreakLines_(value){const raw=String(value||'').replace(/\\r/g,'\\n');return raw.split(/\\n+/).map(x=>stripInternalEvidenceTags_(String(x||'')).replace(/^\\s*(?:[•●▪◦*\\-]|\\d+[.)])\\s*/, '').trim()).filter(Boolean);}
+function rendererCareerBreakLines_(value){const raw=String(value||'').replace(/\\r/g,'\n');return raw.split(/\n+/).map(x=>stripInternalEvidenceTags_(String(x||'')).replace(/^\\s*(?:[•●▪◦*\\-]|\\d+[.)])\\s*/, '').trim()).filter(Boolean);}
 function rendererCareerBreakApprovedLines_(){return ${approvedJson}.slice();}
 function rendererCareerBreakExperience_(d){const xs=d&&Array.isArray(d.experiences)?d.experiences:[];for(const e of xs)if(String(e&&e.key||'').toLowerCase()==='independent_break')return e||null;return null;}
 function rendererCareerBreakExperienceLines_(d){const e=rendererCareerBreakExperience_(d);if(!e)return[];const raw=(e.bullets||[]).map(x=>stripInternalEvidenceTags_(String(x&&x.text||'')).trim()).filter(Boolean),approved=rendererCareerBreakApprovedLines_();for(const need of approved)if(raw.indexOf(need)<0)throw new Error('DETERMINISTIC:RENDER_CAREERBREAK_CANONICAL_MISSING:'+need.slice(0,100));return approved.slice();}
@@ -40,7 +40,7 @@ function runRendererCareerBreakSelfTest(){const x=rendererCareerBreakSelfTest_()
 
 if(s.includes('function rendererCareerBreakLines_(')){
   for(const n of ['rendererWorkerStateValue_','rendererCareerBreakLines_','rendererCareerBreakApprovedLines_','rendererCareerBreakExperience_','rendererCareerBreakExperienceLines_','rendererCareerBreakLegacyProjectSummary_','rendererCareerBreakPruneAndAssert_','rendererReplayBlocked_','rendererQuarantineBlocks_','unresolvedReleaseBlockerIds_','enforceReleaseBlockerHealth_','rendererCareerBreakSelfTest_','runRendererCareerBreakSelfTest']){
-    const m=helpers.match(new RegExp('function '+n+'\\([^]*?(?=\\nfunction |$)'));
+    const m=helpers.match(new RegExp('function '+n+'\\([^]*?(?=\nfunction |$)'));
     if(!m)throw new Error('helper '+n);
     if(rangeOf(n))replaceFunction(n,m[0].trim());else addBefore('function verifyReleaseIdentity()','function '+n+'(',m[0].trim());
   }
@@ -62,7 +62,7 @@ replaceRange('render_',old=>{
   if(!old.includes("careerBlock('{{CAREER_BREAK}}',ex.independent_break"))throw new Error('${EXACT_REGRESSION}: transformed render_ does not bind independent_break');
   if(!old.includes('rendererCareerBreakExperienceLines_({experiences:[e]})'))throw new Error('${EXACT_REGRESSION}: final renderer bypasses exact-three selector');
   old=old.replace(/(?:rendererCareerBreakPruneAndAssert_\(b\);){2,}/g,'rendererCareerBreakPruneAndAssert_(b);');
-  if(!old.includes('RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003')){const open=old.indexOf('{');let depth=0,quote=null,escaped=false,ri=-1;for(let i=open;i<old.length;i++){const c=old[i];if(quote){if(escaped){escaped=false;continue}if(c==='\\\\'){escaped=true;continue}if(c===quote)quote=null;continue}if(c==='"'||c==="'"||c==='\`'){quote=c;continue}if(c==='{'){depth++;continue}if(c==='}'){depth--;continue}if(depth===1&&old.slice(i,i+6)==='return'&&!/[A-Za-z0-9_$]/.test(old[i-1]||'')&&!/[A-Za-z0-9_$]/.test(old[i+6]||'')){ri=i;break}}if(ri<0)throw new Error('top-level render return anchor missing');old=old.slice(0,ri)+"rendererCareerBreakPruneAndAssert_(b);/* RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003 */\\n"+old.slice(ri);}
+  if(!old.includes('RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003')){const open=old.indexOf('{');let depth=0,quote=null,escaped=false,ri=-1;for(let i=open;i<old.length;i++){const c=old[i];if(quote){if(escaped){escaped=false;continue}if(c==='\\\\'){escaped=true;continue}if(c===quote)quote=null;continue}if(c==='"'||c==="'"||c==='\`'){quote=c;continue}if(c==='{'){depth++;continue}if(c==='}'){depth--;continue}if(depth===1&&old.slice(i,i+6)==='return'&&!/[A-Za-z0-9_$]/.test(old[i-1]||'')&&!/[A-Za-z0-9_$]/.test(old[i+6]||'')){ri=i;break}}if(ri<0)throw new Error('top-level render return anchor missing');old=old.slice(0,ri)+"rendererCareerBreakPruneAndAssert_(b);/* RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003 */\n"+old.slice(ri);}
   return old;
 });
 
