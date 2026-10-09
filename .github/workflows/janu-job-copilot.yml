@@ -134,6 +134,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-appsscript-oauth-scopes.mjs" "$LIVE_DIR" --check
       - name: Apply owner authorization scope probe
         run: node "$PROJECT_DIR/scripts/patch-owner-authorization-probe.mjs" "$LIVE_DIR"
+      - name: Apply CI-safe owner worker canary handoff
+        run: node "$PROJECT_DIR/scripts/patch-owner-canary-fresh-replacement.mjs" "$LIVE_DIR"
       - name: Apply additive P1-A contracts
         run: node "$PROJECT_DIR/scripts/patch-p1a.mjs" "$LIVE_DIR"
       - name: Apply P1-A runtime provider adapters
