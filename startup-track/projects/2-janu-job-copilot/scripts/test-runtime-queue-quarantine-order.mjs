@@ -8,6 +8,7 @@ const projectDir=process.argv[2]||path.resolve('startup-track/projects/2-janu-jo
 const patch=path.join(projectDir,'scripts','patch-runtime-queue-quarantine-order.mjs');
 const patchText=fs.readFileSync(patch,'utf8');
 for(const token of ['QUEUE-NOJOB-QUARANTINE-001','QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001',"if(v[i][3]!=='queued'||(nx&&nx>t))continue;"])if(!patchText.includes(token))throw new Error('FL-080 patch contract missing '+token);
+if(patchText.includes("if(old.includes(CONTRACT)||old.includes(ABSENT))return old"))throw new Error('FL-080 patch must repair stale markers instead of early-returning');
 const chainText=fs.readFileSync(path.join(projectDir,'scripts','patch-trace-durability.mjs'),'utf8');
 for(const token of ['patch-runtime-queue-quarantine-order.mjs','QUEUE-NOJOB-QUARANTINE-001','QUEUE-QUARANTINE-CANDIDATE-BOUNDED-001'])if(!chainText.includes(token))throw new Error('FL-080 production patch-chain wiring missing '+token);
 
