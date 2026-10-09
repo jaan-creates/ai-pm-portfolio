@@ -170,27 +170,43 @@ jobs:
           done
           echo "Exact canary $CANARY_QID did not reach terminal state within 9 minutes; isolated owner-canary trigger freshness must be investigated." >&2
           exit 23
-      - name: Await scheduler artifact and QA proof
+      - name: Run bounded canary control handoff
         working-directory: .janu-live
         shell: bash
         run: |
           set -euo pipefail
-          for i in $(seq 1 36); do
-            set +e
-            out="$(clasp run runRendererCanaryControlStatus --user "$CLASP_USER" 2>&1)"
-            rc=$?
-            set -e
-            printf '%s\n' "$out"
-            test "$rc" -eq 0
-            ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
-            if grep -q "artifactProofStatus:[[:space:]]*'PASS'" <<<"$out" &&
-               grep -q "recurrence:[[:space:]]*'CANARY_PASS'" <<<"$out" &&
-               grep -q "replay:[[:space:]]*'CANARY_PASS'" <<<"$out" &&
-               grep -q "atsQaStatus:[[:space:]]*'Passed'" <<<"$out"; then
-              echo "Scheduler artifact and QA proof passed for $CANARY_QID."
-              exit 0
-            fi
-            sleep 15
-          done
-          echo "Scheduler artifact/QA proof did not reach release state within 9 minutes." >&2
-          exit 26
+          out="$(clasp run rendererCanaryControlPlaneTick --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+          grep -q "contract: 'CANARY-SCHEDULER-HANDOFF-001'" <<<"$out"
+          grep -Eq "artifactProof:[[:space:]]*'PASS'" <<<"$out"
+          qaid="$(sed -n "s/.*qaQueueJobId:[[:space:]]*'\\([^']*\\)'.*/\\1/p" <<<"$out" | head -n1)"
+          test -n "$qaid" || { echo 'QA queue ID missing from bounded handoff.' >&2; exit 27; }
+          echo "CANARY_QA_QID=$qaid" >> "$GITHUB_ENV"
+
+      - name: Execute bounded canary QA
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CANARY_QA_QID:-}"
+          out="$(clasp run runRendererCanaryQaExecute --params "[\"$CANARY_QA_QID\"]" --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|MISMATCH|FAILED|NOT_' <<<"$out"
+          grep -Eq 'pass:[[:space:]]*true' <<<"$out"
+          grep -Eq "status:[[:space:]]*'succeeded'" <<<"$out"
+          grep -Eq "atsQaStatus:[[:space:]]*'Passed'" <<<"$out"
+
+      - name: Finalize bounded canary control proof
+        working-directory: .janu-live
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$(clasp run rendererCanaryControlPlaneTick --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+          grep -q "contract: 'CANARY-SCHEDULER-HANDOFF-001'" <<<"$out"
+          grep -Eq "status:[[:space:]]*'PASS'" <<<"$out"
+          grep -Eq "recurrence:[[:space:]]*'CANARY_PASS'" <<<"$out"
+          grep -Eq "replay:[[:space:]]*'CANARY_PASS'" <<<"$out"
+          grep -Eq "atsQaStatus:[[:space:]]*'Passed'" <<<"$out"
