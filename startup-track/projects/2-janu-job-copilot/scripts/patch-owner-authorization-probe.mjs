@@ -7,7 +7,7 @@ const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'))
 const target=files.find(f=>fs.readFileSync(path.join(root,f),'utf8').includes('function forceOwnerAuthorization'));
 if(!target)throw new Error('Owner authorization function missing');
 const file=path.join(root,target);let s=fs.readFileSync(file,'utf8');
-const re=/function forceOwnerAuthorization\(\)\s*\{[\\s\\S]*?\}/;
+const re=/function forceOwnerAuthorization\(\)[\s\S]*?\}/;
 if(!re.test(s))throw new Error('Owner authorization function body missing');
 const fn="function forceOwnerAuthorization(){ScriptApp.requireAllScopes(ScriptApp.AuthMode.FULL);const triggers=ScriptApp.getProjectTriggers();return{pass:true,contract:'OWNER-AUTHORIZATION-SCOPE-PROBE-001',triggerCount:triggers.length};}";
 s=s.replace(re,fn);
