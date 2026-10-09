@@ -1,3 +1,4 @@
 2026-10-09T21:25+05:30
-Renderer release canary after whitespace-regex root-cause repair.
+Renderer release canary after wiring exact Career Break patch into CD.
 Metaforms 2026-08-04-002 only; exact artifact/version/QA proof required; no backlog replay.
+Recovery queue ID: Q-20261009-213134-05f87d44
