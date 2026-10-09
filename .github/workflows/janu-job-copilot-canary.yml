@@ -76,7 +76,7 @@ jobs:
       - name: Assert owner-worker canary generation is deployed
         shell: bash
         run: |
-          for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 CANARY-OWNER-WORKER-001 OWNER_WORKER_TRIGGER 'function runRendererAuthorizedCanaryEnqueue()' 'function runOwnedRendererCanaryTick()' 'function runRendererCanaryReadback(' 'function runRendererCanaryQaEnqueue(' 'function runRendererCanaryQaExecute(' 'function runRendererCanaryReleaseFinalize(' CANARY-ARTIFACT-QA-PROOF-001; do
+          for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 CANARY-OWNER-WORKER-001 OWNER_WORKER_TRIGGER 'function runRendererAuthorizedCanaryEnqueue()' 'function runOwnedRendererCanaryTick()' 'function runRendererCanaryReadback(' 'function runRendererCanaryQaEnqueue(' 'function runRendererCanaryQaExecute(' 'function runRendererCanaryReleaseFinalize(' 'function armRendererCanaryExecutionLease(' 'function rendererCanaryControlPlaneTick(' 'function runRendererCanaryControlStatus(' CANARY-ARTIFACT-QA-PROOF-001 CANARY-SCHEDULER-HANDOFF-001; do
             grep -q "$token" "$LIVE_DIR/TrackerWorkflow.js" || { echo "Owner-worker canary runtime contract missing: $token"; exit 19; }
           done
       - name: Enqueue fresh authorized canary only
@@ -117,19 +117,19 @@ jobs:
           test -n "$qid" || { echo 'Exact canary Queue Job ID missing from enqueue result.' >&2; exit 20; }
           echo "CANARY_QID=$qid" >> "$GITHUB_ENV"
           echo "Enqueued exact canary $qid; scheduling isolated owner canary trigger."
-      - name: Install isolated owner canary trigger
+      - name: Arm canonical scheduler canary lease
         working-directory: .janu-live
         shell: bash
         run: |
           set -euo pipefail
           test -n "${CANARY_QID:-}"
-          out="$(clasp run installOwnedRendererCanaryTrigger --user "$CLASP_USER" 2>&1)"
+          out="$(clasp run armRendererCanaryExecutionLease --params "[\"$CANARY_QID\"]" --user "$CLASP_USER" 2>&1)"
           printf '%s\n' "$out"
           ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|MISMATCH|FAILED|NOT_' <<<"$out"
           grep -Eq 'pass:[[:space:]]*true' <<<"$out"
-          grep -q "contract: 'CONTROL-PLANE-CANARY-ONLY-001'" <<<"$out"
-          grep -q "CONTROL-PLANE-CANARY-TELEMETRY-001" <<<"$out"
-          echo "Installed isolated owner canary trigger for $CANARY_QID; terminal proof will come from queue readback."
+          grep -q "contract: 'CANARY-SCHEDULER-HANDOFF-001'" <<<"$out"
+          grep -Eq "lease:[[:space:]]*'ACTIVE'" <<<"$out"
+          echo "Armed canonical scheduler canary lease for $CANARY_QID."
       - name: Await exact canary terminal proof
         working-directory: .janu-live
         shell: bash
@@ -170,41 +170,27 @@ jobs:
           done
           echo "Exact canary $CANARY_QID did not reach terminal state within 9 minutes; isolated owner-canary trigger freshness must be investigated." >&2
           exit 23
-      - name: Enqueue exact canary QA after artifact proof
+      - name: Await scheduler artifact and QA proof
         working-directory: .janu-live
         shell: bash
         run: |
           set -euo pipefail
-          out="$(clasp run runRendererCanaryQaEnqueue --params "[\"$CANARY_QID\"]" --user "$CLASP_USER" 2>&1)"
-          printf '%s\n' "$out"
-          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|MISMATCH|FAILED|NOT_' <<<"$out"
-          grep -Eq 'pass:[[:space:]]*true' <<<"$out"
-          grep -q "contract: 'CANARY-QA-FINALIZE-001'" <<<"$out"
-          qid="$(sed -n "s/.*qaQueueJobId:[[:space:]]*'\([^']*\)'.*/\1/p" <<<"$out" | head -n1)"
-          test -n "$qid" || { echo 'Canary QA Queue Job ID missing.' >&2; exit 25; }
-          echo "CANARY_QA_QID=$qid" >> "$GITHUB_ENV"
-      - name: Execute exact canary QA in canonical CI owner context
-        working-directory: .janu-live
-        shell: bash
-        run: |
-          set -euo pipefail
-          out="$(clasp run runRendererCanaryQaExecute --params "[\"$CANARY_QA_QID\"]" --user "$CLASP_USER" 2>&1)"
-          printf '%s\n' "$out"
-          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|MISMATCH|FAILED|NOT_' <<<"$out"
-          grep -Eq 'pass:[[:space:]]*true' <<<"$out"
-          grep -q "contract: 'CANARY-QA-FINALIZE-001'" <<<"$out"
-          grep -Eq "status:[[:space:]]*'succeeded'" <<<"$out"
-          grep -Eq "attempts:[[:space:]]*1" <<<"$out"
-          grep -Eq "atsQaStatus:[[:space:]]*'Passed'" <<<"$out"
-      - name: Finalize renderer release proof
-        working-directory: .janu-live
-        shell: bash
-        run: |
-          set -euo pipefail
-          out="$(clasp run runRendererCanaryReleaseFinalize --params "[\"$CANARY_QID\",\"$CANARY_QA_QID\"]" --user "$CLASP_USER" 2>&1)"
-          printf '%s\n' "$out"
-          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|MISMATCH|FAILED|NOT_' <<<"$out"
-          grep -Eq 'pass:[[:space:]]*true' <<<"$out"
-          grep -q "contract: 'CANARY-ARTIFACT-QA-PROOF-001'" <<<"$out"
-          grep -Eq "careerBreakBulletCount:[[:space:]]*3" <<<"$out"
-          grep -Eq "atsQaStatus:[[:space:]]*'Passed'" <<<"$out"
+          for i in $(seq 1 36); do
+            set +e
+            out="$(clasp run runRendererCanaryControlStatus --user "$CLASP_USER" 2>&1)"
+            rc=$?
+            set -e
+            printf '%s\n' "$out"
+            test "$rc" -eq 0
+            ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+            if grep -q "artifactProofStatus:[[:space:]]*'PASS'" <<<"$out" &&
+               grep -q "recurrence:[[:space:]]*'CANARY_PASS'" <<<"$out" &&
+               grep -q "replay:[[:space:]]*'CANARY_PASS'" <<<"$out" &&
+               grep -q "atsQaStatus:[[:space:]]*'Passed'" <<<"$out"; then
+              echo "Scheduler artifact and QA proof passed for $CANARY_QID."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Scheduler artifact/QA proof did not reach release state within 9 minutes." >&2
+          exit 26
