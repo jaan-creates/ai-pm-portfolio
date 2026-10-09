@@ -1,3 +1,3 @@
-2026-10-09T10:01+05:30
-Metaforms renderer release verification after current liveness gates closed.
+2026-10-09T11:02+05:30
+Metaforms renderer release verification after isolated owner-trigger execution-path repair.
 Application 2026-08-04-002 only; one bounded canary plus QA/readback; no backlog replay.
