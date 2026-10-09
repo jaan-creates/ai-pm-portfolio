@@ -75,6 +75,7 @@ if(!s.includes(EXACT_CONTRACT))s+='\n// '+EXACT_CONTRACT+': final Career Break s
 if(!s.includes(EXACT_REGRESSION))s+='\n// '+EXACT_REGRESSION+': production-shaped fixture includes duplicate project summaries and must collapse to exact canonical 3.\n';
 
 if(!s.includes('RENDER-CAREERBREAK-LEGACY-NONLIST-PRUNE-001'))s+='\n// RENDER-CAREERBREAK-LEGACY-NONLIST-PRUNE-001: transformed-source compatibility marker.\n';
+if(!s.includes('RENDER-CAREERBREAK-NESTED-LEGACY-PRUNE-001'))s+='\n// RENDER-CAREERBREAK-NESTED-LEGACY-PRUNE-001: transformed-source compatibility marker.\n';
 for(const token of [LIVE_REGRESSION,EXACT_CONTRACT,EXACT_REGRESSION,'RENDER-CAREERBREAK-001','RENDER-CAREERBREAK-LEGACY-NONLIST-PRUNE-001','RENDER-CAREERBREAK-NESTED-LEGACY-PRUNE-001',"careerBlock('{{CAREER_BREAK}}',ex.independent_break",'function rendererCareerBreakApprovedLines_(','function rendererCareerBreakExperienceLines_(','rendererCareerBreakExperienceLines_({experiences:[e]})','function rendererCareerBreakLegacyProjectSummary_(','rendererCareerBreakPruneAndAssert_(b)','RENDER-CAREERBREAK-ARTIFACT-EXACT3-001','PREVENTION-RECURRENCE-001'])if(!s.includes(token))throw new Error('Live Career Break binding missing '+token);
 fs.writeFileSync(file,s);
 const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(syntax.status!==0)throw new Error(syntax.stderr);
