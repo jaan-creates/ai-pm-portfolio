@@ -76,7 +76,7 @@ jobs:
       - name: Assert owner-worker canary generation is deployed
         shell: bash
         run: |
-          for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 CANARY-OWNER-WORKER-001 OWNER_WORKER_TRIGGER 'function runRendererAuthorizedCanaryEnqueue()' 'function installOwnedRendererCanaryTrigger()' 'function runOwnedRendererCanaryTick()' 'function runRendererCanaryReadback('; do
+          for token in CANARY-PRECONDITION-002 RENDER-CAREERBREAK-V3 ATOMIC_APPEND_VERIFY_RETIRE QUEUE-PROCESSED-ACCOUNTING-001 STALE-WORK-COUNT-001 CANARY-QUEUE-ID-BINDING-001 CANARY-TERMINAL-SUCCESS-001 CANARY-ARTIFACT-READBACK-001 CANARY-EXACT-EXECUTION-001 CANARY-OWNER-WORKER-001 OWNER_WORKER_TRIGGER 'function runRendererAuthorizedCanaryEnqueue()' 'function runOwnedRendererCanaryTick()' 'function runRendererCanaryReadback('; do
             grep -q "$token" "$LIVE_DIR/TrackerWorkflow.js" || { echo "Owner-worker canary runtime contract missing: $token"; exit 19; }
           done
       - name: Enqueue fresh authorized canary only
@@ -117,17 +117,19 @@ jobs:
           test -n "$qid" || { echo 'Exact canary Queue Job ID missing from enqueue result.' >&2; exit 20; }
           echo "CANARY_QID=$qid" >> "$GITHUB_ENV"
           echo "Enqueued exact canary $qid; scheduling isolated owner canary trigger."
-      - name: Install isolated owner canary trigger
+      - name: Execute exact canary in canonical CI owner context
         working-directory: .janu-live
         shell: bash
         run: |
           set -euo pipefail
-          out="$(clasp run installOwnedRendererCanaryTrigger --user "$CLASP_USER" 2>&1)"
+          test -n "${CANARY_QID:-}"
+          out="$(clasp run runOwnedRendererCanaryTick --user "$CLASP_USER" 2>&1)"
           printf '%s\n' "$out"
           ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error|MISMATCH|FAILED|NOT_' <<<"$out"
           grep -Eq 'pass:[[:space:]]*true' <<<"$out"
-          grep -q "contract: 'CONTROL-PLANE-CANARY-ONLY-001'" <<<"$out"
-      - name: Await isolated owner canary terminal proof
+          grep -q "contract: 'CANARY-EXACT-EXECUTION-001'" <<<"$out"
+          grep -Eq "queueJobId:[[:space:]]*'$CANARY_QID'" <<<"$out"
+      - name: Await exact canary terminal proof
         working-directory: .janu-live
         shell: bash
         run: |
