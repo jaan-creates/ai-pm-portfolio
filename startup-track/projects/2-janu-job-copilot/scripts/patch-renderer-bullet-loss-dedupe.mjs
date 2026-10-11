@@ -17,8 +17,8 @@ const breakExpectedDecl=/const breakExpected=\{\};if\(ex\.independent_break\)\(e
   else if(s.includes(old))s=s.replace(old,replacement);
   else throw new Error('Renderer bullet-loss assertion anchor missing');
 }
-if(!s.includes('RENDER-CAREERBREAK-PROJECT-DEDUPE-008'))throw new Error('Renderer bullet-loss dedupe contract missing');
+s=s.replace(/\\bbreakSource\\b/g,'careerBreakSourceEntries');if(!s.includes('RENDER-CAREERBREAK-PROJECT-DEDUPE-009'))throw new Error('Renderer bullet-loss dedupe contract missing');
 fs.writeFileSync(file,s);
 const ck=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
 if(ck.status!==0)throw new Error(ck.stderr||'syntax failure');
-console.log(JSON.stringify({status:'PASS',file:target,contract:'RENDER-CAREERBREAK-PROJECT-DEDUPE-006',careerBreakSourceBulletsExcludedOnlyForIndependentBreak:true},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,contract:'RENDER-CAREERBREAK-PROJECT-DEDUPE-010',careerBreakSourceBulletsExcludedOnlyForIndependentBreak:true},null,2));
