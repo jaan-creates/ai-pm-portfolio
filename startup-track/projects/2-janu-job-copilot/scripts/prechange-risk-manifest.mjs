@@ -138,7 +138,9 @@ function changedFiles(root) {
   let out = '';
   try {
     const base = process.env.GITHUB_BASE_REF;
-    out = base ? run(['diff', '--name-only', `origin/${base}...HEAD`]) : '';
+    const head = process.env.GITHUB_HEAD_REF;
+    if (base && head) out = run(['diff', '--name-only', `origin/${base}...origin/${head}`]);
+    else if (base) out = run(['diff', '--name-only', `origin/${base}...HEAD`]);
   } catch {}
   if (!out) {
     try {
