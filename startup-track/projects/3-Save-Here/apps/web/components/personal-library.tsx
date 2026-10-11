@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, ExternalLink, LogOut, RefreshCw, Search, Settings2, Sparkles, X } from "lucide-react";
+import { Download, ExternalLink, LogOut, Search, Settings2, Sparkles, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AiMetadata = {
@@ -41,8 +41,17 @@ function initials(email: string) {
 function previewFrom(item: Item) {
   const metadata = item.ai_metadata;
   const candidate = metadata?.preview_image_url ?? metadata?.thumbnail_url ?? metadata?.image_url;
-  if (typeof candidate !== "string" || !/^https?:\/\//i.test(candidate)) return null;
-  return candidate;
+  if (typeof candidate === "string" && /^https?:\/\//i.test(candidate)) return candidate;
+  const source = item.original_url ?? item.canonical_url;
+  if (!source) return null;
+  try {
+    const url = new URL(source);
+    const isYouTube = url.hostname === "youtube.com" || url.hostname.endsWith(".youtube.com") || url.hostname === "youtu.be";
+    const videoId = url.hostname === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v") ?? url.pathname.match(/\/(?:shorts|embed)\/([^/?]+)/)?.[1];
+    return isYouTube && videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
+  } catch {
+    return null;
+  }
 }
 
 export function PersonalLibrary() {
@@ -53,7 +62,6 @@ export function PersonalLibrary() {
   const [busy, setBusy] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [reprocessingId, setReprocessingId] = useState<string | null>(null);
   const [viewFilter, setViewFilter] = useState<"all" | "active" | "completed" | "reference">("all");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
@@ -119,35 +127,13 @@ export function PersonalLibrary() {
     await updateItemStatus(itemId, "deleted" as never);
   }
 
-  async function reprocessItem(itemId: string) {
-    if (!supabase) return;
-    setReprocessingId(itemId);
-    setError(null);
-    const { data: sessionData } = await supabase.auth.getSession();
-    const accessToken = sessionData.session?.access_token;
-    if (!accessToken) {
-      setError("Your session expired. Please sign in again.");
-      setReprocessingId(null);
-      return;
-    }
-    const response = await fetch(`/v1/items/${itemId}/reprocess`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (!response.ok) setError("Details could not be refreshed for this save.");
-    else await loadItems();
-    setReprocessingId(null);
-  }
-
 
   return (
     <main className="personal-library">
       <header className="personal-header">
         <div>
           <div className="auth-brand"><span className="auth-brand-mark"><Sparkles size={17} /></span><span>Save Here</span></div>
-          <p className="kicker">Your private library</p>
-          <h1>Everything worth remembering.</h1>
-          <p className="library-subtitle">{items.length} saved {items.length === 1 ? "item" : "items"} · your context stays separate from extracted details</p>
+          <p className="library-count">{items.length} saved {items.length === 1 ? "item" : "items"}</p>
         </div>
         <div className="personal-header-actions">
           <button className="profile-avatar" onClick={() => setProfileOpen((open) => !open)} aria-label="Open your profile" aria-expanded={profileOpen}>{initials(profileEmail)}</button>
@@ -160,7 +146,7 @@ export function PersonalLibrary() {
           <button className="profile-backdrop" aria-label="Close profile" onClick={() => setProfileOpen(false)} />
           <aside className="profile-panel" aria-label="Your profile">
             <div className="profile-panel-heading"><div><p className="kicker">Account</p><h2>Your profile</h2></div><button className="icon-button" onClick={() => setProfileOpen(false)} aria-label="Close profile"><X size={17} /></button></div>
-            <div className="profile-identity"><span className="profile-avatar profile-avatar-large">{initials(profileEmail)}</span><div><strong>{profileEmail || "Private owner"}</strong><span>Private owner account</span></div></div>
+            <div className="profile-identity"><span className="profile-avatar profile-avatar-large">{initials(profileEmail)}</span><div><strong>{profileEmail || "Account"}</strong></div></div>
             <div className="profile-row"><Settings2 size={16} /><span>Settings</span><em>Coming soon</em></div>
             <div className="profile-row"><Download size={16} /><span>Export library</span><em>Coming soon</em></div>
             <button className="profile-signout" onClick={signOut}><LogOut size={16} /> Sign out securely</button>
@@ -170,7 +156,6 @@ export function PersonalLibrary() {
 
       <div className="personal-toolbar">
         <label className="search-box"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by what you remember…" aria-label="Search your saved items" /></label>
-        <button className="refresh-button" onClick={() => void loadItems()} disabled={busy}><RefreshCw size={16} /> Refresh</button>
       </div>
       <div className="view-filters" aria-label="Library views">
         {(["all", "active", "completed", "reference"] as const).map((filter) => <button key={filter} className={viewFilter === filter ? "view-filter active" : "view-filter"} onClick={() => setViewFilter(filter)}>{filter === "all" ? "Everything" : displayLabel(filter)}</button>)}
@@ -185,22 +170,18 @@ export function PersonalLibrary() {
           const url = item.original_url ?? item.canonical_url;
           const previewUrl = previewFrom(item);
           const hasTitle = Boolean(item.title?.trim());
-          const source = item.source_domain ?? displayLabel(item.content_type);
           const topics = [...(item.topics ?? []), ...(item.ai_metadata?.suggested_tags ?? [])].filter((topic, index, all) => topic && all.indexOf(topic) === index).slice(0, 5);
           const previewDescription = typeof item.ai_metadata?.preview_description === "string" ? item.ai_metadata.preview_description.trim() : "";
           return (
-            <article className="media-card" key={item.id}>
+            <article className="media-card" key={item.id} role={url ? "link" : undefined} tabIndex={url ? 0 : undefined} onClick={(event) => { if ((event.target as HTMLElement).closest("button,a")) return; if (url) window.open(url, "_blank", "noopener,noreferrer"); }} onKeyDown={(event) => { if (event.key === "Enter" && url) window.open(url, "_blank", "noopener,noreferrer"); }}>
               <div className={previewUrl ? "media-card-visual has-preview" : "media-card-visual visual-fallback"} style={previewUrl ? { backgroundImage: `url("${previewUrl}")` } : undefined}>
                 {!previewUrl && <><Sparkles size={26} /><span>Preview unavailable</span><small>Original source preserved</small></>}
-                <span className="visual-source">{source}</span>
               </div>
               <div className="media-card-copy">
-                <div className="personal-card-top"><span>{displayLabel(item.content_type)}</span><span className={"quality " + (item.capture_quality === "link_only" ? "partial" : "ready")}>{item.capture_quality === "link_only" ? "Link only" : displayLabel(item.processing_status)}</span></div>
                 {hasTitle && <h2 title={item.title ?? undefined}>{item.title}</h2>}
                 {previewDescription && <p className="metadata-summary">{previewDescription}</p>}
                 {item.user_note && <><span className="card-context-label">Your context</span><p className="personal-note">{item.user_note}</p></>}
                 {topics.length > 0 && <div className="suggested-tags" aria-label="Suggested tags">{topics.map((topic) => <span className="suggested-tag" key={topic}>{topic}</span>)}</div>}
-                <div className="personal-card-foot"><span>{new Date(item.saved_at).toLocaleDateString()}</span><span className="personal-card-foot-actions">{item.capture_quality === "link_only" && url && <button className="reprocess-button" onClick={() => void reprocessItem(item.id)} disabled={reprocessingId === item.id}>{reprocessingId === item.id ? "Refreshing…" : "Refresh details"}</button>}{url && <a href={url} target="_blank" rel="noreferrer">Open source <ExternalLink size={14} /></a>}</span></div>
                 <div className="lifecycle-actions" aria-label="Save actions"><button onClick={() => setSelectedItem(item)} aria-label="View save details">Details</button><button onClick={() => void updateItemStatus(item.id, "completed")} aria-label="Mark as done">Done</button><button onClick={() => void updateItemStatus(item.id, "reference")} aria-label="Keep as reference">Reference</button><button onClick={() => void deleteItem(item.id)} aria-label="Remove save">Remove</button></div>
               </div>
             </article>
@@ -217,7 +198,7 @@ export function PersonalLibrary() {
             <p className="detail-source">{selectedItem.source_domain || displayLabel(selectedItem.content_type)} · {displayLabel(selectedItem.status)}</p>
             {selectedItem.user_note && <div className="detail-section"><span className="card-context-label">Your context</span><p>{selectedItem.user_note}</p></div>}
             {typeof selectedItem.ai_metadata?.preview_description === "string" && <div className="detail-section"><span className="detail-label">Extracted description</span><p>{selectedItem.ai_metadata.preview_description}</p></div>}
-            <div className="detail-section detail-facts"><span>Saved {new Date(selectedItem.saved_at).toLocaleString()}</span><span>{displayLabel(selectedItem.intent)} · {displayLabel(selectedItem.capture_quality)}</span></div>
+            {selectedItem.intent !== "unknown" && <div className="detail-section detail-facts"><span>Intent: {displayLabel(selectedItem.intent)}</span></div>}
             {(() => { const detailUrl = selectedItem.original_url ?? selectedItem.canonical_url; return detailUrl ? <a className="detail-open" href={detailUrl} target="_blank" rel="noreferrer">Open original source <ExternalLink size={14} /></a> : null; })()}
           </section>
         </div>
