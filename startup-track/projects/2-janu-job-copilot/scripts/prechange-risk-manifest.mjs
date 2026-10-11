@@ -193,7 +193,7 @@ function buildManifest({ root, files }) {
   const components = [...new Map(material.map(file => {
     const e = catalogFor(file);
     return [e.id, e];
-  }).values())].map(e => {
+  })).values()].map(e => {
     if (!e || !Array.isArray(e.evidence)) throw new Error('Risk catalog entry missing evidence: ' + (e?.id || 'unknown'));
     const missing = e.evidence.filter(token => !corpus.toLowerCase().includes(token.toLowerCase()));
     if (missing.length) throw new Error(`Risk evidence missing for ${e.id}: ${missing.join(', ')}`);
