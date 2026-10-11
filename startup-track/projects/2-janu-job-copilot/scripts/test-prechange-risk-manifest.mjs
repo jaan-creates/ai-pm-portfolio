@@ -3,7 +3,7 @@ import { buildManifest, catalogFor, validateManifest } from './prechange-risk-ma
 
 assert.equal(catalogFor('.github/workflows/janu-job-copilot.yml')?.id, 'governance');
 assert.equal(catalogFor('startup-track/projects/2-janu-job-copilot/scripts/patch-renderer-careerbreak.mjs')?.id, 'renderer');
-assert.equal(catalogFor('startup-track/projects/2-janu-job-copilot/scripts/patch-owner-canary-lock.mjs')?.id, 'runtime');
+assert.equal(catalogFor('startup-track/projects/2-janu-job-copilot/scripts/patch-runtime-queue-quarantine-order.mjs')?.id, 'runtime');
 assert.equal(catalogFor('startup-track/projects/2-janu-job-copilot/scripts/patch-sourcing-scheduler-health.mjs')?.id, 'sourcing');
 assert.equal(catalogFor('startup-track/projects/2-janu-job-copilot/scripts/patch-candidate-evidence-capture-first.mjs')?.id, 'evidence');
 assert.equal(catalogFor('startup-track/projects/2-janu-job-copilot/scripts/patch-release-provenance.mjs')?.id, 'release');
