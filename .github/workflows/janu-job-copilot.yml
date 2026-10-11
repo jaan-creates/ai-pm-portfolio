@@ -230,6 +230,19 @@ jobs:
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "Active release/runtime contract missing: $token"; exit 14; }
           done
           grep -q "'Decision':'New'" /tmp/janu-job-copilot-combined.js
+      - name: Build automated pre-change risk manifest
+        shell: bash
+        run: |
+          node "$PROJECT_DIR/scripts/test-prechange-risk-manifest.mjs"
+          node "$PROJECT_DIR/scripts/prechange-risk-manifest.mjs" "$GITHUB_WORKSPACE" > /tmp/janu-prechange-risk-manifest.json
+          cat /tmp/janu-prechange-risk-manifest.json
+      - name: Upload automated pre-change risk manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: janu-job-copilot-prechange-risk-manifest-${{ github.sha }}
+          path: /tmp/janu-prechange-risk-manifest.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Build privacy-safe transformed-source manifest
         shell: bash
         run: |
