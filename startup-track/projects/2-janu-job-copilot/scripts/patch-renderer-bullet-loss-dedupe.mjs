@@ -9,7 +9,7 @@ if(!target)throw new Error('Renderer bullet-loss target missing');
 const file=path.join(root,target);let s=fs.readFileSync(file,'utf8');
 const old="const missing=resumeBulletEntries_(d).filter(x=>norm_(txt).indexOf(norm_(stripInternalEvidenceTags_(x.text)))<0);";
 const replacement="const breakExpected={};if(ex.independent_break)(ex.independent_break.bullets||[]).forEach(x=>breakExpected[norm_(stripInternalEvidenceTags_(x.text))]=1);const expectedEntries=resumeBulletEntries_(d).filter(x=>!(ex.independent_break&&(breakExpected[norm_(stripInternalEvidenceTags_(x.text))]||/^(?:Morning Brief|Job Copilot)\\b/i.test(norm_(stripInternalEvidenceTags_(x.text))))));const missing=expectedEntries.filter(x=>norm_(txt).indexOf(norm_(stripInternalEvidenceTags_(x.text)))<0);/* RENDER-CAREERBREAK-PROJECT-DEDUPE-003 */";
-const currentExpected=/const expectedEntries=resumeBulletEntries_\\(d\\)\\.filter\\(x=>[\\s\\S]*?\\);const missing=expectedEntries\\.filter\\(x=>norm_\\(txt\\)\\.indexOf\\(norm_\\(stripInternalEvidenceTags_\\(x\\.text\\)\\)\\)<0\\);/;
+const currentExpected=/const expectedEntries=resumeBulletEntries_\(d\)\.filter\(x=>[\s\S]*?\);const missing=expectedEntries\.filter\(x=>norm_\(txt\)\.indexOf\(norm_\(stripInternalEvidenceTags_\(x\.text\)\)\)<0\);/;
 if(!s.includes(replacement)){
   if(currentExpected.test(s))s=s.replace(currentExpected,replacement);
   else if(s.includes(old))s=s.replace(old,replacement);
