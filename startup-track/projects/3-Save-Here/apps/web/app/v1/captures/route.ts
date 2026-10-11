@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { captureInputSchema, inferContentType, normalizeUrl } from "@save-recall/domain";
 import { assessCaptureTokenAccess, readBearerToken, tokenDigest } from "@/lib/capture-token";
 import { createAdminClient } from "@/lib/supabase-admin";
@@ -79,7 +79,13 @@ export async function POST(request: Request) {
     .eq("id", deviceToken.id);
 
   if (data?.item_id && canonicalUrl) {
-    await enrichCapturedItem(admin.client, deviceToken.owner_id, data.item_id, canonicalUrl);
+    after(async () => {
+      try {
+        await enrichCapturedItem(admin.client, deviceToken.owner_id, data.item_id, canonicalUrl);
+      } catch (error) {
+        console.error("capture_enrichment_failed", { itemId: data.item_id, error });
+      }
+    });
   }
 
   return NextResponse.json(data, { status: data.result === "created" ? 201 : 200 });
