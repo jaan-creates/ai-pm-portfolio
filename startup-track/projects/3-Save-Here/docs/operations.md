@@ -41,3 +41,10 @@ Recordings default to `temporary` with `purge_after = created_at + interval '30 
 - X: disabled and ₹0.
 
 Never upgrade Supabase or enable paid providers without checking the total projected cost.
+
+
+## iPhone Shortcut wording
+
+The optional note field is a user-facing Shortcut label, not an API field. Set the prompt title to exactly **Context (optional)**. The request body must still send the value under the technical key `user_note`; that key is never shown in the web library.
+
+To change it on iPhone: open Shortcuts → Save Here → tap the **Context (optional)user_note** prompt → replace the title with **Context (optional)** → Done. No token or URL changes are required.
