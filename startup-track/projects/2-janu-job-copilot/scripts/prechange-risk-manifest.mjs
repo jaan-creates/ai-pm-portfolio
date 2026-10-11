@@ -109,7 +109,7 @@ const CATALOG = [
     proof: 'candidate evidence capture and readback self-tests',
     unlock: 'canonical source claims are captured and read back',
     uncertainty: 'conflicting source dates/metrics remain separate until verified',
-    evidence: ['CANDIDATE-EVIDENCE-CAPTURE-FIRST-001', 'canonical'],
+    evidence: ['capture-first', 'canonical'],
   },
   {
     id: 'application-flow',
