@@ -38,20 +38,40 @@ function initials(email: string) {
   return email.split("@")[0].slice(0, 2).toUpperCase() || "ME";
 }
 
-function previewFrom(item: Item) {
+function previewCandidatesFrom(item: Item) {
+  const candidates: string[] = [];
   const metadata = item.ai_metadata;
-  const candidate = metadata?.preview_image_url ?? metadata?.thumbnail_url ?? metadata?.image_url;
-  if (typeof candidate === "string" && /^https?:\/\//i.test(candidate)) return candidate;
-  const source = item.original_url ?? item.canonical_url;
-  if (!source) return null;
-  try {
-    const url = new URL(source);
-    const isYouTube = url.hostname === "youtube.com" || url.hostname.endsWith(".youtube.com") || url.hostname === "youtu.be";
-    const videoId = url.hostname === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v") ?? url.pathname.match(/\/(?:shorts|embed)\/([^/?]+)/)?.[1];
-    return isYouTube && videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
-  } catch {
-    return null;
+  for (const candidate of [metadata?.preview_image_url, metadata?.thumbnail_url, metadata?.image_url]) {
+    if (typeof candidate === "string" && /^https?:\/\//i.test(candidate)) candidates.push(candidate);
   }
+  const source = item.original_url ?? item.canonical_url;
+  if (source) {
+    try {
+      const url = new URL(source);
+      const host = url.hostname.toLowerCase();
+      const isYouTube = host === "youtube.com" || host.endsWith(".youtube.com") || host === "youtu.be";
+      const videoId = host === "youtu.be"
+        ? url.pathname.split("/").filter(Boolean)[0]
+        : url.searchParams.get("v") ?? url.pathname.match(/\/(?:shorts|embed|live)\/([^/?]+)/)?.[1];
+      if (isYouTube && videoId) {
+        candidates.push(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
+        candidates.push(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
+        candidates.push(`https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`);
+      }
+    } catch {
+      // The original source remains clickable even when it cannot produce a preview.
+    }
+  }
+  return [...new Set(candidates)];
+}
+
+function PreviewVisual({ candidates, itemTitle }: { candidates: string[]; itemTitle: string }) {
+  const [failedCount, setFailedCount] = useState(0);
+  const activeUrl = candidates[failedCount];
+  if (!activeUrl) return <div className="media-card-visual visual-fallback"><Sparkles size={26} /><span>Preview unavailable</span><small>Original source preserved</small></div>;
+  return <div className="media-card-visual has-preview">
+    <img src={activeUrl} alt={itemTitle || "Saved item preview"} onError={() => setFailedCount((count) => count + 1)} />
+  </div>;
 }
 
 export function PersonalLibrary() {
@@ -168,15 +188,13 @@ export function PersonalLibrary() {
       <div className="personal-grid">
         {filtered.map((item) => {
           const url = item.original_url ?? item.canonical_url;
-          const previewUrl = previewFrom(item);
+          const previewCandidates = previewCandidatesFrom(item);
           const hasTitle = Boolean(item.title?.trim());
           const topics = [...(item.topics ?? []), ...(item.ai_metadata?.suggested_tags ?? [])].filter((topic, index, all) => topic && all.indexOf(topic) === index).slice(0, 5);
           const previewDescription = typeof item.ai_metadata?.preview_description === "string" ? item.ai_metadata.preview_description.trim() : "";
           return (
             <article className="media-card" key={item.id} role={url ? "link" : undefined} tabIndex={url ? 0 : undefined} onClick={(event) => { if ((event.target as HTMLElement).closest("button,a")) return; if (url) window.open(url, "_blank", "noopener,noreferrer"); }} onKeyDown={(event) => { if (event.key === "Enter" && url) window.open(url, "_blank", "noopener,noreferrer"); }}>
-              <div className={previewUrl ? "media-card-visual has-preview" : "media-card-visual visual-fallback"} style={previewUrl ? { backgroundImage: `url("${previewUrl}")` } : undefined}>
-                {!previewUrl && <><Sparkles size={26} /><span>Preview unavailable</span><small>Original source preserved</small></>}
-              </div>
+              <PreviewVisual key={`${item.id}-${previewCandidates.join("|")}`} candidates={previewCandidates} itemTitle={item.title ?? ""} />
               <div className="media-card-copy">
                 {hasTitle && <h2 title={item.title ?? undefined}>{item.title}</h2>}
                 {previewDescription && <p className="metadata-summary">{previewDescription}</p>}
