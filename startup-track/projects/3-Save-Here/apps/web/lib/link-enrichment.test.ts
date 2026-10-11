@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractLinkMetadata, isSafePublicUrl } from "./link-enrichment";
+import { deriveSuggestedTags, extractLinkMetadata, isSafePublicUrl } from "./link-enrichment";
 
 describe("deterministic link enrichment", () => {
   it("extracts Open Graph metadata and resolves relative images", () => {
@@ -12,6 +12,16 @@ describe("deterministic link enrichment", () => {
       description: "A quick dinner",
       imageUrl: "https://example.com/thumb.jpg",
     });
+  });
+
+  it("uses a deterministic YouTube thumbnail when metadata is absent", () => {
+    expect(extractLinkMetadata("", "https://youtu.be/abc123?t=4").imageUrl)
+      .toBe("https://img.youtube.com/vi/abc123/hqdefault.jpg");
+  });
+
+  it("derives conservative source and topic tags", () => {
+    expect(deriveSuggestedTags("https://www.instagram.com/reel/example", "Oats sandwich workout", "Quick recipe"))
+      .toEqual(["Instagram Reel", "recipe", "fitness"]);
   });
 
   it("rejects local and private destinations", () => {
