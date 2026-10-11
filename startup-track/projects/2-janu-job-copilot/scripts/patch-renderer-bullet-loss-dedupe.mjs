@@ -8,7 +8,7 @@ const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');re
 if(!target)throw new Error('Renderer bullet-loss target missing');
 const file=path.join(root,target);let s=fs.readFileSync(file,'utf8');
 const old="const missing=resumeBulletEntries_(d).filter(x=>norm_(txt).indexOf(norm_(stripInternalEvidenceTags_(x.text)))<0);";
-const replacement="const breakSource=(ex.independent_break&&ex.independent_break.bullets||[]).map(x=>norm_(stripInternalEvidenceTags_(x.text))).filter(Boolean);const breakExpected={};breakSource.forEach(x=>breakExpected[x]=1);const expectedEntries=resumeBulletEntries_(d).flatMap(x=>{const t=stripInternalEvidenceTags_(x.text),parts=ex.independent_break?t.split(/\\s+\\|\\s+/).map(v=>v.trim()).filter(Boolean):[t];return parts.length>1?parts.map(v=>Object.assign({},x,{text:v})):[x];}).filter(x=>{const t=norm_(stripInternalEvidenceTags_(x.text));return !(ex.independent_break&&(breakExpected[t]||breakSource.some(v=>t.indexOf(v)>=0)||/caregiving|Morning Brief|Job Copilot/i.test(t)));});const missing=expectedEntries.filter(x=>norm_(txt).indexOf(norm_(stripInternalEvidenceTags_(x.text)))<0);/* RENDER-CAREERBREAK-PROJECT-DEDUPE-007 */";
+const replacement="const breakSource=(ex.independent_break&&ex.independent_break.bullets||[]).map(x=>norm_(stripInternalEvidenceTags_(x.text))).filter(Boolean);const expectedEntries=resumeBulletEntries_(d).flatMap(x=>{const t=stripInternalEvidenceTags_(x.text),parts=ex.independent_break?t.split(/\\s+\\|\\s+/).map(v=>v.trim()).filter(Boolean):[t];return parts.length>1?parts.map(v=>Object.assign({},x,{text:v})):[x];}).filter(x=>{const t=norm_(stripInternalEvidenceTags_(x.text));return !(ex.independent_break&&(breakSource.includes(t)||breakSource.some(v=>t.indexOf(v)>=0)||/caregiving|Morning Brief|Job Copilot/i.test(t)));});const missing=expectedEntries.filter(x=>norm_(txt).indexOf(norm_(stripInternalEvidenceTags_(x.text)))<0);/* RENDER-CAREERBREAK-PROJECT-DEDUPE-008 */";
 const currentExpected=/const expectedEntries=resumeBulletEntries_\(d\)\.filter\(x=>[\s\S]*?\);const missing=expectedEntries\.filter\(x=>norm_\(txt\)\.indexOf\(norm_\(stripInternalEvidenceTags_\(x\.text\)\)\)<0\);/;
 const anyExpected=/const expectedEntries=resumeBulletEntries_\(d\)[\s\S]*?;const missing=expectedEntries\.filter\(x=>norm_\(txt\)\.indexOf\(norm_\(stripInternalEvidenceTags_\(x\.text\)\)\)<0\);/;
 const breakExpectedDecl=/const breakExpected=\{\};if\(ex\.independent_break\)\(ex\.independent_break\.bullets\|\|\[\]\)\.forEach\(x=>breakExpected\[norm_\(stripInternalEvidenceTags_\(x\.text\)\)\]=1\);/g;s=s.replace(breakExpectedDecl,'');if(!s.includes(replacement)){
@@ -17,7 +17,7 @@ const breakExpectedDecl=/const breakExpected=\{\};if\(ex\.independent_break\)\(e
   else if(s.includes(old))s=s.replace(old,replacement);
   else throw new Error('Renderer bullet-loss assertion anchor missing');
 }
-if((s.match(/const breakExpected=\{\};/g)||[]).length!==1)throw new Error('Renderer bullet-loss dedupe expected one breakExpected owner');if(!s.includes('RENDER-CAREERBREAK-PROJECT-DEDUPE-006'))throw new Error('Renderer bullet-loss dedupe contract missing');
+if(!s.includes('RENDER-CAREERBREAK-PROJECT-DEDUPE-008'))throw new Error('Renderer bullet-loss dedupe contract missing');
 fs.writeFileSync(file,s);
 const ck=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
 if(ck.status!==0)throw new Error(ck.stderr||'syntax failure');
