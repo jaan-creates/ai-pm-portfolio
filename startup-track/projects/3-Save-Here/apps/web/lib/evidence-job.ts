@@ -10,6 +10,7 @@ export type EvidenceJob = {
   maxAttempts: number;
   state: EvidenceJobState;
   provider: "none" | "ocr" | "vision" | "transcription";
+  role: "image" | "pdf" | "recording";
   errorCode?: string;
 };
 
@@ -33,6 +34,7 @@ export function createEvidenceJob(input: { itemId: string; assetId: string; mime
     maxAttempts: 3,
     state: "queued",
     provider,
+    role: input.mimeType.startsWith("video/") ? "recording" : input.mimeType === "application/pdf" ? "pdf" : "image",
   };
 }
 
@@ -46,8 +48,8 @@ export function completeEvidenceJob(job: EvidenceJob, result: EvidenceProviderRe
   return {
     job: { ...job, state: "succeeded", errorCode: undefined },
     understanding: buildEvidenceUnderstanding({
-      role: job.provider === "transcription" ? "recording" : job.provider === "vision" ? "image" : "pdf",
-      mimeType: job.provider,
+      role: job.role,
+      mimeType: job.role === "recording" ? "video/mp4" : job.role === "pdf" ? "application/pdf" : "image/jpeg",
       extractedText: result.extractedText,
       visualLabels: result.visualLabels,
       sourceName: result.sourceName,
