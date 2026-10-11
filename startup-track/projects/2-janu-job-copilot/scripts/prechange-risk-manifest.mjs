@@ -8,7 +8,7 @@ const PROJECT_REL = 'startup-track/projects/2-janu-job-copilot';
 const CATALOG = [
   {
     id: 'governance',
-    match: p => p.includes('.github/workflows/') || /prechange-risk-manifest|validate-.*governance/i.test(p),
+    match: p => p.includes('.github/workflows/') || /prechange-risk-manifest|validate-.*governance|validate-ai-systems|validate-public-doc-privacy|owner-authorization-probe/i.test(p),
     priorIncidents: ['PRECHANGE-RISK-GATE'],
     failureClasses: ['known-failure-retrieval-missing', 'policy-without-enforcement'],
     fixtures: ['exact escaped fixture or target canary'],
@@ -38,7 +38,7 @@ const CATALOG = [
   },
   {
     id: 'runtime',
-    match: p => /runtime|queue|worker|one-job|nojob|reserve/i.test(p),
+    match: p => /runtime|queue|worker|one-job|nojob|reserve|runq|live-target-structure/i.test(p),
     priorIncidents: ['FL-080', 'FL-072'],
     failureClasses: ['no-runnable queue selection', 'execution/readback unavailable'],
     fixtures: ['QUEUE-NOJOB-BUDGET-001', 'RUNTIME-ONEJOB-RESERVE-001'],
@@ -98,7 +98,7 @@ const CATALOG = [
   },
   {
     id: 'evidence',
-    match: p => /candidate-evidence|evidence-capture/i.test(p),
+    match: p => /candidate-evidence|evidence-capture|pack-live-evidence/i.test(p),
     priorIncidents: ['CANDIDATE-EVIDENCE-CAPTURE-FIRST-001'],
     failureClasses: ['candidate claim not canonical', 'source disagreement silently reconciled'],
     fixtures: ['candidate evidence capture self-test'],
@@ -110,6 +110,21 @@ const CATALOG = [
     unlock: 'canonical source claims are captured and read back',
     uncertainty: 'conflicting source dates/metrics remain separate until verified',
     evidence: ['CANDIDATE-EVIDENCE-CAPTURE-FIRST-001', 'canonical'],
+  },
+  {
+    id: 'application-flow',
+    match: p => /jd-predecision|owned-apply|edit-intake|p1a-score-admission/i.test(p),
+    priorIncidents: ['P0-APPROVAL-GATE'],
+    failureClasses: ['stale user-action projection', 'approval/readiness state mismatch'],
+    fixtures: ['APPROVAL-GATE-001', 'APPROVAL-GATE-002'],
+    siblingRisks: ['Resume Review projection', 'Applications state', 'My Actions suppression', 'vacancy readiness'],
+    enforcement: 'approval and readiness gates derive from current approved version, QA, vacancy, and system blockers',
+    tests: ['test-owned-apply-state-matrix.mjs', 'test-owned-edit-intake-admission.mjs', 'test-jd-predecision-admission.mjs'],
+    containment: 'keep system-owned work gated; do not create a user action for an unresolved system state',
+    proof: 'exact application, review, action, vacancy, and audit readback',
+    unlock: 'approval/readiness projections converge with no stale system-owned action',
+    uncertainty: 'fresh source-to-submission trace remains the broader P0 exit criterion',
+    evidence: ['P0.2', 'approval'],
   },
   {
     id: 'release',
