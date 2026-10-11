@@ -8,7 +8,7 @@ const PROJECT_REL = 'startup-track/projects/2-janu-job-copilot';
 const CATALOG = [
   {
     id: 'governance',
-    match: p => p.includes('.github/workflows/') || /prechange-risk-manifest|validate-.*governance|validate-ai-systems|validate-public-doc-privacy|owner-authorization-probe/i.test(p),
+    match: p => p.includes('.github/workflows/') || /prechange-risk-manifest|validate-.*governance|validate-ai-systems|validate-public-doc-privacy|owner-authorization-probe|control-plane-owner-takeover/i.test(p),
     priorIncidents: ['PRECHANGE-RISK-GATE'],
     failureClasses: ['known-failure-retrieval-missing', 'policy-without-enforcement'],
     fixtures: ['exact escaped fixture or target canary'],
