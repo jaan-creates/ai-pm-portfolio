@@ -39,21 +39,43 @@ function initials(email: string) {
 }
 
 function previewFrom(item: Item) {
-  const metadata = item.ai_metadata;
-  const candidate = metadata?.preview_image_url ?? metadata?.thumbnail_url ?? metadata?.image_url;
-  if (typeof candidate === "string" && /^https?:\/\//i.test(candidate)) return candidate;
-  const source = item.original_url ?? item.canonical_url;
-  if (!source) return null;
-  try {
-    const url = new URL(source);
-    const isYouTube = url.hostname === "youtube.com" || url.hostname.endsWith(".youtube.com") || url.hostname === "youtu.be";
-    const videoId = url.hostname === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v") ?? url.pathname.match(/\/(?:shorts|embed)\/([^/?]+)/)?.[1];
-    return isYouTube && videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
-  } catch {
-    return null;
-  }
+  return previewCandidatesFrom(item)[0] ?? null;
 }
 
+function previewCandidatesFrom(item: Item) {
+  const metadata = item.ai_metadata;
+  const candidates: string[] = [];
+  for (const candidate of [metadata?.preview_image_url, metadata?.thumbnail_url, metadata?.image_url]) {
+    if (typeof candidate === "string" && /^https?:\/\//i.test(candidate) && !candidates.includes(candidate)) candidates.push(candidate);
+  }
+  const source = item.original_url ?? item.canonical_url;
+  if (source) {
+    try {
+      const url = new URL(source);
+      const isYouTube = url.hostname === "youtube.com" || url.hostname.endsWith(".youtube.com") || url.hostname === "youtu.be";
+      const videoId = url.hostname === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v") ?? url.pathname.match(/\/(?:shorts|embed)\/([^/?]+)/)?.[1];
+      if (isYouTube && videoId) {
+        for (const candidate of [
+          `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+          `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+          `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        ]) if (!candidates.includes(candidate)) candidates.push(candidate);
+      }
+    } catch {
+      // A malformed source remains a link-only save.
+    }
+  }
+  return candidates;
+}
+
+function PreviewVisual({ candidates, itemTitle }: { candidates: string[]; itemTitle: string }) {
+  const [index, setIndex] = useState(0);
+  const candidate = candidates[index];
+  if (!candidate) {
+    return <div className="media-card-visual visual-fallback"><Sparkles size={26} /><span>Preview unavailable</span><small>{itemTitle || "Original source preserved"}</small></div>;
+  }
+  return <div className="media-card-visual has-preview"><img src={candidate} alt={itemTitle || "Saved item preview"} onError={() => setIndex((current) => current + 1)} /></div>;
+}
 export function PersonalLibrary() {
   const supabase = createSupabaseBrowserClient();
   const [items, setItems] = useState<Item[]>([]);
@@ -66,6 +88,7 @@ export function PersonalLibrary() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [sourceMessage, setSourceMessage] = useState<string | null>(null);
 
   const loadItems = useCallback(async () => {
     if (!supabase) return;
@@ -127,6 +150,20 @@ export function PersonalLibrary() {
   async function deleteItem(itemId: string) {
     if (!window.confirm("Remove this save from your library?")) return;
     await updateItemStatus(itemId, "deleted" as never);
+  }
+
+  async function copySource(url: string) {
+    await navigator.clipboard.writeText(url);
+    setSourceMessage("Copied");
+    window.setTimeout(() => setSourceMessage(null), 1600);
+  }
+
+  async function shareSource(url: string, title: string) {
+    if (navigator.share) {
+      await navigator.share({ title, url });
+      return;
+    }
+    await copySource(url);
   }
 
   async function uploadEvidence(item: Item, file: File) {
@@ -218,9 +255,9 @@ export function PersonalLibrary() {
                 {!previewUrl && <><Sparkles size={26} /><span>Preview unavailable</span><small>Original source preserved</small></>}
               </div>
               <div className="media-card-copy">
-                {hasTitle && <h2 title={item.title ?? undefined}>{item.title}</h2>}
+                {(hasTitle || previewDescription || item.source_domain) && <h2 title={item.title ?? undefined}>{item.title?.trim() || previewDescription.split(/[.!?]/)[0].trim() || item.source_domain}</h2>}
                 {previewDescription && <p className="metadata-summary">{previewDescription}</p>}
-                {item.user_note && <><span className="card-context-label">Your context</span><p className="personal-note">{item.user_note}</p></>}
+                {item.user_note && <><span className="card-context-label">Added tag</span><p className="personal-note">{item.user_note}</p></>}
                 {topics.length > 0 && <div className="suggested-tags" aria-label="Suggested tags">{topics.map((topic) => <span className="suggested-tag" key={topic}>{topic}</span>)}</div>}
                 <div className="lifecycle-actions" aria-label="Save actions"><button onClick={() => setSelectedItem(item)} aria-label="View save details">Details</button><button onClick={() => void updateItemStatus(item.id, "completed")} aria-label="Mark as done">Done</button><button onClick={() => void updateItemStatus(item.id, "reference")} aria-label="Keep as reference">Reference</button><button onClick={() => void deleteItem(item.id)} aria-label="Remove save">Remove</button></div>
               </div>
@@ -234,9 +271,22 @@ export function PersonalLibrary() {
           <section className="detail-panel" role="dialog" aria-modal="true" aria-label="Save details" onClick={(event) => event.stopPropagation()}>
             <button className="icon-button detail-close" onClick={() => setSelectedItem(null)} aria-label="Close details"><X size={17} /></button>
             <p className="kicker">Saved detail</p>
-            <h2>{selectedItem.title || "Untitled save"}</h2>
-            <p className="detail-source">{selectedItem.source_domain || displayLabel(selectedItem.content_type)} · {displayLabel(selectedItem.status)}</p>
-            {selectedItem.user_note && <div className="detail-section"><span className="card-context-label">Your context</span><p>{selectedItem.user_note}</p></div>}
+            {(() => {
+              const detailTitle = selectedItem.title?.trim() || (typeof selectedItem.ai_metadata?.preview_description === "string" ? selectedItem.ai_metadata.preview_description.split(/[.!?]/)[0].trim() : "") || selectedItem.source_domain || "Saved item";
+              const detailUrl = selectedItem.original_url ?? selectedItem.canonical_url;
+              const detailCandidates = previewCandidatesFrom(selectedItem);
+              return <>
+                <PreviewVisual key={`detail-${selectedItem.id}-${detailCandidates.join("|")}`} candidates={detailCandidates} itemTitle={detailTitle} />
+                <h2>{detailTitle}</h2>
+                <p className="detail-source">{selectedItem.source_domain || displayLabel(selectedItem.content_type)} · {selectedItem.status === "pending" ? "Saved" : displayLabel(selectedItem.status)}</p>
+                {detailUrl && <div className="detail-source-actions">
+                  <button type="button" onClick={() => void copySource(detailUrl)}>Copy link</button>
+                  <button type="button" onClick={() => void shareSource(detailUrl, detailTitle)}>Share</button>
+                  {sourceMessage && <span role="status">{sourceMessage}</span>}
+                </div>}
+              </>;
+            })()}
+            {selectedItem.user_note && <div className="detail-section"><span className="card-context-label">Added tag</span><p>{selectedItem.user_note}</p></div>}
             <div className="detail-section evidence-upload">
               <span className="detail-label">Add evidence</span>
               <p>Attach a screenshot, image, PDF, or recording when the original source is private or incomplete.</p>
