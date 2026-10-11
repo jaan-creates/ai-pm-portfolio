@@ -64,6 +64,8 @@ export function PersonalLibrary() {
   const [error, setError] = useState<string | null>(null);
   const [viewFilter, setViewFilter] = useState<"all" | "active" | "completed" | "reference">("all");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
 
   const loadItems = useCallback(async () => {
     if (!supabase) return;
@@ -125,6 +127,44 @@ export function PersonalLibrary() {
   async function deleteItem(itemId: string) {
     if (!window.confirm("Remove this save from your library?")) return;
     await updateItemStatus(itemId, "deleted" as never);
+  }
+
+  async function uploadEvidence(item: Item, file: File) {
+    if (!supabase) return;
+    setUploading(true);
+    setUploadMessage(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error("Your session expired. Please sign in again.");
+      const role = file.type.startsWith("video/") ? "video" : file.type === "application/pdf" ? "pdf" : "screenshot";
+      const initResponse = await fetch("/v1/captures/init-upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ item_id: item.id, role, mime_type: file.type, byte_size: file.size }),
+      });
+      const init = await initResponse.json();
+      if (!initResponse.ok) throw new Error(init.error ?? "Could not prepare upload");
+      const upload = await supabase.storage.from(init.bucket).uploadToSignedUrl(init.path, init.token, file);
+      if (upload.error) throw new Error("The evidence file could not be uploaded");
+      const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+      const sha256 = Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+      const completeResponse = await fetch(`/v1/items/${item.id}/assets`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ asset_id: init.asset_id, role, mime_type: file.type, byte_size: file.size, storage_path: init.path, sha256 }),
+      });
+      if (!completeResponse.ok) {
+        const complete = await completeResponse.json().catch(() => null);
+        throw new Error(complete?.error ?? "Could not record evidence");
+      }
+      setUploadMessage("Evidence saved privately.");
+      await loadItems();
+    } catch (uploadError) {
+      setUploadMessage(uploadError instanceof Error ? uploadError.message : "Evidence upload failed");
+    } finally {
+      setUploading(false);
+    }
   }
 
 
@@ -197,6 +237,15 @@ export function PersonalLibrary() {
             <h2>{selectedItem.title || "Untitled save"}</h2>
             <p className="detail-source">{selectedItem.source_domain || displayLabel(selectedItem.content_type)} · {displayLabel(selectedItem.status)}</p>
             {selectedItem.user_note && <div className="detail-section"><span className="card-context-label">Your context</span><p>{selectedItem.user_note}</p></div>}
+            <div className="detail-section evidence-upload">
+              <span className="detail-label">Add evidence</span>
+              <p>Attach a screenshot, image, PDF, or recording when the original source is private or incomplete.</p>
+              <label className="evidence-picker">
+                <span>{uploading ? "Uploading…" : "Choose a file"}</span>
+                <input type="file" accept="image/*,application/pdf,video/mp4,video/quicktime,video/webm" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadEvidence(selectedItem, file); event.currentTarget.value = ""; }} />
+              </label>
+              {uploadMessage && <p className="evidence-message" role="status">{uploadMessage}</p>}
+            </div>
             {typeof selectedItem.ai_metadata?.preview_description === "string" && <div className="detail-section"><span className="detail-label">Extracted description</span><p>{selectedItem.ai_metadata.preview_description}</p></div>}
             {selectedItem.intent !== "unknown" && <div className="detail-section detail-facts"><span>Intent: {displayLabel(selectedItem.intent)}</span></div>}
             {(() => { const detailUrl = selectedItem.original_url ?? selectedItem.canonical_url; return detailUrl ? <a className="detail-open" href={detailUrl} target="_blank" rel="noreferrer">Open original source <ExternalLink size={14} /></a> : null; })()}
