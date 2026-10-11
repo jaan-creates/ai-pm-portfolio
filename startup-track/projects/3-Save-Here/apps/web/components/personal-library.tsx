@@ -66,6 +66,7 @@ export function PersonalLibrary() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [sourceMessage, setSourceMessage] = useState<string | null>(null);
 
   const loadItems = useCallback(async () => {
     if (!supabase) return;
@@ -127,6 +128,20 @@ export function PersonalLibrary() {
   async function deleteItem(itemId: string) {
     if (!window.confirm("Remove this save from your library?")) return;
     await updateItemStatus(itemId, "deleted" as never);
+  }
+
+  async function copySource(url: string) {
+    await navigator.clipboard.writeText(url);
+    setSourceMessage("Copied");
+    window.setTimeout(() => setSourceMessage(null), 1600);
+  }
+
+  async function shareSource(url: string, title: string) {
+    if (navigator.share) {
+      await navigator.share({ title, url });
+      return;
+    }
+    await copySource(url);
   }
 
   async function uploadEvidence(item: Item, file: File) {
@@ -234,9 +249,22 @@ export function PersonalLibrary() {
           <section className="detail-panel" role="dialog" aria-modal="true" aria-label="Save details" onClick={(event) => event.stopPropagation()}>
             <button className="icon-button detail-close" onClick={() => setSelectedItem(null)} aria-label="Close details"><X size={17} /></button>
             <p className="kicker">Saved detail</p>
-            <h2>{selectedItem.title || "Untitled save"}</h2>
-            <p className="detail-source">{selectedItem.source_domain || displayLabel(selectedItem.content_type)} · {displayLabel(selectedItem.status)}</p>
-            {selectedItem.user_note && <div className="detail-section"><span className="card-context-label">Your context</span><p>{selectedItem.user_note}</p></div>}
+            {(() => {
+              const detailTitle = selectedItem.title?.trim() || (typeof selectedItem.ai_metadata?.preview_description === "string" ? selectedItem.ai_metadata.preview_description.split(/[.!?]/)[0].trim() : "") || selectedItem.source_domain || "Saved item";
+              const detailUrl = selectedItem.original_url ?? selectedItem.canonical_url;
+              const detailCandidates = previewCandidatesFrom(selectedItem);
+              return <>
+                <PreviewVisual key={`detail-${selectedItem.id}-${detailCandidates.join("|")}`} candidates={detailCandidates} itemTitle={detailTitle} />
+                <h2>{detailTitle}</h2>
+                <p className="detail-source">{selectedItem.source_domain || displayLabel(selectedItem.content_type)} · {selectedItem.status === "pending" ? "Saved" : displayLabel(selectedItem.status)}</p>
+                {detailUrl && <div className="detail-source-actions">
+                  <button type="button" onClick={() => void copySource(detailUrl)}>Copy link</button>
+                  <button type="button" onClick={() => void shareSource(detailUrl, detailTitle)}>Share</button>
+                  {sourceMessage && <span role="status">{sourceMessage}</span>}
+                </div>}
+              </>;
+            })()}
+            {selectedItem.user_note && <div className="detail-section"><span className="card-context-label">Added tag</span><p>{selectedItem.user_note}</p></div>}
             <div className="detail-section evidence-upload">
               <span className="detail-label">Add evidence</span>
               <p>Attach a screenshot, image, PDF, or recording when the original source is private or incomplete.</p>
