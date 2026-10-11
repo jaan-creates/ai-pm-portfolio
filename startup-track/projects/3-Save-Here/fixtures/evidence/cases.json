@@ -1,0 +1,8 @@
+[
+  {"id":"instagram-screenshot","role":"screenshot","mime_type":"image/jpeg","byte_size":240000,"expected":"accept","retention":"permanent"},
+  {"id":"instagram-photo","role":"original","mime_type":"image/png","byte_size":480000,"expected":"accept","retention":"permanent"},
+  {"id":"scanned-reference","role":"pdf","mime_type":"application/pdf","byte_size":1200000,"expected":"accept","retention":"permanent"},
+  {"id":"instagram-recording","role":"video","mime_type":"video/mp4","byte_size":18000000,"expected":"accept","retention":"temporary"},
+  {"id":"executable-disguised-as-image","role":"screenshot","mime_type":"application/javascript","byte_size":1200,"expected":"reject"},
+  {"id":"oversized-recording","role":"video","mime_type":"video/mp4","byte_size":104857601,"expected":"reject"}
+]
