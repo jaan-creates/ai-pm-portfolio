@@ -233,6 +233,7 @@ jobs:
       - name: Build automated pre-change risk manifest
         shell: bash
         run: |
+          if [ -n "${GITHUB_BASE_REF:-}" ]; then git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"; fi
           node "$PROJECT_DIR/scripts/test-prechange-risk-manifest.mjs"
           node "$PROJECT_DIR/scripts/prechange-risk-manifest.mjs" "$GITHUB_WORKSPACE" > /tmp/janu-prechange-risk-manifest.json
           cat /tmp/janu-prechange-risk-manifest.json
