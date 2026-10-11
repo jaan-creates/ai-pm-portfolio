@@ -101,6 +101,16 @@ export function extractLinkMetadata(html: string, sourceUrl: string): LinkMetada
       imageUrl = null;
     }
   }
+  if (!imageUrl) {
+    try {
+      const url = new URL(sourceUrl);
+      const isYouTube = url.hostname === "youtube.com" || url.hostname.endsWith(".youtube.com") || url.hostname === "youtu.be";
+      const videoId = url.hostname === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v") ?? url.pathname.match(/\\/(?:shorts|embed)\\/([^/?]+)/)?.[1];
+      if (isYouTube && videoId) imageUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    } catch {
+      imageUrl = null;
+    }
+  }
   return {
     title: title ? title.slice(0, 300) : null,
     description: description ? description.slice(0, 600) : null,
