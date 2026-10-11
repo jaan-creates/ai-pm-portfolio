@@ -57,6 +57,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .single();
 
   if (error) return NextResponse.json({ error: "Could not record evidence" }, { status: 500 });
-  await admin.client.from("item_events").insert({ owner_id: authData.user.id, item_id: id, event_type: "captured", metadata: { asset_id: asset.id, role: asset.role } });
-  return NextResponse.json({ asset }, { status: 201 });
+
+  // Enrichment is best-effort: the durable asset must remain captured even if the queue is unavailable.
+  const { error: jobError } = await admin.client.from("jobs").insert({
+    owner_id: authData.user.id,
+    item_id: id,
+    job_type: "evidence_understanding",
+    status: "queued",
+    payload: { asset_id: asset.id, role: asset.role, mime_type: asset.mime_type },
+  });
+  await admin.client.from("item_events").insert({ owner_id: authData.user.id, item_id: id, event_type: "captured", metadata: { asset_id: asset.id, role: asset.role, enrichment_queued: !jobError } });
+  return NextResponse.json({ asset, enrichment_queued: !jobError }, { status: 201 });
 }
