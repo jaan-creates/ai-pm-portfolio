@@ -41,3 +41,31 @@ Recordings default to `temporary` with `purge_after = created_at + interval '30 
 - X: disabled and ₹0.
 
 Never upgrade Supabase or enable paid providers without checking the total projected cost.
+
+
+## Evidence upload contract
+
+Evidence is private by default and never stored in the public repository.
+
+1. Obtain signed upload details with an authenticated request:
+
+```http
+POST /v1/captures/init-upload
+Authorization: Bearer <Supabase access token>
+Content-Type: application/json
+
+{"item_id":"<item id>","role":"screenshot","mime_type":"image/jpeg","byte_size":123456}
+```
+
+2. Upload the bytes directly to the returned Supabase signed-upload path using the returned token. The signed upload URL expires after two hours.
+3. Confirm the upload and record provenance:
+
+```http
+POST /v1/items/<item id>/assets
+Authorization: Bearer <Supabase access token>
+Content-Type: application/json
+
+{"asset_id":"<asset id>","role":"screenshot","mime_type":"image/jpeg","byte_size":123456,"storage_path":"<returned path>","sha256":"<64-char lowercase sha256>"}
+```
+
+Allowed roles are `screenshot`, `original`, `pdf`, and `video`. Images and screenshots are permanent by default. Videos are temporary and receive a 30-day purge date unless retention is explicitly changed later. The server rejects paths outside the authenticated owner/item prefix.
