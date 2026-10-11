@@ -17,8 +17,8 @@ const breakExpectedDecl=/const breakExpected=\{\};if\(ex\.independent_break\)\(e
   else if(s.includes(old))s=s.replace(old,replacement);
   else throw new Error('Renderer bullet-loss assertion anchor missing');
 }
-s=s.replace(/\bbreakSource\b/g,'careerBreakSourceEntries');if(!s.includes('RENDER-CAREERBREAK-PROJECT-DEDUPE-009'))throw new Error('Renderer bullet-loss dedupe contract missing');
+const careerBreakDecl=/const careerBreakSourceEntries=[\s\S]*?;(?=const expectedEntries=)/g;s=s.replace(careerBreakDecl,'');s=s.replace(/\bbreakSource\b/g,'careerBreakSourceEntries_(ex)');s=s.replace(/\bcareerBreakSourceEntries\b/g,'careerBreakSourceEntries_(ex)');if(!s.includes('function careerBreakSourceEntries_(ex)'))s=s.replace('function render_(','function careerBreakSourceEntries_(ex){return (ex.independent_break&&ex.independent_break.bullets||[]).map(x=>norm_(stripInternalEvidenceTags_(x.text))).filter(Boolean);}function render_(');if(!s.includes('RENDER-CAREERBREAK-PROJECT-DEDUPE-012'))throw new Error('Renderer bullet-loss dedupe contract missing');
 fs.writeFileSync(file,s);
 const ck=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
 if(ck.status!==0)throw new Error(ck.stderr||'syntax failure');
-console.log(JSON.stringify({status:'PASS',file:target,contract:'RENDER-CAREERBREAK-PROJECT-DEDUPE-011',careerBreakSourceBulletsExcludedOnlyForIndependentBreak:true},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,contract:'RENDER-CAREERBREAK-PROJECT-DEDUPE-012',careerBreakSourceBulletsExcludedOnlyForIndependentBreak:true},null,2));
