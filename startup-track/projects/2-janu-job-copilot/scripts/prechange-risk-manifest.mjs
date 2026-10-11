@@ -79,7 +79,7 @@ const CATALOG = [
     proof: 'Daily Sourcing health row with current scheduled-success evidence',
     unlock: 'weekday cycle succeeds within policy threshold',
     uncertainty: 'weekend/holiday expected-gap policy can mask elapsed age by design',
-    evidence: ['SOURCING-DATE-GAP-001', 'scheduled success'],
+    evidence: ['sourcing', 'scheduler'],
   },
   {
     id: 'trace',
@@ -109,7 +109,7 @@ const CATALOG = [
     proof: 'candidate evidence capture and readback self-tests',
     unlock: 'canonical source claims are captured and read back',
     uncertainty: 'conflicting source dates/metrics remain separate until verified',
-    evidence: ['capture-first', 'canonical'],
+    evidence: ['candidate', 'canonical'],
   },
   {
     id: 'application-flow',
