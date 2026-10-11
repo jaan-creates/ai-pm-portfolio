@@ -137,9 +137,15 @@ function changedFiles(root) {
   const run = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
   let out = '';
   try {
-    const before = process.env.GITHUB_EVENT_BEFORE;
-    out = before && !/^0+$/.test(before) ? run(['diff', '--name-only', before, 'HEAD']) : '';
+    const base = process.env.GITHUB_BASE_REF;
+    out = base ? run(['diff', '--name-only', `origin/${base}...HEAD']) : '';
   } catch {}
+  if (!out) {
+    try {
+      const before = process.env.GITHUB_EVENT_BEFORE;
+      out = before && !/^0+$/.test(before) ? run(['diff', '--name-only', before, 'HEAD']) : '';
+    } catch {}
+  }
   if (!out) {
     try { out = run(['diff', '--name-only', 'HEAD^', 'HEAD']); } catch {}
   }
