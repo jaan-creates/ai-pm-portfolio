@@ -16,6 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 # Recovery proof runs the verified HEAD generation; nondev/version drift cannot satisfy this check.
+# TRACE-GOLDEN-01 live-proof checkpoint: run one bounded same-fixture V4 continuation before new daily-source E2E.
 jobs:
   run-once:
     runs-on: ubuntu-latest
