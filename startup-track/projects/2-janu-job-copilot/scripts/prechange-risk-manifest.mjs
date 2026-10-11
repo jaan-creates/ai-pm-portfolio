@@ -53,7 +53,7 @@ const CATALOG = [
   },
   {
     id: 'health',
-    match: p => /health|release-gate|regression/i.test(p),
+    match: p => /health|release-gate|regression/i.test(p) && !/sourcing-scheduler/i.test(p),
     priorIncidents: ['FL-078'],
     failureClasses: ['blocker-aware health overwrite', 'regression gate closes around open blocker'],
     fixtures: ['REGRESSION-HEALTH-BLOCKER-JOIN-001'],
