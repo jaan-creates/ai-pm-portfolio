@@ -1,0 +1,33 @@
+name: Save Here quality
+
+on:
+  pull_request:
+    paths:
+      - "startup-track/projects/3-Save-Here/**"
+  push:
+    branches: [main]
+    paths:
+      - "startup-track/projects/3-Save-Here/**"
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: startup-track/projects/3-Save-Here
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: pnpm
+          cache-dependency-path: startup-track/projects/3-Save-Here/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check

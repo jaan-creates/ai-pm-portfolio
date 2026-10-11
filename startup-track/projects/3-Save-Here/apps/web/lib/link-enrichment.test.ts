@@ -14,6 +14,11 @@ describe("deterministic link enrichment", () => {
     });
   });
 
+  it("derives a YouTube thumbnail when public metadata is unavailable", () => {
+    const result = extractLinkMetadata("", "https://youtu.be/abc123?t=4");
+    expect(result.imageUrl).toBe("https://img.youtube.com/vi/abc123/hqdefault.jpg");
+  });
+
   it("rejects local and private destinations", () => {
     expect(isSafePublicUrl("http://localhost:3000")).toBe(false);
     expect(isSafePublicUrl("http://192.168.1.20/item")).toBe(false);
