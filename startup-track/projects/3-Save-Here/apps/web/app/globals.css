@@ -741,3 +741,8 @@ button {
 /* Simplified personal library chrome */
 .personal-header{align-items:flex-start;margin-bottom:22px}.library-count{margin:12px 0 0;color:var(--muted);font-size:14px}.personal-header-actions{margin-top:0}.media-card{cursor:pointer}.media-card:focus-visible{outline:2px solid var(--accent);outline-offset:3px}.media-card-copy{padding-top:16px}.media-card .personal-card-foot{display:none}.profile-identity{align-items:center}.profile-identity strong{margin:0}.detail-facts{font-size:12px}
 @media(max-width:560px){.personal-header-actions{width:auto;margin:0 0 0 auto;justify-content:flex-end}.personal-library{padding-top:20px}}
+
+
+/* Preview images use a real img element so broken provider URLs can fall through to the next candidate. */
+.media-card-visual.has-preview img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.media-card-visual.has-preview::after{pointer-events:none}
