@@ -39,21 +39,43 @@ function initials(email: string) {
 }
 
 function previewFrom(item: Item) {
-  const metadata = item.ai_metadata;
-  const candidate = metadata?.preview_image_url ?? metadata?.thumbnail_url ?? metadata?.image_url;
-  if (typeof candidate === "string" && /^https?:\/\//i.test(candidate)) return candidate;
-  const source = item.original_url ?? item.canonical_url;
-  if (!source) return null;
-  try {
-    const url = new URL(source);
-    const isYouTube = url.hostname === "youtube.com" || url.hostname.endsWith(".youtube.com") || url.hostname === "youtu.be";
-    const videoId = url.hostname === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v") ?? url.pathname.match(/\/(?:shorts|embed)\/([^/?]+)/)?.[1];
-    return isYouTube && videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
-  } catch {
-    return null;
-  }
+  return previewCandidatesFrom(item)[0] ?? null;
 }
 
+function previewCandidatesFrom(item: Item) {
+  const metadata = item.ai_metadata;
+  const candidates: string[] = [];
+  for (const candidate of [metadata?.preview_image_url, metadata?.thumbnail_url, metadata?.image_url]) {
+    if (typeof candidate === "string" && /^https?:\/\//i.test(candidate) && !candidates.includes(candidate)) candidates.push(candidate);
+  }
+  const source = item.original_url ?? item.canonical_url;
+  if (source) {
+    try {
+      const url = new URL(source);
+      const isYouTube = url.hostname === "youtube.com" || url.hostname.endsWith(".youtube.com") || url.hostname === "youtu.be";
+      const videoId = url.hostname === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v") ?? url.pathname.match(/\/(?:shorts|embed)\/([^/?]+)/)?.[1];
+      if (isYouTube && videoId) {
+        for (const candidate of [
+          `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+          `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+          `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        ]) if (!candidates.includes(candidate)) candidates.push(candidate);
+      }
+    } catch {
+      // A malformed source remains a link-only save.
+    }
+  }
+  return candidates;
+}
+
+function PreviewVisual({ candidates, itemTitle }: { candidates: string[]; itemTitle: string }) {
+  const [index, setIndex] = useState(0);
+  const candidate = candidates[index];
+  if (!candidate) {
+    return <div className="media-card-visual visual-fallback"><Sparkles size={26} /><span>Preview unavailable</span><small>{itemTitle || "Original source preserved"}</small></div>;
+  }
+  return <div className="media-card-visual has-preview"><img src={candidate} alt={itemTitle || "Saved item preview"} onError={() => setIndex((current) => current + 1)} /></div>;
+}
 export function PersonalLibrary() {
   const supabase = createSupabaseBrowserClient();
   const [items, setItems] = useState<Item[]>([]);
@@ -233,9 +255,9 @@ export function PersonalLibrary() {
                 {!previewUrl && <><Sparkles size={26} /><span>Preview unavailable</span><small>Original source preserved</small></>}
               </div>
               <div className="media-card-copy">
-                {hasTitle && <h2 title={item.title ?? undefined}>{item.title}</h2>}
+                {(hasTitle || previewDescription || item.source_domain) && <h2 title={item.title ?? undefined}>{item.title?.trim() || previewDescription.split(/[.!?]/)[0].trim() || item.source_domain}</h2>}
                 {previewDescription && <p className="metadata-summary">{previewDescription}</p>}
-                {item.user_note && <><span className="card-context-label">Your context</span><p className="personal-note">{item.user_note}</p></>}
+                {item.user_note && <><span className="card-context-label">Added tag</span><p className="personal-note">{item.user_note}</p></>}
                 {topics.length > 0 && <div className="suggested-tags" aria-label="Suggested tags">{topics.map((topic) => <span className="suggested-tag" key={topic}>{topic}</span>)}</div>}
                 <div className="lifecycle-actions" aria-label="Save actions"><button onClick={() => setSelectedItem(item)} aria-label="View save details">Details</button><button onClick={() => void updateItemStatus(item.id, "completed")} aria-label="Mark as done">Done</button><button onClick={() => void updateItemStatus(item.id, "reference")} aria-label="Keep as reference">Reference</button><button onClick={() => void deleteItem(item.id)} aria-label="Remove save">Remove</button></div>
               </div>
