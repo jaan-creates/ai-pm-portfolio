@@ -168,6 +168,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-canary-ci-handoff-final.mjs" "$LIVE_DIR"
       - name: Bind owner canary to canonical worker lock
         run: node "$PROJECT_DIR/scripts/patch-owner-canary-lock.mjs" "$LIVE_DIR"
+      - name: Normalize renderer artifact proof bullet prefixes
+        run: node "$PROJECT_DIR/scripts/patch-renderer-artifact-proof-bullet-prefix.mjs" "$LIVE_DIR"
       - name: Align renderer bullet-loss guard with project dedupe
         run: node "$PROJECT_DIR/scripts/patch-renderer-bullet-loss-dedupe.mjs" "$LIVE_DIR"
       - name: JavaScript syntax validation
