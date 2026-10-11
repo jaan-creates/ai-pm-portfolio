@@ -61,6 +61,7 @@ replaceRange('render_',old=>{
   }
   if(!old.includes("careerBlock('{{CAREER_BREAK}}',ex.independent_break"))throw new Error('${EXACT_REGRESSION}: transformed render_ does not bind independent_break');
   if(!old.includes('rendererCareerBreakExperienceLines_({experiences:[e]})'))throw new Error('${EXACT_REGRESSION}: final renderer bypasses exact-three selector');
+  old=old.replace("careerBlock('{{CAREER_BREAK}}',ex.independent_break,d.career_break||'');rendererCareerBreakPruneAndAssert_(b);","careerBlock('{{CAREER_BREAK}}',ex.independent_break,d.career_break||'');if(ex.independent_break)rendererCareerBreakPruneAndAssert_(b);");
   old=old.replace("rendererCareerBreakPruneAndAssert_(b);/* RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003 */","if(ex.independent_break)rendererCareerBreakPruneAndAssert_(b);/* RENDER-CAREERBREAK-FINAL-ARTIFACT-PRUNE-003 */");
   old=old.replace(/(?:rendererCareerBreakPruneAndAssert_\(b\);){2,}/g,'rendererCareerBreakPruneAndAssert_(b);');
   old=old.replaceAll('if(ex.independent_break)if(ex.independent_break)rendererCareerBreakPruneAndAssert_(b);','if(ex.independent_break)rendererCareerBreakPruneAndAssert_(b);');
