@@ -34,7 +34,7 @@ const CATALOG = [
     proof: 'exact canary queue, artifact readback, QA readback, live health closure',
     unlock: 'renderer recurrence and replay gates are CANARY_PASS',
     uncertainty: 'backlog replay remains a separate governed action',
-    evidence: ['renderer fix → queue replay/idempotency', 'FL-045'],
+    evidence: ['renderer fix → queue replay/idempotency', 'RENDER-CAREERBREAK-V2'],
   },
   {
     id: 'runtime',
