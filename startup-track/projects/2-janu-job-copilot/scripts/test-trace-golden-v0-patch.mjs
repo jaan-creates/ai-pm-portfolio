@@ -10,7 +10,8 @@ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'janu-trace-golden-'));
 const target=path.join(tmp,'TrackerWorkflow.js');
 fs.writeFileSync(target,`
 const P12=Object.freeze({VERSION:'1.3.8',SUITE:'p0-regression-v19'});
-const JC={S:{A:'Applications'},W:{}};
+// Worker names must be present so the real continuation patch can resolve its contracts.
+const JC={S:{A:'Applications'},W:{RESUME_GENERATE:true,QA_FINALIZE:true}};
 function verifyReleaseIdentity(){return true;}
 function enqueue_(){return 'Q-1';}
 function upsertWorkerState_(){}
