@@ -8,7 +8,7 @@ const file=path.join(root,target);let s=fs.readFileSync(file,'utf8'),before=s;
 const anchor='function verifyReleaseIdentity()';
 function rangeOf(name){const sig='function '+name+'(';const start=s.indexOf(sig);if(start<0)return null;const open=s.indexOf('{',start);if(open<0)throw new Error('Malformed '+name);let depth=0,quote=null,esc=false;for(let i=open;i<s.length;i++){const c=s[i];if(quote){if(esc){esc=false;continue;}if(c==='\\'){esc=true;continue;}if(c===quote)quote=null;continue;}if(c==='"'||c==="'"||c==='`'){quote=c;continue;}if(c==='{')depth++;else if(c==='}'&&--depth===0)return{start,end:i+1};}throw new Error('Unterminated '+name);}
 function add(token,code){if(s.includes(token))return;const i=s.indexOf(anchor);if(i<0)throw new Error('release identity anchor missing');s=s.slice(0,i)+code+'\n'+s.slice(i);}
-function replaceFn(name,code){const r=rangeOf(name);if(r)s=s.slice(0,r.start)+code+'\n'+s.slice(r.end);else add('function '+name+'(',code);}
+function replaceFn(name,code){const r=rangeOf(name);if(r){const suffix=s.slice(r.end);s=s.slice(0,r.start)+code+(suffix.startsWith('\n')||suffix.startsWith('\r')?'':'\n')+suffix;}else add('function '+name+'(',code);}
 function append(name,marker,code){if(s.includes(marker))return;const r=rangeOf(name);if(!r)throw new Error(name+' missing');s=s.slice(0,r.end-1)+code+s.slice(r.end-1);}
 for(const dep of ['function enqueue_(','function upsertWorkerState_(','function p1aPropagateClosedVacancy_('])if(!s.includes(dep))throw new Error('E2E continuation dependency missing '+dep);
 if(!s.includes('RESUME_GENERATE')||!s.includes('QA_FINALIZE'))throw new Error('required worker contract missing');
