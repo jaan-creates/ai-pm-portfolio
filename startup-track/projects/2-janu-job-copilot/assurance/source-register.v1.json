@@ -1,0 +1,116 @@
+{
+  "schema_version": "janu-source-register-v1",
+  "evidence_cutoff": "2026-10-12",
+  "classification": "PUBLIC METADATA ONLY",
+  "sources": [
+    {
+      "id": "APPROVED_CANDIDATE_EVIDENCE",
+      "authority": "Candidate factual truth",
+      "locator": "Private canonical Candidate Evidence Registry and approved resume",
+      "read": "AVAILABLE THROUGH AUTHORIZED DRIVE; content not reproduced",
+      "write": "HUMAN APPROVAL",
+      "evidence": "Document revision and approved claim ID",
+      "freshness": "Verify per evaluation run"
+    },
+    {
+      "id": "MASTER_SPEC",
+      "authority": "Product policy and expected behavior",
+      "locator": "Google Doc 1vMnjspHRSr66k_ephii0KKJd_2IdLcGlDHdGDDx2Z3o",
+      "version": "0.26.0; Google revision must be captured",
+      "read": "VERIFIED",
+      "write": "EXPLICIT POLICY APPROVAL",
+      "evidence": "Docs revisionId + relevant section",
+      "freshness": "Re-read on material changes"
+    },
+    {
+      "id": "DECISION_LOG",
+      "authority": "Append-only business decisions",
+      "locator": "Within MASTER_SPEC",
+      "read": "VERIFIED existence",
+      "write": "APPROVED CHANGE SET",
+      "evidence": "Change Set ID and document revision",
+      "freshness": "Review latest entries"
+    },
+    {
+      "id": "REPO",
+      "authority": "Patch source and governance",
+      "locator": "github:jaan-creates/ai-pm-portfolio/startup-track/projects/2-janu-job-copilot",
+      "version": "commit SHA per change",
+      "read": "VERIFIED",
+      "write": "VERIFIED ON ISOLATED BRANCH",
+      "evidence": "blob SHA + commit + PR checks",
+      "freshness": "Read HEAD before material change"
+    },
+    {
+      "id": "LAB",
+      "authority": "Parent learning and promotion policy",
+      "locator": "github:jaan-creates/ai-systems-lab/PROJECT_INSTRUCTIONS.md",
+      "read": "VERIFIED",
+      "write": "NOT VERIFIED",
+      "evidence": "commit/blob SHA",
+      "freshness": "Read for relevant Lab interventions"
+    },
+    {
+      "id": "TRACKER",
+      "authority": "Operational state, not policy",
+      "locator": "Private Google Sheets 1Z80S9hNxUyAm3bggE5xYhKSImf3izdsywNDPU2sXE84",
+      "read": "VERIFIED BOUNDED RANGES",
+      "write": "REQUIRES EXPLICIT SCOPE AND IMMEDIATE READBACK",
+      "evidence": "tab, range, snapshot cutoff; never public row data",
+      "freshness": "At assessment"
+    },
+    {
+      "id": "TRACES",
+      "authority": "Execution reconstruction",
+      "locator": "Tracker: Trace Explorer + __Processing Queue + Audit Log",
+      "read": "PARTIALLY OBSERVABLE",
+      "write": "RUNTIME PATH NOT VERIFIED",
+      "evidence": "trace_id + queue_job_id + release",
+      "freshness": "At assessment"
+    },
+    {
+      "id": "TEST_EVIDENCE",
+      "authority": "Executed verification",
+      "locator": "GitHub Actions, __Regression Results, __Verification Ledger",
+      "read": "VERIFIED FOR KNOWN RUN IDS",
+      "write": "CI / PRIVATE RUNTIME ONLY",
+      "evidence": "run ID + job ID + commit + test ID",
+      "freshness": "At assessed commit"
+    },
+    {
+      "id": "SOURCE_RUNTIME",
+      "authority": "Deployed Google Apps Script truth",
+      "locator": "Google Apps Script project accessed by CI clasp pull",
+      "read": "BLOCKED DIRECTLY; SAFE CI PULL PATH DESIGN REQUIRED",
+      "write": "PROTECTED PRODUCTION",
+      "evidence": "source SHA-256, script identity, timestamp, deployed revision",
+      "freshness": "Before/after release and periodic checks"
+    },
+    {
+      "id": "SCHEDULE",
+      "authority": "Expected trigger topology",
+      "locator": "Apps Script trigger inventory + Operating Config + __Sourcing Runs",
+      "read": "PARTIALLY OBSERVABLE",
+      "write": "PROTECTED RUNTIME CONFIG",
+      "evidence": "expected slot ID + actual trigger + business write ref",
+      "freshness": "Daily"
+    },
+    {
+      "id": "PRIVATE_OUTCOMES",
+      "authority": "Actual submission and employer results",
+      "locator": "Applications, Resume Registry, Audit Log, employer confirmation",
+      "read": "PARTIALLY OBSERVABLE",
+      "write": "HUMAN/BOUNDARY-SCOPED",
+      "evidence": "immutable version and external confirmation",
+      "freshness": "Event-specific"
+    }
+  ],
+  "unknowns": [
+    "Exact current Apps Script source not independently captured",
+    "Trigger inventory unavailable through current connector",
+    "Approval status of observed historical baselines unresolved",
+    "Branch protection endpoint forbidden to integration",
+    "User-effort/outcome cohort not accepted",
+    "Product iteration skill path referenced by RUNBOOK not found"
+  ]
+}
