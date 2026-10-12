@@ -54,7 +54,7 @@ A missing link means INCOMPLETE. Sourcing scheduler liveness must not be inferre
 
 ## Required next gates
 
-1. Confirm this PR's actual GitHub Actions run and reproduce failure/pass outcomes; inspect job logs, do not rely on status summary alone.
+1. Completed source-level CI check: governance workflow run `38287883539` passed, including 21 event/measurement assertions, six generated runtime helper checks and v2/v3 patch-compatibility tests. Continue to verify future changes and production acceptance independently.
 2. Independently capture the current assembled Apps Script source/trigger inventory with existing clasp credentials using a separate **read-only** path. Never call the production CD `workflow_dispatch` as an audit probe.
 3. Approve event propagation design, incorporate it into real worker/persistence code with compatibility migration, test a full isolated journey, then prove one real downstream readback.
 4. Reconcile actual expected schedule calendar against `__Sourcing Runs` and business outcomes; investigate recurring misses without bypassing the OPEN sourcing circuit.
@@ -65,3 +65,7 @@ A missing link means INCOMPLETE. Sourcing scheduler liveness must not be inferre
 The existing `RUNBOOK.md`, `ITERATION_EVIDENCE_GATE.md`, `AUTONOMY_CONTRACT.md`, `TRACE_SCHEMA.md` and `EVAL_PLAN.md` remain authoritative. This work implements a small validator and source registry under them rather than replacing governance.
 
 **Production release decision: HOLD.** The recovery branch is not a product release; do not merge until CI and safe rollout dependencies are satisfied.
+
+### CI verification cutoff (2026-10-12)
+
+Run [38287883539](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38287883539) succeeded on the tested PR head; corresponding production CD job was skipped. This validates the local patch-composition and privacy-safe assurance contract only. **It does not validate the current deployed runtime source, complete workflow, or new read-only snapshot workflow.**
