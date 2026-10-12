@@ -11,7 +11,13 @@ check('UTC offset rejected',()=>assert(validateEvent({...valid,occurred_at:'2026
 check('recording before occurrence rejected',()=>assert(validateEvent({...valid,recorded_at:'2026-10-11T23:00:00Z'}).includes('RECORDING_BEFORE_OCCURRENCE')));
 const persistence={...valid,event_id:'E2',span_id:'S2',parent_span_id:'S1',span_type:'persistence'};
 const verifier={...valid,event_id:'E3',span_id:'S3',parent_span_id:'S1',span_type:'verification'};
-check('complete correlated trace accepted',()=>assert.equal(validateTrace([valid,persistence,verifier]).status,'VERIFIED'));
+check('correlated trace structurally complete, not business-certified',()=>{const r=validateTrace([valid,persistence,verifier]);assert.equal(r.status,'STRUCTURALLY_COMPLETE');assert.equal(r.assurance,'PARTIALLY OBSERVABLE');assert.equal(r.business_outcome_verified,false);});
+check('multiple events on one span valid',()=>assert.equal(validateTrace([valid,{...persistence,event_id:'E4',event_type:'finished'},verifier]).errors.includes('SPAN_PARENT_CONFLICT:S2'),false));
+check('missing root rejected',()=>assert(validateTrace([persistence,verifier]).errors.includes('MISSING_OR_MULTIPLE_ROOT_SPANS')));
+check('extra root rejected',()=>assert(validateTrace([valid,{...persistence,parent_span_id:null,span_type:'orchestration'},verifier]).errors.includes('MISSING_OR_MULTIPLE_ROOT_SPANS')));
+check('inconsistent span parent rejected',()=>assert(validateTrace([valid,persistence,{...persistence,event_id:'E4',parent_span_id:'S3'},verifier]).errors.includes('SPAN_PARENT_CONFLICT:S2')));
+check('mixed group IDs rejected',()=>assert(validateTrace([valid,{...persistence,group_id:'B'},verifier]).errors.includes('MULTIPLE_GROUP_IDS')));
+check('missing span type rejected',()=>assert(validateEvent({...valid,span_type:''}).includes('MISSING_SPAN_TYPE')));
 check('missing persistence rejected',()=>assert(validateTrace([valid,verifier]).errors.includes('MISSING_PERSISTENCE')));
 check('orphan parent rejected',()=>assert(validateTrace([valid,persistence,{...verifier,parent_span_id:'missing'}]).errors.includes('ORPHAN_PARENT:S3')));
 check('duplicate events rejected',()=>assert(validateTrace([valid,{...persistence,event_id:'E1'},verifier]).errors.some(x=>x.includes('DUPLICATE_EVENT_ID'))));
