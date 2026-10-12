@@ -14,20 +14,28 @@ export function checkScopes(scope){
 }
 export function hashSource(files){
   if(!Array.isArray(files))fail('INVALID_PROJECT_CONTENT');
-  const names=new Set();
-  const code=[];
+  const seen=new Set(),legacyNames=new Set();
+  const code=[],all=[];
   for(const f of files){
-    if(f?.type!=='SERVER_JS')continue;
-    if(typeof f.name!=='string'||!/^[\w.-]+$/.test(f.name)||typeof f.source!=='string')fail('INVALID_SCRIPT_FILE');
-    const filename=f.name+'.js';
-    if(names.has(filename))fail('DUPLICATE_SCRIPT_FILE');
-    names.add(filename);
-    code.push({name:filename,hash:sha(Buffer.from(f.source,'utf8'))});
+    if(typeof f?.name!=='string'||!/^[\w.-]+$/.test(f.name)||!['SERVER_JS','HTML','JSON'].includes(f.type)||typeof f.source!=='string')fail('INVALID_SCRIPT_FILE');
+    const key=f.type+':'+f.name;
+    if(seen.has(key))fail('DUPLICATE_SCRIPT_FILE');
+    seen.add(key);
+    const digest=sha(Buffer.from(f.source,'utf8'));
+    all.push({key,digest});
+    if(f.type==='SERVER_JS'){
+      const filename=f.name+'.js';
+      if(legacyNames.has(filename))fail('DUPLICATE_SCRIPT_FILE');
+      legacyNames.add(filename);
+      code.push({name:filename,hash:digest});
+    }
   }
   if(!code.length)fail('NO_SERVER_JS_FILES');
   code.sort((a,b)=>a.name<b.name?-1:a.name>b.name?1:0);
+  all.sort((a,b)=>a.key<b.key?-1:a.key>b.key?1:0);
   const source_sha256=sha(code.map(f=>f.name+':'+f.hash).join('\n'));
-  return {source_sha256,source_files:code.length};
+  const project_sha256=sha(all.map(f=>f.key+':'+f.digest).join('\n'));
+  return {source_sha256,project_sha256,source_files:code.length,project_files:all.length};
 }
 export function releaseIdentity(files){
   const source=files.filter(f=>f?.type==='SERVER_JS').map(f=>f.source).join('\n');
@@ -58,7 +66,7 @@ async function inspect(){
   if(payload?.scriptId!==project.scriptId)fail('PROJECT_IDENTITY_MISMATCH');
   const identity=releaseIdentity(payload.files||[]);
   const hashed=hashSource(payload.files);
-  return {contract:'JANU-READONLY-RUNTIME-SNAPSHOT-2',observed_at:new Date().toISOString(),inspector_git_sha:process.env.GITHUB_SHA||null,github_run_id:process.env.GITHUB_RUN_ID||null,project_id_sha256:sha(project.scriptId),runtime_target:'APPS_SCRIPT_PROJECT_HEAD',credential_scope:'script.projects.readonly',scope_check:'EXACT_READONLY_SCOPE',...identity,...hashed,hash_semantics:'JANU-DEPLOYMENT-MANIFEST-1 / API_SERVER_JS_AS_DOT_JS_UTF8',private_tracker_hash_comparison:'PENDING_INDEPENDENT_READBACK',pinned_deployment_version:'NOT_INSPECTED',trigger_inventory:'NOT_INSPECTED',worker_execution:'NOT_RUN',source_body_in_artifact:false};
+  return {contract:'JANU-READONLY-RUNTIME-SNAPSHOT-2',observed_at:new Date().toISOString(),inspector_git_sha:process.env.GITHUB_SHA||null,github_run_id:process.env.GITHUB_RUN_ID||null,project_id_sha256:sha(project.scriptId),runtime_target:'APPS_SCRIPT_PROJECT_HEAD',credential_scope:'script.projects.readonly',scope_check:'EXACT_READONLY_SCOPE',...identity,...hashed,hash_semantics:'LEGACY_JS_SHA_1; FULL_PROJECT_TYPE_NAME_SOURCE_SHA_2',private_tracker_hash_comparison:'PENDING_INDEPENDENT_READBACK',pinned_deployment_version:'NOT_INSPECTED',trigger_inventory:'NOT_INSPECTED',worker_execution:'NOT_RUN',source_body_in_artifact:false};
 }
 function selfTest(){
  let checks=0;
@@ -74,6 +82,10 @@ function selfTest(){
  test(()=>assert.throws(()=>hashSource([{name:'a',type:'JSON',source:'{}'}]),/NO_SERVER_JS_FILES/));
  test(()=>assert.deepEqual(releaseIdentity([{name:'X',type:'SERVER_JS',source:'const P12 = Object.freeze({ VERSION: "1.3.8", SUITE: "p0-regression-v19" });'}]),{release_version:'1.3.8',regression_suite:'p0-regression-v19'}));
  test(()=>assert.throws(()=>releaseIdentity(fixture),/RELEASE_IDENTITY_UNAVAILABLE/));
+ test(()=>assert.notEqual(hashSource(fixture).project_sha256,hashSource([...fixture.slice(0,2),{...fixture[2],source:'{"scope":"changed"}'}]).project_sha256));
+ test(()=>assert.equal(hashSource(fixture).source_sha256,hashSource([...fixture.slice(0,2),{...fixture[2],source:'{"scope":"changed"}'}]).source_sha256));
+ test(()=>assert.throws(()=>hashSource([{...fixture[0],type:'UNKNOWN'}]),/INVALID_SCRIPT_FILE/));
+
  console.log(JSON.stringify({contract:'JANU-READONLY-RUNTIME-SNAPSHOT-2',status:'PASS',checks,network:'NOT_USED',worker_execution:'NOT_RUN'}));
 }
 const mode=process.argv[2];
