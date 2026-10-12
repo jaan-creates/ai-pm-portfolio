@@ -21,6 +21,8 @@ check('missing span type rejected',()=>assert(validateEvent({...valid,span_type:
 check('missing persistence rejected',()=>assert(validateTrace([valid,verifier]).errors.includes('MISSING_PERSISTENCE')));
 check('orphan parent rejected',()=>assert(validateTrace([valid,persistence,{...verifier,parent_span_id:'missing'}]).errors.includes('ORPHAN_PARENT:S3')));
 check('duplicate events rejected',()=>assert(validateTrace([valid,{...persistence,event_id:'E1'},verifier]).errors.some(x=>x.includes('DUPLICATE_EVENT_ID'))));
+check('disconnected cyclic parent graph rejected',()=>{const cyclePersist={...persistence,parent_span_id:'S3'};const cycleVerify={...verifier,parent_span_id:'S2'};assert(validateTrace([valid,cyclePersist,cycleVerify]).errors.some(e=>e.startsWith('CYCLIC_OR_DISCONNECTED_SPAN:')));});
+check('invalid Gregorian calendar UTC rejected',()=>assert(validateEvent({...valid,occurred_at:'2026-02-30T00:00:00Z'}).includes('INVALID_UTC_TIMESTAMP')));
 check('no events is incomplete',()=>assert.equal(validateTrace([]).status,'INCOMPLETE'));
 check('OK not counted as an error',()=>assert.deepEqual(stateConsistencySummary(['OK','OK','Not Started','ERROR:bad']).invalid,1));
 check('Not Started reported separately',()=>assert.equal(stateConsistencySummary(['OK','Not Started']).pending,1));
