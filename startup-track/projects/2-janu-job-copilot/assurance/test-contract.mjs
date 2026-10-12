@@ -25,6 +25,7 @@ check('no events is incomplete',()=>assert.equal(validateTrace([]).status,'INCOM
 check('OK not counted as an error',()=>assert.deepEqual(stateConsistencySummary(['OK','OK','Not Started','ERROR:bad']).invalid,1));
 check('Not Started reported separately',()=>assert.equal(stateConsistencySummary(['OK','Not Started']).pending,1));
 check('unknown states reduce assurance',()=>assert.equal(stateConsistencySummary(['SOMETHING_NEW']).assurance,'PARTIALLY OBSERVABLE'));
+check('state labels alone never certify invariants',()=>{const r=stateConsistencySummary(['OK','OK','Not Started']);assert.equal(r.assurance,'PARTIALLY OBSERVABLE');assert.equal(r.invariant_evidence_verified,false);assert.equal(r.invalid,0);});
 const expected=[{id:'20261012',enabled:true},{id:'20261013',enabled:true},{id:'off',enabled:true,approved_suspension:true}];
 const runs=[{slot_id:'20261012',trigger_type:'recovery',status:'SUCCEEDED',verified_outcome_ref:'record'},{slot_id:'20261013',trigger_type:'scheduled',status:'SUCCEEDED',verified_outcome_ref:'record'}];
 check('recovery not counted as scheduled success',()=>assert.deepEqual(scheduledCycleSummary(expected,runs).numerator,1));
