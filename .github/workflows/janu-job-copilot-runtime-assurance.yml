@@ -5,8 +5,7 @@ on:
     paths:
       - '.github/workflows/janu-job-copilot-runtime-assurance.yml'
   workflow_dispatch:
-  schedule:
-    - cron: '15 2 * * 1-5'
+  # Automated scheduling requires separate approval after a successful manual source readback.
 permissions:
   contents: read
 concurrency:
@@ -22,7 +21,7 @@ jobs:
         run: |
           f=.github/workflows/janu-job-copilot-runtime-assurance.yml
           grep -q 'clasp pull' "$f"
-          if grep -E '^[[:space:]]*(run:[[:space:]]*)?clasp[[:space:]]+(push|run|deploy|create|delete|version)([[:space:]]|$)' "$f"; then
+          if grep -v '^[[:space:]]*#' "$f" | grep -Ei '(^|[^[:alpha:]])(clasp|npx[[:space:]]+clasp)[[:space:]]+(push|run|deploy|create|delete|version)([[:space:];]|$)'; then
             echo 'Mutating clasp command forbidden in read-only assurance workflow'
             exit 31
           fi
