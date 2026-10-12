@@ -25,6 +25,8 @@ function iso_(){return new Date().toISOString();}
 function p1aQueueWorkerState_(){return {state:'NONE'};}
 // Provider guard fixture mirrors the exact pre-patch bounded-paid-fallback seam.
 function fixtureProviderGuard_(q,cfg,ctx){if(q&&cfg.tavilyKey)return true;return false;}
+// Real lifecycle patch inserts a closed-vacancy guard at this existing harness seam.
+function orchestrateOne_(id,a){if(!id||a['Decision']!=='Apply')return 0;return 1;}
 function phase1HealthTick(){return true;}
 `);
 // The TRACE runtime patch composes the *real* E2E continuation patch. Its CLOSED
