@@ -72,3 +72,22 @@ export function evidenceChain(links){
   const missing=required.filter(k=>!links||!hasText(links[k]));
   return {status:missing.length?'INCOMPLETE':'READY_FOR_REVIEW',missing};
 }
+
+
+// Validate metric *definitions*, never claim measured outcomes or approve baselines.
+export function validateMetricDictionary(registry){
+  if(!registry||registry.schema!=='janu-metric-dictionary-v1')return ['UNSUPPORTED_METRIC_SCHEMA'];
+  if(!Array.isArray(registry.definitions)||!registry.definitions.length)return ['MISSING_METRIC_DEFINITIONS'];
+  const errors=[],seen=new Set();
+  const required=['metric_id','definition_version','business_question','numerator','denominator','unit_of_analysis','inclusion_criteria','exclusion_criteria','evidence_sources','evidence_version','missing_data','minimum_sample','owner','freshness_slo','assurance_status'];
+  for(const [index,metric] of registry.definitions.entries()){
+    if(!metric||typeof metric!=='object'||Array.isArray(metric)){errors.push('INVALID_DEFINITION:'+index);continue;}
+    for(const field of required)if(!hasText(metric[field]))errors.push('MISSING_METRIC_FIELD:'+index+':'+field);
+    if(hasText(metric.metric_id)){if(seen.has(metric.metric_id))errors.push('DUPLICATE_METRIC_ID:'+metric.metric_id);seen.add(metric.metric_id);}
+    if(!Array.isArray(metric.observation_windows)||!metric.observation_windows.length||metric.observation_windows.some(x=>!hasText(x)))errors.push('MISSING_OBSERVATION_WINDOW:'+index);
+    if(!ASSURANCE_STATUSES.includes(metric.assurance_status))errors.push('INVALID_ASSURANCE_STATUS:'+index);
+    if(!Object.hasOwn(metric,'baseline')||!Object.hasOwn(metric,'target'))errors.push('MISSING_BASELINE_TARGET_FIELDS:'+index);
+    if(String(registry.approval_status||'').toUpperCase().startsWith('DRAFT')&&(metric.baseline!==null||metric.target!==null))errors.push('UNAPPROVED_NUMERICAL_BASELINE:'+index);
+  }
+  return errors;
+}
