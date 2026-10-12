@@ -25,6 +25,13 @@ function iso_(){return new Date().toISOString();}
 function p1aQueueWorkerState_(){return {state:'NONE'};}
 function phase1HealthTick(){return true;}
 `);
+// The TRACE runtime patch composes the *real* E2E continuation patch. Its CLOSED
+// vacancy dependency must be installed by the real lifecycle patch, not mocked
+// or omitted from this acceptance fixture.
+const lifecyclePatcher=path.join(projectDir,'scripts','patch-p1a-vacancy-lifecycle.mjs');
+const lifecycle=spawnSync(process.execPath,[lifecyclePatcher,tmp],{encoding:'utf8'});
+if(lifecycle.status!==0)throw new Error('lifecycle fixture composition failed: '+(lifecycle.stderr||lifecycle.stdout));
+if(!fs.readFileSync(target,'utf8').includes('function p1aPropagateClosedVacancy_('))throw new Error('real closed-vacancy lifecycle dependency not installed');
 function run(){const r=spawnSync(process.execPath,[patcher,tmp],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout);return r.stdout;}
 run();const once=fs.readFileSync(target,'utf8');
 run();const twice=fs.readFileSync(target,'utf8');
