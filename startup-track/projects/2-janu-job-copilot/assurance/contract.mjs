@@ -53,7 +53,7 @@ export function stateConsistencySummary(rows){
     else if(/^(ERROR|INVALID|FAIL|INCONSISTENT)(?:\b|:|_)/i.test(s))result.invalid++;
     else result.unknown++;
   }
-  return {...result,assurance:result.unknown?'PARTIALLY OBSERVABLE':'VERIFIED'};
+  return {...result,assurance:'PARTIALLY OBSERVABLE',invariant_evidence_verified:false}; // Label classification alone cannot verify state invariants.
 }
 export function scheduledCycleSummary(expectedSlots,runs){
   if(!Array.isArray(expectedSlots)||!Array.isArray(runs))throw new TypeError('slots and runs required');
