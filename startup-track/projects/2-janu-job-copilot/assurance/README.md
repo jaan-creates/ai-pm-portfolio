@@ -20,7 +20,7 @@ node startup-track/projects/2-janu-job-copilot/assurance/test-contract.mjs
 node startup-track/projects/2-janu-job-copilot/scripts/test-trace-golden-v0-patch.mjs startup-track/projects/2-janu-job-copilot
 ```
 
-The second test constructs a temporary script and composes the real vacancy-lifecycle patch prior to TRACE and E2E continuation. It does not contact production; it does not certify a full application journey. Governance CI requires both tests after the proposed PR lands. A file present or test skipped is not a pass.
+The source-level validator distinguishes `STRUCTURALLY_COMPLETE` from independent business assurance: a structurally complete trace returns `business_outcome_verified:false` and measurement assurance `PARTIALLY OBSERVABLE`. It requires a single orchestration root, consistent parent identity and group identity, but cannot certify the referenced external records without an authoritative readback. Required live instrumentation and verifier identity remain separate release gates. GitHub governance run `38291069816` on commit `f6158ef9f5604c18b8ca45084d4f64fae4ed6c9f` passed 27 assurance assertions; production deploy was skipped.\n\nThe second test constructs a temporary script and composes the real vacancy-lifecycle patch prior to TRACE and E2E continuation. It does not contact production; it does not certify a full application journey. Governance CI requires both tests after the proposed PR lands. A file present or test skipped is not a pass.
 
 ## Metric and baseline discipline
 
@@ -52,7 +52,7 @@ A missing link means INCOMPLETE. Sourcing scheduler liveness must not be inferre
 - The existing Trace Explorer view held a manually assembled 26-entry single-trace reconstruction without parent-span IDs; it does **not** demonstrate production-wide correlated telemetry.
 - A held-out golden application has linked Application, queue, Resume Registry, Resume Review and Audit entries, ending at Resume Review rather than Submitted. Exact source/job IDs are private and not copied here.
 
-## Required next gates
+## Recurring audit prompt execution contract (2026-10-12)\n\nExisting ChatGPT automations `Janu Daily Assurance Watch` (daily conditional) and `Janu Weekly Architect Audit` (weekly Monday) were updated with current-source, evidence-chain, trace, CI, sourcing and missing-data checks. They remain **read-only**, and neither has completed a post-update run. Their task configuration currently reports notification/email delivery disabled, so alert delivery is not accepted. These prompts are configured in ChatGPT, not synced from the public repository. Confirm actual execution timestamp, cited authoritative sources, deduplication and delivery on first runs before treating the automation as reliable.\n\n## Required next gates
 
 1. Completed source-level CI check: governance workflow run `38287883539` passed, including 21 event/measurement assertions, six generated runtime helper checks and v2/v3 patch-compatibility tests. Continue to verify future changes and production acceptance independently.
 2. A source-hash-only read-only `clasp pull` inspector is staged separately in [draft PR #57](https://github.com/jaan-creates/ai-pm-portfolio/pull/57), whose PR static guard passed. Its actual runtime-capture job is **SKIPPED on PRs** and has not run against production. It does not inspect trigger inventory; that remains separately blocked. Never call production CD `workflow_dispatch` as an audit probe.
