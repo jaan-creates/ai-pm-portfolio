@@ -55,7 +55,7 @@ A missing link means INCOMPLETE. Sourcing scheduler liveness must not be inferre
 ## Required next gates
 
 1. Completed source-level CI check: governance workflow run `38287883539` passed, including 21 event/measurement assertions, six generated runtime helper checks and v2/v3 patch-compatibility tests. Continue to verify future changes and production acceptance independently.
-2. Independently capture the current assembled Apps Script source/trigger inventory with existing clasp credentials using a separate **read-only** path. Never call the production CD `workflow_dispatch` as an audit probe.
+2. A source-hash-only read-only `clasp pull` inspector is staged separately in [draft PR #57](https://github.com/jaan-creates/ai-pm-portfolio/pull/57), whose PR static guard passed. Its actual runtime-capture job is **SKIPPED on PRs** and has not run against production. It does not inspect trigger inventory; that remains separately blocked. Never call production CD `workflow_dispatch` as an audit probe.
 3. Approve event propagation design, incorporate it into real worker/persistence code with compatibility migration, test a full isolated journey, then prove one real downstream readback.
 4. Reconcile actual expected schedule calendar against `__Sourcing Runs` and business outcomes; investigate recurring misses without bypassing the OPEN sourcing circuit.
 5. Calibrate AI factuality rubrics with approved private evidence and held-out fixtures; do not expose them publicly.
@@ -69,3 +69,5 @@ The existing `RUNBOOK.md`, `ITERATION_EVIDENCE_GATE.md`, `AUTONOMY_CONTRACT.md`,
 ### CI verification cutoff (2026-10-12)
 
 Run [38287883539](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38287883539) succeeded on the tested PR head; corresponding production CD job was skipped. This validates the local patch-composition and privacy-safe assurance contract only. **It does not validate the current deployed runtime source, complete workflow, or new read-only snapshot workflow.**
+
+**Release safety split:** PR #56 carries code/eval corrections, while [PR #57](https://github.com/jaan-creates/ai-pm-portfolio/pull/57) carries only the read-only runtime-capture workflow. Merge of PR #56 would match the existing `scripts/**` production CD trigger; explicit protected release approval is required. Both remain draft.
