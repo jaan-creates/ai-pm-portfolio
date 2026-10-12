@@ -58,3 +58,14 @@ Rollback source for B17 is the original `=COUNTIF(Applications!AO2:AO,"?*")`, bu
 - Diagnosed two additional patching defects: v2-only compatibility shim rejected authoritative v3, and E2E continuation function replacement introduced extra bytes on repeated application. Both repaired and covered in isolated CI. Production applicability pending protected release review.
 - Created read-only automated weekly architect assessment and daily conditional critical-health watch. **No scheduled run has yet been observed**, so delivery reliability is NOT VERIFIED.
 - Recovery source remains draft. Branch protection admin endpoint returned 403; repo ruleset listing was empty, neither sufficient to certify main protection.
+
+## Private failure-learning and product/Lab accountability (read back)
+
+- `FL-139`: dashboard metric counted OK states as errors; dashboard correction was independently read back. The **state-invariant evaluator remains pending**.
+- `FL-140`: v2-only E2E compatibility shim rejected v3; source patch and version-negative regression verified by CI, production deployment not performed.
+- `FL-141`: E2E function replacement had byte drift on repeated patch; test now passes after actual code fix; production deployment not performed.
+- `JC-LAB-003`: linked intervention with before/after source-level evidence, observation window of three material changes and 30 days; decision **Insufficient Evidence — Source Improvements Verified; Runtime/Outcome Pending**.
+
+The four private records were each independently read back in the Live Tracker after the write. The weekly read-only architect assessment and daily critical conditional watch have been created, but **their future execution and alert accuracy have not yet been verified**.
+
+Document-only CI after initial implementation also passed (run `38288019701`); corresponding Apps Script CD job `38288019686` was skipped. No production runtime promotion occurred.
