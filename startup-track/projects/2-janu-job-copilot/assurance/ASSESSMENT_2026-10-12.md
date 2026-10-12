@@ -7,12 +7,12 @@
 | Scope | Action or measured finding | Evidence / outcome | Remaining proof |
 |---|---|---|---|
 | 1. Authority/governance | Re-read master spec v0.26.0, repository policies, parent Lab instructions; staged source register and clarified missing skill reference | Master Docs revision available; Git blob/commit per branch change | Reconcile decision-log deltas and production release identity |
-| 2. PR #55 regression failure | Existing TRACE test fixture omitted actual lifecycle dependency; branch now composes real vacancy lifecycle patch | Historical failing CI run 38221284384 / governance 38221284252, both missing `p1aPropagateClosedVacancy_` | **NEW CI PASS REQUIRED**; no assumption of fix until actual run |
+| 2. PR #55 regression failure | Existing TRACE test fixture omitted actual lifecycle dependency; branch now composes real vacancy lifecycle patch | Historical failing CI run 38221284384 / governance 38221284252, both missing `p1aPropagateClosedVacancy_` | **CI PASS** run 38287883539; six actual generated runtime helper checks + patch-composition idempotence. No production E2E proof |
 | 3. Golden evidence chain | Tracker had linked Application, 18 queue jobs, Resume Registry, review and audit; trace view had 26 entries missing all parent-span IDs | Read-only bounded private Sheets readback | Real source/mutation, full correlated trace and external submission still unverified |
 | 4. State dashboard integrity | Before: Dashboard B17 `COUNTIF(...,"?*")` counted 51 OK + 6 Not Started as 57 errors. After: B17 `COUNTIF("?*")-COUNTIF("OK")-COUNTIF("Not Started")` | **Live formula readback: 0 provisional exceptions**, separate B19 **6 Not Started**; C17 link preserved | Define authoritative invariant taxonomy; dashboard not a full business validation |
 | 5. Sourcing health | Multiple October missed scheduled runs even when recovery succeeded; Daily Sourcing reported BLOCKED/OPEN | Private `__Sourcing Runs` and `__System Health` | Apps Script trigger inventory, schedule owner and durable independent outcome |
 | 6. Metric validity | Staged 10 versioned metric definitions with numerator, denominator, exclusions, source, cohort/missing-data policy and nullable baseline | `metrics.v1.json` source artifact | Approval, normalized cohort measurements, empirical targets |
-| 7. Assistant process | Staged source/capability register, negative-control execution contract and mandatory governance CI step | Git SHA of modified branch and CI workflow | Actual passing CI, regression-to-incident learning, measurable reduction in user relay |
+| 7. Assistant process | Staged source/capability register, negative-control execution contract and mandatory governance CI step | Git SHA of modified branch and CI workflow | CI PASS 38287883539; regression-to-incident learning and measurable reduction in user relay still pending |
 | 8. Priority/risk handling | Kept production deploy out of scope, staged safe read-only runtime manifest pull workflow | `.github/workflows/janu-job-copilot-runtime-assurance.yml` | Reviewed merge required to activate; not run |
 | 9. Permission/readiness | GitHub repo + private Sheets reads verified; branch writes tested, production Apps Script source pull requires CI identity | `source-register.v1.json` and access logs | Actual private runtime capture and branch-protection check still blocked |
 | 10. Closeout | Material code staged on isolated branch, runtime changes not merged; assessment preserved | This artifact and branch commits | Full Iteration Evidence Gate not satisfied, final HOLD |
@@ -45,8 +45,16 @@ Rollback source for B17 is the original `=COUNTIF(Applications!AO2:AO,"?*")`, bu
 
 ## Next valid measurable intervention
 
-1. Achieve actual GitHub Actions PASS for the corrected TRACE fixture and assurance contract; detect a deliberately broken real worker/patch scenario.
+1. CI PASS achieved: run 38287883539, 21 evidence-contract checks and six generated-runtime helper assertions; continue with an isolated full-worker fault scenario before production acceptance.
 2. Obtain read-only clasp source hash + deployed identity using newly staged workflow after reviewed activation; no production workflow invocation as an audit shortcut.
 3. Recover sourcing schedule independently, prove business outcomes and absence of avoidable relays.
 4. Instrument real worker event propagation only after private/schema compatibility and isolated E2E tests.
 5. Close one valid golden path with independent tracker, artifact, audit and trace readback. Record reliable baseline and controlled improvement outcome.
+
+## Verified later-on-October-12 execution and recurring review
+
+- Governance workflow run `38287883539`: **SUCCESS** at tested commit `b3037cc4f2bceaefbf024b8ec5d3c04f3f28a11f`. Real TRACE patch composition and idempotence passed; six generated runtime helpers executed in Node VM; continuation v2/v3 shim negative controls passed; `JANU-ASSURANCE-1` executed 21 assertions including negative controls. **Does not prove production behavior.**
+- Matching Apps Script CD workflow run `38287883533`: `deploy-production` **SKIPPED**; no Apps Script deployment.
+- Diagnosed two additional patching defects: v2-only compatibility shim rejected authoritative v3, and E2E continuation function replacement introduced extra bytes on repeated application. Both repaired and covered in isolated CI. Production applicability pending protected release review.
+- Created read-only automated weekly architect assessment and daily conditional critical-health watch. **No scheduled run has yet been observed**, so delivery reliability is NOT VERIFIED.
+- Recovery source remains draft. Branch protection admin endpoint returned 403; repo ruleset listing was empty, neither sufficient to certify main protection.
