@@ -81,18 +81,19 @@
       "id": "SOURCE_RUNTIME",
       "authority": "Deployed Google Apps Script truth",
       "locator": "Google Apps Script project accessed by CI clasp pull",
-      "read": "BLOCKED DIRECTLY; SAFE CI PULL PATH DESIGN REQUIRED",
+      "read": "BLOCKED DIRECT: separate manual-only PR #57 CI source-pull design tested; dedicated auditor credential availability, scopes and first target readback NOT VERIFIED",
       "write": "PROTECTED PRODUCTION",
-      "evidence": "source SHA-256, script identity, timestamp, deployed revision",
-      "freshness": "Before/after release and periodic checks"
+      "evidence": "PR #57 run 38295666910 static guard PASS; credentialed clasp pull SKIPPED. First authorized source hash + project/version identity and private readback still required",
+      "freshness": "Must capture at authorized audit and compare with private deployment_source_sha256; Apps Script HEAD is not necessarily pinned deployment version",
+      "scope_gate": "Separate JANU_INSPECT_CLASPRC_JSON and auditor profile required; do not reuse production CD JANU_CLASPRC_JSON. Provisioning and OAuth scope remain BLOCKED"
     },
     {
       "id": "SCHEDULE",
       "authority": "Expected trigger topology",
       "locator": "Apps Script trigger inventory + Operating Config + __Sourcing Runs",
-      "read": "PARTIALLY OBSERVABLE",
+      "read": "PARTIALLY OBSERVABLE: primary ChatGPT sourcing task observed disabled; recovery watcher enabled; Apps Script trigger inventory inaccessible",
       "write": "PROTECTED RUNTIME CONFIG",
-      "evidence": "expected slot ID + actual trigger + business write ref",
+      "evidence": "Daily Sourcing BLOCKED/SOURCING_SCHEDULER_STALE; manual/recovery run is not scheduled-slot liveness",
       "freshness": "Daily"
     },
     {
@@ -111,6 +112,7 @@
     "Approval status of observed historical baselines unresolved",
     "Branch protection endpoint forbidden to integration",
     "User-effort/outcome cohort not accepted",
-    "Product iteration skill path referenced by RUNBOOK not found"
+    "Product iteration skill path referenced by RUNBOOK not found",
+    "Dedicated read-only Apps Script OAuth identity not provisioned or independently scoped"
   ]
 }
