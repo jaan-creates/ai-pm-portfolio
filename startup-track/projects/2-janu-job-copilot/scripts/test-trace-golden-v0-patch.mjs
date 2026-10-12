@@ -23,6 +23,8 @@ function find_(){return 0;}
 function now_(){return new Date();}
 function iso_(){return new Date().toISOString();}
 function p1aQueueWorkerState_(){return {state:'NONE'};}
+// Provider guard fixture mirrors the exact pre-patch bounded-paid-fallback seam.
+function fixtureProviderGuard_(q,cfg,ctx){if(q&&cfg.tavilyKey)return true;return false;}
 function phase1HealthTick(){return true;}
 `);
 // The TRACE runtime patch composes the *real* E2E continuation patch. Its CLOSED
