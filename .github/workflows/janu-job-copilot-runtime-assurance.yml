@@ -21,6 +21,10 @@ jobs:
         run: |
           f=.github/workflows/janu-job-copilot-runtime-assurance.yml
           grep -q 'clasp pull' "$f"
+          if grep -Eq 'secrets\\.[J]ANU_CLASPRC_JSON' "$f"; then
+            echo 'Production CD credential must not be used for audit'
+            exit 32
+          fi
           if grep -v '^[[:space:]]*#' "$f" | grep -Ei '(^|[^[:alpha:]])(clasp|npx[[:space:]]+clasp)[[:space:]]+(push|run|deploy|create|delete|version)([[:space:];]|$)'; then
             echo 'Mutating clasp command forbidden in read-only assurance workflow'
             exit 31
@@ -45,9 +49,9 @@ jobs:
     timeout-minutes: 15
     env:
       PROJECT_DIR: startup-track/projects/2-janu-job-copilot
-      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASPRC_JSON: ${{ secrets.JANU_INSPECT_CLASPRC_JSON }}
       CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
-      CLASP_USER: janu-build
+      CLASP_USER: janu-auditor
     steps:
       - name: Checkout inspector only
         uses: actions/checkout@v4
@@ -55,6 +59,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      # Requires a dedicated approved auditor credential; never reuse production CD write identity.
+      # The workflow remains manual-only. A passing PR check does not prove the OAuth scopes.
       - name: Preflight credentials without logging content
         shell: bash
         run: |
