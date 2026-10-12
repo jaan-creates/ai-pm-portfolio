@@ -1,0 +1,16 @@
+{
+ "version":"janu-eval-v1",
+ "cases":[
+  {"id":"SOURCING-MISSED","severity":"critical","expected":true,"scope":"synthetic sourcing completion"},
+  {"id":"SOURCING-WRITE-FAIL","severity":"critical","expected":true,"scope":"synthetic durable write failure"},
+  {"id":"SOURCING-COMPLETE","severity":"major","expected":true,"scope":"synthetic full completion"},
+  {"id":"INTAKE-NO-FALSE-SUCCESS","severity":"critical","expected":true,"scope":"synthetic promotion write failure"},
+  {"id":"INTAKE-ONE-RECORD","severity":"critical","expected":true,"scope":"synthetic idempotent promotion"},
+  {"id":"SUBMISSION-REQUIRES-CONFIRMATION","severity":"critical","expected":true,"scope":"synthetic submission guard"},
+  {"id":"SUBMISSION-CLOSED-BLOCKED","severity":"critical","expected":true,"scope":"synthetic vacancy guard"},
+  {"id":"REGRESSION-DETECTED","severity":"critical","expected":true,"scope":"regression comparator mutation"},
+  {"id":"REGRESSION-CONTROL","severity":"major","expected":true,"scope":"regression comparator stable"},
+  {"id":"REPOSITORY-RELEASE-GATE","severity":"major","expected":true,"scope":"actual workflow static assertion"},
+  {"id":"SOURCE-TEST-EXISTS","severity":"major","expected":true,"scope":"actual repo regression script inventory"}
+ ]
+}
