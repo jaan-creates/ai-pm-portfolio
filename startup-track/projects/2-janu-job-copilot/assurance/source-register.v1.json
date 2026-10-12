@@ -80,12 +80,12 @@
     {
       "id": "SOURCE_RUNTIME",
       "authority": "Deployed Google Apps Script truth",
-      "locator": "Google Apps Script project accessed by CI clasp pull",
-      "read": "BLOCKED DIRECT: separate manual-only PR #57 CI source-pull design tested; dedicated auditor credential availability, scopes and first target readback NOT VERIFIED",
+      "locator": "Google Apps Script projects.getContent HEAD through dedicated read-only OAuth (draft PR #57); historical deployment via GitHub Actions run 38151328846",
+      "read": "HISTORICAL DEPLOYMENT PROVENANCE VERIFIED (2026-10-11); FRESH CURRENT HEAD BLOCKED until dedicated OAuth secret + manual run",
       "write": "PROTECTED PRODUCTION",
-      "evidence": "PR #57 run 38295666910 static guard PASS; credentialed clasp pull SKIPPED. First authorized source hash + project/version identity and private readback still required",
-      "freshness": "Must capture at authorized audit and compare with private deployment_source_sha256; Apps Script HEAD is not necessarily pinned deployment version",
-      "scope_gate": "Separate JANU_INSPECT_CLASPRC_JSON and auditor profile required; do not reuse production CD JANU_CLASPRC_JSON. Provisioning and OAuth scope remain BLOCKED"
+      "evidence": "Oct 11 GitHub CD run 38151328846 post-push exact hash check agrees with private __Worker State; PR #57 offline CI run 38298198871 PASS; live inspect-runtime SKIPPED",
+      "freshness": "Historical 2026-10-11 source hash cannot certify current HEAD; compare first fresh read-only GET source digest and release identity to tracker + deployment artifact",
+      "scope_gate": "PR #57 uses JANU_INSPECT_OAUTH_JSON refreshed with exact https://www.googleapis.com/auth/script.projects.readonly; never reuse production CD JANU_CLASPRC_JSON. Owner interactive OAuth + GitHub Actions secret required; scope and access not yet proven"
     },
     {
       "id": "SCHEDULE",
@@ -113,6 +113,6 @@
     "Branch protection endpoint forbidden to integration",
     "User-effort/outcome cohort not accepted",
     "Product iteration skill path referenced by RUNBOOK not found",
-    "Dedicated read-only Apps Script OAuth identity not provisioned or independently scoped"
+    "First exact-readonly script.projects.readonly OAuth grant/refresh secret not created or observed; current Apps Script HEAD unverified"
   ]
 }
