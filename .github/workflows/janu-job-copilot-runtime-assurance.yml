@@ -22,7 +22,7 @@ jobs:
         run: |
           f=.github/workflows/janu-job-copilot-runtime-assurance.yml
           grep -q 'clasp pull' "$f"
-          if grep -E 'clasp[[:space:]]+(push|run|deploy|create|delete|version)' "$f" | grep -v 'grep -E' ; then
+          if grep -E '^[[:space:]]*(run:[[:space:]]*)?clasp[[:space:]]+(push|run|deploy|create|delete|version)([[:space:]]|$)' "$f"; then
             echo 'Mutating clasp command forbidden in read-only assurance workflow'
             exit 31
           fi
