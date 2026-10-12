@@ -52,3 +52,30 @@
 **Safety/rollback:** PRs #55/#56/#57 remain draft and unmerged. No production Apps Script push, worker invocation, external send or new private tracker mutation was performed in this recovery turn. Branch commits are reversible, public artifacts exclude private application content, and release state remains unchanged.
 
 **End state:** source-level safeguards improved and checked; full ten-point product recovery and five foundational gates are **INCOMPLETE** until target-runtime and business outcomes are independently verified.
+
+
+## Gate A authority and Gate B access review — follow-up
+
+This is a fresh read-only reconciliation from the explicitly approved recovery plan, NOT an assertion of product acceptance. Source IDs: Google Drive Master Product & Engineering Specification v0.26.0 (read at the current revision), GitHub `main` `205ce1116675`, `CURRENT_STATE.md`, `PRODUCT_CAPABILITY_MAP.md`, `TRACE_SCHEMA.md`, `MONITORING_ALERTS.md`, `EVAL_PLAN.md`, and the October 13 private tracker observations.
+
+| Authority and expected invariant | Implementation/execution observation | Acceptance status / next proof |
+|---|---|---|
+| Master source order: approved candidate factual evidence > latest Master Spec > append-only Decision Log > live tracker > chat | Re-read current Master Spec 0.1; source register staged on this draft PR | **VERIFIED for hierarchy**, not for runtime implementation |
+| CS-20260824-031: artifact-driven continuation, latest-attempt semantics, genuine My Actions boundary, no user relay for machine work | Public continuation patch and helper tests exist; current live workflow behavior not independently executed for specified fixtures | **PARTIALLY OBSERVABLE**; read back actual queued transitions and My Actions for targeted fixtures |
+| CS-20260824-032: known renderer defect family quarantined until exact Career Break regression, release provenance and bounded live canary pass | Historical source/CI and private Failure Learning exist; a reported HEALTHY component does not satisfy exact canary acceptance | **BLOCKED** pending release-controlled runtime canary and immutable artifact readback |
+| CS-20260824-033: approved content/hash before official PDF render, post-render QA, exact PDF version/hashes, no preapproval asset | Current public patch/test source does not establish `approved_content_hash` or the full approved lifecycle; full deployed code cannot currently be read | **NOT VERIFIED**; prevent older `Resume Review`-only trace acceptance from certifying this newer contract |
+| FL-098: one owner-authorized five-minute `phase1OneJobTick` trigger, exact owner/cadence | Tracker component status exists, but direct trigger inventory remains unavailable through current connection | **BLOCKED**; authorized read-only trigger topology and owner evidence required |
+| M-01: every expected sourcing slot has truthful durable completion; recovery != scheduled success | Daily Sourcing remains BLOCKED/OPEN with repeated missed scheduled slots; ChatGPT primary sourcing automation is disabled while bounded recovery watcher is enabled | **VERIFIED operational fault**, scheduler owner/topology still unverified; do not lift circuit on recovery evidence |
+| TRACE_SCHEMA: event, span, trace and release identifiers retain consistent cross-boundary meaning | Source-only validator has schema and 35 negative/positive checks; existing displayed Trace Explorer evidence was incomplete | **PARTIALLY OBSERVABLE**; approve trace/span/event projection map and prove actual worker-to-persistence propagation |
+| Iteration Evidence Gate: implementation, real tests, target-environment execution, independent readback and improvement proof | Draft source-level CI passes and deployment skipped | **INCOMPLETE** until target-environment downstream evidence |
+| Daily/weekly assurance delivery | Task definitions are enabled, with no observed first execution and notifications off in the task configuration | **NOT VERIFIED**; do not certify alert delivery from prompt presence |
+
+### Least-privilege read-only capture decision
+
+The initial PR #57 design reused the write-capable production CD identity `JANU_CLASPRC_JSON`, even though it called only `clasp pull`. **Command-level read-only is not equivalent to credential-level least privilege**. Corrective isolated commit `13ed3b5722eca9c3434bc210afd667cc3681d2b1` requires `JANU_INSPECT_CLASPRC_JSON` and auditor identity, and rejects reference to the production CD secret. It preserves *manual-only* activation. GitHub Actions read-only static guard **38295666910 PASS**; actual credentialed `inspect-runtime` **SKIPPED**.
+
+**Stop conditions:** Do not merge/activate PR #57 until dedicated auditor credential availability, OAuth/project access scope, private output retention/visibility, GitHub Actions permissions and fallback cleanup are reviewed. Do not infer that the new secret exists. An eventual `clasp pull` captures Apps Script editable project HEAD, which alone does not prove a separately versioned deployment is running. Trigger owner/cadence requires its own read-only verifier.
+
+### No-change boundaries
+
+No master specification, approved candidate record, production worker, Apps Script trigger, release, application or submitted artifact was changed by this review. PR #55 and the recovery PRs remain draft. A source-only PASS cannot close product-level Gate A–E. The first blocked external dependency is an authorized, verified dedicated read-only Apps Script capture identity and permissible activation path.
