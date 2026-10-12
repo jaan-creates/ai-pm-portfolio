@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import {validateEvent,validateTrace,stateConsistencySummary,scheduledCycleSummary,evidenceChain} from './contract.mjs';
+import fs from 'node:fs';
+import {validateEvent,validateTrace,stateConsistencySummary,scheduledCycleSummary,evidenceChain,validateMetricDictionary} from './contract.mjs';
 const valid={telemetry_schema_version:'janu-trace-v1',event_id:'E1',event_type:'started',trace_id:'T1',span_id:'S1',parent_span_id:null,span_type:'orchestration',group_id:'A1',workflow_name:'intake',occurred_at:'2026-10-12T00:00:00Z',recorded_at:'2026-10-12T00:00:01Z',status:'success',release_version:'1.3.8',evidence_ref:'opaque:run1'};
 let checks=0;const check=(name,fn)=>{fn();checks++;console.log('PASS '+name)};
 check('canonical event accepted',()=>assert.deepEqual(validateEvent(valid),[]));
@@ -36,4 +37,10 @@ check('scheduled success requires durable reference',()=>assert.equal(scheduledC
 check('missing expected schedule not invented',()=>assert.equal(scheduledCycleSummary([],runs).rate,null));
 check('evidence chain missing readback fails',()=>assert(evidenceChain({approved_contract:'spec',source_version:'commit'}).missing.includes('independent_readback')));
 check('complete chain still requires review',()=>assert.equal(evidenceChain(Object.fromEntries(['approved_contract','source_version','execution','durable_state','independent_readback','regression','decision'].map(x=>[x,'opaque-ref']))).status,'READY_FOR_REVIEW'));
+const metricRegistry=JSON.parse(fs.readFileSync(new URL('./metrics.v1.json',import.meta.url),'utf8'));
+check('all ten versioned metric definitions are complete',()=>{assert.equal(metricRegistry.definitions.length,10);assert.deepEqual(validateMetricDictionary(metricRegistry),[]);});
+check('missing denominator rejected',()=>{const m=structuredClone(metricRegistry);m.definitions[0].denominator='';assert(validateMetricDictionary(m).some(x=>x.includes('denominator')));});
+check('duplicate metric IDs rejected',()=>{const m=structuredClone(metricRegistry);m.definitions[1].metric_id=m.definitions[0].metric_id;assert(validateMetricDictionary(m).some(x=>x.startsWith('DUPLICATE_METRIC_ID')));});
+check('unapproved numeric baseline rejected',()=>{const m=structuredClone(metricRegistry);m.definitions[0].baseline=1;assert(validateMetricDictionary(m).some(x=>x.startsWith('UNAPPROVED_NUMERICAL_BASELINE')));});
+check('invalid measurement-assurance status rejected',()=>{const m=structuredClone(metricRegistry);m.definitions[0].assurance_status='PASS';assert(validateMetricDictionary(m).some(x=>x.startsWith('INVALID_ASSURANCE_STATUS')));});
 console.log(JSON.stringify({status:'PASS',checks,contract:'JANU-ASSURANCE-1',mutation_controls:['missing-correlation','duplicate-event','missing-readback','false-scheduled-recovery']}));
