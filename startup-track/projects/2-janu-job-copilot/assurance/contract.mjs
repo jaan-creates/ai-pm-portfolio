@@ -4,7 +4,7 @@ export const ASSURANCE_STATUSES=Object.freeze(['VERIFIED','PARTIALLY OBSERVABLE'
 export const EVENT_FIELDS=Object.freeze(['telemetry_schema_version','event_id','event_type','trace_id','span_id','group_id','workflow_name','occurred_at','recorded_at','status','release_version','evidence_ref']);
 const forbidden=new Set(['prompt','response_body','resume_text','email_body','api_key','secret','candidate_content']);
 const hasText=v=>typeof v==='string'&&v.trim().length>0;
-const utc=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(s)&&!Number.isNaN(Date.parse(s));
+const utc=s=>{if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(s))return false;const ms=Date.parse(s);return Number.isFinite(ms)&&new Date(ms).toISOString().slice(0,19)===s.slice(0,19);};
 export function validateEvent(e){
   if(!e||typeof e!=='object'||Array.isArray(e))return ['NOT_AN_OBJECT'];
   const faults=EVENT_FIELDS.filter(k=>!hasText(e[k])).map(k=>'MISSING:'+k);
@@ -36,6 +36,7 @@ export function validateTrace(events){
   if(traceIds.size!==1)errors.push('MULTIPLE_TRACE_IDS');
   if(groups.size!==1)errors.push('MULTIPLE_GROUP_IDS');
   if(roots.size!==1)errors.push('MISSING_OR_MULTIPLE_ROOT_SPANS');
+  for(const span of spans){let current=span;const visited=new Set();while(current&&spans.has(current)){if(visited.has(current)){errors.push('CYCLIC_OR_DISCONNECTED_SPAN:'+span);break;}visited.add(current);current=spanParents.get(current)||null;}}
   for(const e of events)if(!e?.parent_span_id&&e?.span_type!=='orchestration')errors.push('ROOT_NOT_ORCHESTRATION:'+e.span_id);
   for(const e of events)if(e?.parent_span_id&&!spans.has(e.parent_span_id))errors.push('ORPHAN_PARENT:'+e.span_id);
   if(!events.some(e=>e.span_type==='verification'&&hasText(e.evidence_ref)))errors.push('MISSING_VERIFIED_OUTCOME');
