@@ -1,0 +1,98 @@
+name: Janu Job Copilot Read-only Runtime Provenance
+# Design-only until reviewed and merged: NEVER triggers production deploy.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/janu-job-copilot-runtime-assurance.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '15 2 * * 1-5'
+permissions:
+  contents: read
+concurrency:
+  group: janu-job-copilot-read-only-assurance
+  cancel-in-progress: false
+jobs:
+  assert-read-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert no mutating clasp operations in runtime inspector
+        shell: bash
+        run: |
+          f=.github/workflows/janu-job-copilot-runtime-assurance.yml
+          grep -q 'clasp pull' "$f"
+          if grep -E 'clasp[[:space:]]+(push|run|deploy|create|delete|version)' "$f" | grep -v 'grep -E' ; then
+            echo 'Mutating clasp command forbidden in read-only assurance workflow'
+            exit 31
+          fi
+  inspect-runtime:
+    if: github.event_name != 'pull_request'
+    needs: assert-read-only
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PROJECT_DIR: startup-track/projects/2-janu-job-copilot
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+    steps:
+      - name: Checkout inspector only
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preflight credentials without logging content
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON" || { echo 'Missing read credential'; exit 2; }
+          test -n "$CLASP_JSON" || { echo 'Missing script identity'; exit 2; }
+      - name: Install existing clasp interface
+        run: npm install --global @google/clasp
+      - name: Prepare ephemeral read-only workspace
+        shell: bash
+        run: |
+          mkdir -p .janu-assurance-source
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > .janu-assurance-source/.clasp.json
+          chmod 600 .janu-assurance-source/.clasp.json
+      - name: Pull deployed source (read only)
+        working-directory: .janu-assurance-source
+        run: clasp pull --user "$CLASP_USER"
+      - name: Verify and record privacy-safe runtime identity
+        shell: bash
+        run: |
+          node --check "$PROJECT_DIR/scripts/deployment-manifest.mjs"
+          node "$PROJECT_DIR/scripts/deployment-manifest.mjs" .janu-assurance-source --hash-only > /tmp/janu-runtime.sha
+          node - <<'NODE'
+          const fs=require('node:fs'),crypto=require('node:crypto');
+          const dir='.janu-assurance-source';
+          const files=fs.readdirSync(dir).filter(f=>f.endsWith('.js')||f.endsWith('.gs'));
+          if(!files.length)throw Error('No source files pulled; fail closed');
+          const text=files.map(f=>fs.readFileSync(dir+'/'+f,'utf8')).join('\n');
+          const version=text.match(/P12\s*=\s*Object\.freeze\(\{[\s\S]*?VERSION\s*:\s*['"]([^'"]+)['"]/);
+          const suite=text.match(/P12\s*=\s*Object\.freeze\(\{[\s\S]*?SUITE\s*:\s*['"]([^'"]+)['"]/);
+          if(!version||!suite)throw Error('Deployed runtime release identity missing');
+          const sha=fs.readFileSync('/tmp/janu-runtime.sha','utf8').trim();
+          if(!/^[a-f0-9]{64}$/.test(sha))throw Error('Invalid canonical source hash');
+          const out={contract:'JANU-READONLY-RUNTIME-SNAPSHOT-1',observed_at:new Date().toISOString(),git_inspector_commit:process.env.GITHUB_SHA,github_run_id:process.env.GITHUB_RUN_ID,release_version:version[1],regression_suite:suite[1],source_sha256:sha,source_files:files.length,execution_probe:'NOT_RUN',worker_mutation:'NONE',credential_scope:'EXISTING_CI_IDENTITY'};
+          fs.writeFileSync('/tmp/janu-runtime-observation.json',JSON.stringify(out,null,2)+'\n',{mode:0o600});
+          console.log(JSON.stringify({contract:out.contract,release_version:out.release_version,regression_suite:out.regression_suite,source_sha256:out.source_sha256,execution_probe:out.execution_probe,worker_mutation:out.worker_mutation}));
+          NODE
+      - name: Preserve hash-only assurance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: janu-readonly-runtime-${{ github.run_id }}
+          path: /tmp/janu-runtime-observation.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Cleanup temporary identity material
+        if: always()
+        shell: bash
+        run: |
+          rm -rf .janu-assurance-source
+          rm -f "$HOME/.clasprc.json"
+# Deliberate exclusions: NO clasp push, clasp run, Apps Script trigger mutation,
+# Google Sheets writes, mail send, or full source/code upload.
