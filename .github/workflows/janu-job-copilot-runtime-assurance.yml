@@ -26,6 +26,19 @@ jobs:
             echo 'Mutating clasp command forbidden in read-only assurance workflow'
             exit 31
           fi
+      - name: Exercise privacy-safe source hash on a synthetic fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          printf 'const P12 = Object.freeze({VERSION:"1.3.8",SUITE:"synthetic"});\\n' > "$tmp/TrackerWorkflow.js"
+          first="$(node startup-track/projects/2-janu-job-copilot/scripts/deployment-manifest.mjs "$tmp" --hash-only)"
+          [[ "$first" =~ ^[a-f0-9]{64}$ ]] || { echo "Invalid hash output"; exit 33; }
+          printf '// content changed\\n' >> "$tmp/TrackerWorkflow.js"
+          second="$(node startup-track/projects/2-janu-job-copilot/scripts/deployment-manifest.mjs "$tmp" --hash-only)"
+          [[ "$second" =~ ^[a-f0-9]{64}$ ]] || exit 34
+          test "$first" != "$second" || { echo "Hash ignored changed source"; exit 35; }
   inspect-runtime:
     if: github.event_name != 'pull_request'
     needs: assert-read-only
