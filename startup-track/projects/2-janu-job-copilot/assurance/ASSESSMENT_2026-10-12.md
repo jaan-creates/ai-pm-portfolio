@@ -13,7 +13,7 @@
 | 5. Sourcing health | Multiple October missed scheduled runs even when recovery succeeded; Daily Sourcing reported BLOCKED/OPEN | Private `__Sourcing Runs` and `__System Health` | Apps Script trigger inventory, schedule owner and durable independent outcome |
 | 6. Metric validity | Staged 10 versioned metric definitions with numerator, denominator, exclusions, source, cohort/missing-data policy and nullable baseline | `metrics.v1.json` source artifact | Approval, normalized cohort measurements, empirical targets |
 | 7. Assistant process | Staged source/capability register, negative-control execution contract and mandatory governance CI step | Git SHA of modified branch and CI workflow | CI PASS 38287883539; regression-to-incident learning and measurable reduction in user relay still pending |
-| 8. Priority/risk handling | Kept production deploy out of scope, staged safe read-only runtime manifest pull workflow | `.github/workflows/janu-job-copilot-runtime-assurance.yml` | Reviewed merge required to activate; not run |
+| 8. Priority/risk handling | Kept production deploy out of scope, read-only runtime manifest pull workflow isolated into draft PR #57 | `.github/workflows/janu-job-copilot-runtime-assurance.yml` | Reviewed merge required to activate; not run |
 | 9. Permission/readiness | GitHub repo + private Sheets reads verified; branch writes tested, production Apps Script source pull requires CI identity | `source-register.v1.json` and access logs | Actual private runtime capture and branch-protection check still blocked |
 | 10. Closeout | Material code staged on isolated branch, runtime changes not merged; assessment preserved | This artifact and branch commits | Full Iteration Evidence Gate not satisfied, final HOLD |
 
@@ -69,3 +69,7 @@ Rollback source for B17 is the original `=COUNTIF(Applications!AO2:AO,"?*")`, bu
 The four private records were each independently read back in the Live Tracker after the write. The weekly read-only architect assessment and daily critical conditional watch have been created, but **their future execution and alert accuracy have not yet been verified**.
 
 Document-only CI after initial implementation also passed (run `38288019701`); corresponding Apps Script CD job `38288019686` was skipped. No production runtime promotion occurred.
+
+## Release-safety split
+
+Read-only runtime source hash capture is now isolated in [draft PR #57](https://github.com/jaan-creates/ai-pm-portfolio/pull/57). Its PR guard run `38288586790` **PASS**; production inspector job intentionally **SKIPPED** because this was a pull request. PR #56 no longer contains that workflow. This eliminates the need to merge source-changing scripts merely to activate the read-only inspection path. Neither PR is approved for merge in this assessment.
