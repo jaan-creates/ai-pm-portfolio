@@ -11,25 +11,36 @@ export function validateEvent(e){
   if(e.telemetry_schema_version!=='janu-trace-v1')faults.push('UNSUPPORTED_SCHEMA');
   if(!utc(e.occurred_at)||!utc(e.recorded_at))faults.push('INVALID_UTC_TIMESTAMP');
   if(utc(e.occurred_at)&&utc(e.recorded_at)&&Date.parse(e.recorded_at)<Date.parse(e.occurred_at))faults.push('RECORDING_BEFORE_OCCURRENCE');
+  if(!hasText(e.span_type))faults.push('MISSING_SPAN_TYPE');
   if(e.span_type!=='orchestration'&&!hasText(e.parent_span_id))faults.push('MISSING_PARENT_SPAN');
   if(e.attempt!==undefined&&(!Number.isInteger(e.attempt)||e.attempt<1))faults.push('INVALID_ATTEMPT');
   for(const key of Object.keys(e))if(forbidden.has(key.toLowerCase()))faults.push('SENSITIVE_FIELD:'+key);
   return [...new Set(faults)];
 }
 export function validateTrace(events){
-  if(!Array.isArray(events)||!events.length)return {status:'INCOMPLETE',errors:['NO_EVENTS']};
-  const errors=[],spans=new Set(),eventIds=new Set(),traceIds=new Set();
+  if(!Array.isArray(events)||!events.length)return {status:'INCOMPLETE',assurance:'BLOCKED',errors:['NO_EVENTS']};
+  const errors=[],spans=new Set(),eventIds=new Set(),traceIds=new Set(),roots=new Set(),spanParents=new Map(),groups=new Set();
   for(const e of events){
     for(const issue of validateEvent(e))errors.push((e?.event_id||'<missing>')+':'+issue);
     if(e?.event_id){if(eventIds.has(e.event_id))errors.push('DUPLICATE_EVENT_ID:'+e.event_id);eventIds.add(e.event_id);}
-    if(e?.span_id)spans.add(e.span_id);
+    if(e?.span_id){
+      spans.add(e.span_id);
+      if(e.parent_span_id===null||e.parent_span_id===undefined||e.parent_span_id==='')roots.add(e.span_id);
+      const parent=e.parent_span_id||null;
+      if(spanParents.has(e.span_id)&&spanParents.get(e.span_id)!==parent)errors.push('SPAN_PARENT_CONFLICT:'+e.span_id);
+      spanParents.set(e.span_id,parent);
+    }
+    if(e?.group_id)groups.add(e.group_id);
     if(e?.trace_id)traceIds.add(e.trace_id);
   }
   if(traceIds.size!==1)errors.push('MULTIPLE_TRACE_IDS');
+  if(groups.size!==1)errors.push('MULTIPLE_GROUP_IDS');
+  if(roots.size!==1)errors.push('MISSING_OR_MULTIPLE_ROOT_SPANS');
+  for(const e of events)if(!e?.parent_span_id&&e?.span_type!=='orchestration')errors.push('ROOT_NOT_ORCHESTRATION:'+e.span_id);
   for(const e of events)if(e?.parent_span_id&&!spans.has(e.parent_span_id))errors.push('ORPHAN_PARENT:'+e.span_id);
   if(!events.some(e=>e.span_type==='verification'&&hasText(e.evidence_ref)))errors.push('MISSING_VERIFIED_OUTCOME');
   if(!events.some(e=>e.span_type==='persistence'&&hasText(e.evidence_ref)))errors.push('MISSING_PERSISTENCE');
-  return {status:errors.length?'INCOMPLETE':'VERIFIED',errors:[...new Set(errors)],events:events.length};
+  return {status:errors.length?'INCOMPLETE':'STRUCTURALLY_COMPLETE',assurance:'PARTIALLY OBSERVABLE',business_outcome_verified:false,errors:[...new Set(errors)],events:events.length};
 }
 export function stateConsistencySummary(rows){
   const result={checked:0,ok:0,pending:0,invalid:0,unknown:0};
