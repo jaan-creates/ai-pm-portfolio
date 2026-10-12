@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/janu-job-copilot-runtime-assurance.yml'
-      - 'startup-track/projects/2-janu-job-copilot/assurance/runtime-source-readonly.mjs'
+      - '.github/janu-runtime-source-readonly.mjs'
   workflow_dispatch:
 
 permissions:
@@ -27,7 +27,7 @@ jobs:
         run: |
           set -euo pipefail
           f=.github/workflows/janu-job-copilot-runtime-assurance.yml
-          inspector=startup-track/projects/2-janu-job-copilot/assurance/runtime-source-readonly.mjs
+          inspector=.github/janu-runtime-source-readonly.mjs
           grep -Fq 'secrets.JANU_INSPECT_OAUTH_JSON' "$f"
           grep -Fq 'script.projects.readonly' "$inspector"
           grep -Fq 'script.googleapis.com/v1/projects/' "$inspector"
@@ -41,8 +41,8 @@ jobs:
           fi
       - name: Real offline read-only contract and fault injection
         run: |
-          node --check startup-track/projects/2-janu-job-copilot/assurance/runtime-source-readonly.mjs
-          node startup-track/projects/2-janu-job-copilot/assurance/runtime-source-readonly.mjs --self-test
+          node --check .github/janu-runtime-source-readonly.mjs
+          node .github/janu-runtime-source-readonly.mjs --self-test
 
   inspect-runtime:
     if: github.event_name == 'workflow_dispatch'
@@ -61,7 +61,7 @@ jobs:
           JANU_CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
         run: |
           set -euo pipefail
-          node startup-track/projects/2-janu-job-copilot/assurance/runtime-source-readonly.mjs --inspect
+          node .github/janu-runtime-source-readonly.mjs --inspect
       - name: Preserve hash-only audit output
         uses: actions/upload-artifact@v4
         with:
