@@ -1,0 +1,76 @@
+name: Janu Job Copilot Read-only Runtime Provenance
+# PR tests use fixtures only. First real inspection requires separate reviewed manual dispatch.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/janu-job-copilot-runtime-assurance.yml'
+      - '.github/janu-runtime-source-readonly.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: janu-job-copilot-read-only-assurance
+  cancel-in-progress: false
+
+jobs:
+  assert-read-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prove the inspector is a source read, not a privileged clasp session
+        shell: bash
+        run: |
+          set -euo pipefail
+          f=.github/workflows/janu-job-copilot-runtime-assurance.yml
+          inspector=.github/janu-runtime-source-readonly.mjs
+          grep -Fq 'secrets.JANU_INSPECT_OAUTH_JSON' "$f"
+          grep -Fq 'script.projects.readonly' "$inspector"
+          grep -Fq 'script.googleapis.com/v1/projects/' "$inspector"
+          if grep -v '^[[:space:]]*#' "$f" | grep -Eq 'secrets\.JANU_CLASPRC_JSON|secrets\.JANU_INSPECT_CLASPRC_JSON'; then
+            echo 'clasp refresh credentials forbidden in source inspector'
+            exit 31
+          fi
+          if grep -v '^[[:space:]]*#' "$f" | grep -Ei '(^|[^[:alpha:]])clasp[[:space:]]+(push|run|deploy|create|delete|version)([[:space:];]|$)'; then
+            echo 'No write-capable clasp command permitted'
+            exit 32
+          fi
+      - name: Real offline read-only contract and fault injection
+        run: |
+          node --check .github/janu-runtime-source-readonly.mjs
+          node .github/janu-runtime-source-readonly.mjs --self-test
+
+  inspect-runtime:
+    if: github.event_name == 'workflow_dispatch'
+    needs: assert-read-only
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read Apps Script project HEAD using exact read-only OAuth scope
+        shell: bash
+        env:
+          JANU_INSPECT_OAUTH_JSON: ${{ secrets.JANU_INSPECT_OAUTH_JSON }}
+          JANU_CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+        run: |
+          set -euo pipefail
+          node .github/janu-runtime-source-readonly.mjs --inspect
+      - name: Preserve hash-only audit output
+        uses: actions/upload-artifact@v4
+        with:
+          name: janu-readonly-runtime-${{ github.run_id }}
+          path: /tmp/janu-runtime-observation.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove temporary audit output
+        if: always()
+        run: rm -f /tmp/janu-runtime-observation.json
+# Explicitly excluded: clasp auth, push, run, trigger changes, Sheet/Drive writes,
+# full Apps Script source upload, automated schedules, and external job submission.
