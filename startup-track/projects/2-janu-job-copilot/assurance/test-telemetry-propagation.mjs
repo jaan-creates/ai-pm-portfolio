@@ -24,10 +24,11 @@ assert.equal(valid(events), true);
 assert.equal(valid(events.map((e,i)=>i ? {...e,trace_id:'other'} : e)), false);
 assert.equal(valid(events.map((e,i)=>i ? {...e,recorded_at:''} : e)), false);
 assert.equal(valid(events.map((e,i)=>i ? {...e,release_version:'old'} : e)), false);
+assert.equal(valid(events.map((e,i)=>i ? {...e,telemetry_schema_version:''} : e)), false);
 console.log(JSON.stringify({
   status:'PASS',
   contract:'JANU-TELEMETRY-CROSS-BOUNDARY-1',
-  checks:4,
-  negative_controls_detected:3,
+  checks:5,
+  negative_controls_detected:4,
   evidence_boundary:'synthetic event propagation contract; no live worker/storage propagation'
 }));
