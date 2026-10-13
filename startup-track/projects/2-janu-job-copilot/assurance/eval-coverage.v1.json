@@ -1,7 +1,7 @@
 {
   "schema": "janu-eval-coverage-v1",
   "approval_status": "DRAFT",
-  "source": "Master Product & Engineering Specification v0.26.0 + EVAL_PLAN.md; source-level only",
+  "source": "Master Product & Engineering Specification v0.26.0 + EVAL_PLAN.md; source-level only; runtime boundaries remain explicit",
   "cases": [
     {
       "id": "TRACE-GOLDEN-PATCH",
@@ -44,6 +44,34 @@
       "test": "assurance/test-contract.mjs",
       "workflow_step": "Run evidence contract negative controls",
       "evidence_boundary": "metric schema only"
+    },
+    {
+      "id": "APPROVAL-BEFORE-PDF",
+      "requirement": "Human approval and locked content hash precede official PDF render",
+      "test": "assurance/test-approval-pdf-contract.mjs",
+      "workflow_step": "Check approval-before-PDF contract",
+      "evidence_boundary": "synthetic approval/renderer contract only; no official PDF"
+    },
+    {
+      "id": "RENDERER-INTEGRITY",
+      "requirement": "Renderer output hash, QA and career-break integrity are required",
+      "test": "assurance/test-renderer-contract.mjs",
+      "workflow_step": "Check renderer integrity contract",
+      "evidence_boundary": "synthetic renderer/QA contract only; no live canary"
+    },
+    {
+      "id": "TELEMETRY-CROSS-BOUNDARY",
+      "requirement": "Telemetry identity and timestamps remain consistent across boundaries",
+      "test": "assurance/test-telemetry-propagation.mjs",
+      "workflow_step": "Check telemetry propagation contract",
+      "evidence_boundary": "synthetic propagation contract only; no live worker/storage"
+    },
+    {
+      "id": "ESCAPED-REGRESSIONS",
+      "requirement": "Known FL/CS regressions remain executable and fail closed when mutated",
+      "test": "assurance/test-escaped-regressions.mjs",
+      "workflow_step": "Check escaped regression controls",
+      "evidence_boundary": "synthetic escaped-regression controls only; no production recurrence proof"
     }
   ],
   "pending_runtime": [
@@ -52,6 +80,10 @@
     "REAL-TRACE-PROPAGATION",
     "APPROVAL-FIRST-OFFICIAL-PDF",
     "LIVE-RENDER-CAREERBREAK-CANARY",
-    "QUALIFIED-INTERVIEW-EFFORT"
+    "QUALIFIED-INTERVIEW-EFFORT",
+    "REAL-APPROVAL-PDF-LIFECYCLE",
+    "REAL-RENDERER-CANARY",
+    "REAL-TELEMETRY-PROPAGATION",
+    "REAL-ESCAPED-REGRESSION-RECURRENCE"
   ]
 }
