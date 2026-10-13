@@ -58,3 +58,12 @@ GitHub main `14c363cb27bda7fa3279aedf9167bbedf94c9570`, PRs #55/#56 draft and un
 | PR safety | Keep PR #55 unmerged and PR #56 draft | Yes | PR state read | PR #55/#56 state read back after change | Protected release approval and target-runtime evidence before any merge |
 
 **Current disposition:** Source-only stabilization increment COMPLETE for its authorized scope; product/release DoD remains INCOMPLETE / HOLD. No unsupported runtime PASS claim.
+
+
+## Owner action packet — P0.3 proof completion (no assistant production mutation)
+
+- [ ] **Owner-1 — Read-only trigger/task inventory:** As the Apps Script project owner, open the production script's Triggers view and the ChatGPT sourcing-task configuration. Record, without editing, each relevant handler, enabled state, owner identity, timezone, cadence, and last-run metadata for the primary Daily PM Sourcing Worker, recovery watcher, and canonical `phase1OneJobTick`. Capture a timestamped screenshot/export or equivalent private evidence. Do not click Run, add, delete, enable, disable, or replay anything.
+- [ ] **Owner-2 — Genuine scheduled recurrence proof:** After Owner-1 confirms the topology, observe the next two eligible weekday slots without manual execution. Read back `__Sourcing Runs` and `__System Health` after each slot. Accept only rows whose Trigger is the genuine scheduled worker and whose durable run ID, finished time, and outcome are present. Recovery/manual rows remain separate and cannot close `SOURCING_SCHEDULER_STALE`.
+- [ ] **Owner-3 — Controlled release decision:** Provide explicit approval before any re-enable/replay or production configuration change. If approved, change only the named control, record before/after state and rollback, then verify the next scheduled durable outcome and circuit transition. If not approved, leave the circuit OPEN and record the owner decision as HOLD. Never create a duplicate canary or replay the preserved FL-098 queue identity.
+
+**Exact handoff:** return the private evidence references for Owner-1/2/3; do not paste secrets, candidate data, or full private rows into chat. The assistant can then update this same ledger and re-check PR #56/PR #55 state. Until these boxes are checked with evidence, P0.3, FL-096, FL-098 and the overall release DoD remain open.
