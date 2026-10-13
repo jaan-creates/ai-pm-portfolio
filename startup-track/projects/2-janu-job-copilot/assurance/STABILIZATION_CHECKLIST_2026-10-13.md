@@ -267,3 +267,13 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **Runtime acceptance:** Still open. No genuine post-resume scheduled sourcing row or current correlated telemetry execution has been independently read back.
 
 **Evidence decision:** The scheduler classifier is now stronger and CI-proven, but the product remains INCOMPLETE / RELEASE HOLD because source CI cannot substitute for scheduled runtime, telemetry propagation or downstream business proof.
+
+
+## 2026-10-13 telemetry contract hardening — verification status
+
+- [x] **Implemented:** Added an explicit negative control rejecting an event with a missing `telemetry_schema_version`, increasing the telemetry contract to 5 checks and 4 negative controls.
+- [x] **Local execution:** Executed the exact current script content in an isolated Node runtime; result was `PASS`, contract `JANU-TELEMETRY-CROSS-BOUNDARY-1`, 5 checks, 4 negative controls.
+- [ ] **Full governance CI for this revision:** The source commit `0d663ada0dbeb132ced86c428689974ad5c8b27f` has not yet produced a matching Governance run at this readback. The prior full governance run remains valid for the unchanged surrounding suite, but no full-CI PASS is claimed for this exact telemetry revision.
+- [ ] **Runtime health:** Still not proven; local/source tests cannot establish live propagation or durable tracker correlation.
+
+**Regression decision:** The current isolated change passes its direct test and introduces no production mutation. Keep the release hold until the exact revision receives full governance CI and runtime telemetry is independently read back.
