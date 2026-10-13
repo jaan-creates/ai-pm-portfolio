@@ -236,3 +236,14 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **Telemetry health:** Still NOT HEALTHY / NOT PROVEN. The current bounded Trace Explorer readback continues to show blank Parent Span ID fields and incomplete timestamps; no current cross-boundary `telemetry_schema_version` proof was observed. Source-level telemetry checks passing in CI do not change this runtime verdict.
 
 **Operating decision after this refresh:** continue quiet monitoring through the existing stabilization evidence watch; retain the open circuit and all release holds. No additional owner action is requested now beyond allowing the resumed existing task to produce genuine scheduled evidence. If that evidence does not appear, the exact remaining owner action is to provide the read-only topology/last-run evidence and explicitly decide whether the existing schedule may be changed; no trigger or worker change is implied by this ledger update.
+
+
+## 2026-10-13 operating decision — manual sourcing run versus scheduled proof
+
+- [x] **Manual-run evidence boundary clarified:** A user-requested run now would be classified as `recovery/manual`, even if it uses the same sourcing logic. It could provide useful downstream evidence—durable run telemetry, duplicate counts, promoted/no-op counts and Applications readback—but it cannot establish that the daily schedule fired and cannot close `SOURCING_SCHEDULER_STALE`.
+- [x] **Safety decision:** No manual run was started in this continuation because the task may write Applications and the user asked whether it would be sufficient, not explicitly to execute a production recovery run. The resumed existing schedule remains unchanged; no replay, trigger edit or production configuration change was made.
+- [ ] **P0.3 acceptance:** Keep awaiting a genuine scheduled result. The evidence-watch monitor will continue reading the same ledger and will ignore recovery/manual rows when assessing scheduler liveness.
+- [x] **Next stabilization item prepared — runtime telemetry proof boundary:** The next safe item is P0.4 runtime telemetry reconciliation. Its close condition is now explicit: one current-release execution must correlate worker, queue, tool/model, persistence and verifier records with nonblank parent/group/release/timestamp/evidence fields and independently read-back durable downstream state. Synthetic CI remains source evidence only.
+- [ ] **P0.4 execution:** Not run; current connector has no approved target-runtime invocation or production telemetry mutation capability. Existing Trace Explorer gaps remain open.
+
+**User-facing rule:** If a bounded recovery run is intentionally requested later, record it as recovery/manual, read back all downstream fields, and retain the scheduler circuit OPEN until a separate genuine scheduled cycle is observed.
