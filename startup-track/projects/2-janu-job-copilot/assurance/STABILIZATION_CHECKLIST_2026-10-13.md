@@ -308,3 +308,11 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [x] **N3 owner boundary rechecked:** Merged PR #57 remains a reviewed read-only inspector, but its actual credentialed inspection is still not demonstrated. Its documented owner-only requirements remain separate OAuth setup, secure GitHub secret configuration, review/approval and manual dispatch. The assistant cannot perform those protected owner steps.
 - [ ] **N2 scheduler proof:** No new genuine scheduled sourcing outcome has been observed; latest tracker state remains stale/open with recovery excluded.
 - [ ] **N4 live telemetry:** Still blocked by missing current target execution and incomplete tracker trace correlation.
+
+
+## 2026-10-13 N2 scheduled sourcing readback
+
+- [x] **Authoritative refresh executed:** `__System Health`, `__Sourcing Runs` and `__Worker State` were read again after the last continuation.
+- [x] **Result:** No new genuine scheduled success exists. Latest genuine scheduled success remains `SRC-20261009-DAILY-01`; `SRC-20261013-SCHEDULER-MISS` remains FAILED and `SRC-20261013-RECOVERY-01` remains recovery-only.
+- [x] **Health unchanged:** Daily Sourcing remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`; latestScheduled remains `2026-10-09T04:09:00.000Z`; recent gaps remain 2026-10-13, 2026-10-12, 2026-10-08 and 2026-10-07.
+- [ ] **N2 closure:** Two qualifying post-resume genuine scheduled outcomes are still missing. No scheduler PASS or circuit closure claimed.
