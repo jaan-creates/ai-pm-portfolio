@@ -38,7 +38,7 @@ assert.equal(idempotentPatch({firstBytes:'x',secondBytes:'xx'}), false);
 console.log(JSON.stringify({
   status:'PASS',
   contract:'JANU-ESCAPED-REGRESSIONS-1',
-  checks:13,
+  checks:12,
   negative_controls_detected:8,
   cases:['FL-096','FL-098','FL-140','FL-141','CS-20260824-033'],
   evidence_boundary:'synthetic escaped-regression controls; not production recurrence proof'
