@@ -42,6 +42,19 @@ GitHub main `14c363cb27bda7fa3279aedf9167bbedf94c9570`, PRs #55/#56 draft and un
 - [x] **G02e — Renderer integrity contract:** Added 'RENDERER-INTEGRITY' with output hash, QA, page-count and exact Career Break integrity controls. **Evidence:** source-level CI contract only; no live renderer canary.
 - [x] **G02f — Telemetry propagation contract:** Added 'TELEMETRY-CROSS-BOUNDARY' with trace/group/release/timestamp/evidence identity and broken-join negative controls. **Evidence:** synthetic event fixture only; no live worker/storage propagation.
 - [x] **G02g — Escaped regression controls:** Added 'ESCAPED-REGRESSIONS' covering FL-096 scheduled-vs-recovery truth, FL-098 queued-vs-executed truth, FL-140 v2/v3 compatibility, FL-141 patch idempotence and CS-20260824-033 approval ordering. **Evidence:** executable synthetic controls only; no production recurrence proof.
-- [ ] **G02h — CI execution/readback:** New checks are committed to draft PR #56 but their post-change GitHub Actions execution and logs are not yet read back. Do not treat registry presence as PASS.
+- [x] **G02h — CI execution/readback:** Post-change governance run [38359918950](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38359918950) independently read back as SUCCESS on head `c1d4abcc9f2d791dca570133e68992160551e3b8`; all 18 substantive steps passed, including all four new contracts. Logs: 10 mapped cases, 6 registry negative controls, 10 explicit runtime gaps, 35 assurance assertions, and new negative controls 4/4/3/6. Production CD was SKIPPED. This is source-level evidence only.
 
 **P0.2 status:** PARTIALLY IMPLEMENTED / NOT CLOSED. Existing mapping remains draft-only; PR #55 remains unmerged. Runtime and approval baselines remain pending.
+
+
+## Final evidence ledger — planned / implemented / executed / readback / missing proof
+
+| Item | Planned | Implemented | Executed | Independently read back | Missing proof / disposition |
+|---|---|---|---|---|---|
+| P0.2 canonical evaluation registry | Expand approval-before-PDF, renderer, telemetry and escaped-regression coverage | Yes — registry now maps 10 checks on draft PR #56 | Yes — governance run 38359918950 | Yes — job steps and logs read back; all new contracts passed | Runtime approval/PDF, live renderer, live telemetry and recurrence remain unverified; P0.2 remains partially implemented, not closed |
+| P0.3 scheduled sourcing liveness | Reconcile scheduled vs recovery, task state, Apps Script topology, owner/cadence and open circuit | No production/config mutation permitted; tracker evidence reconciled | Read-only tracker search executed; no worker/trigger replay | Yes — __System Health and __Sourcing Runs read back; recovery rows excluded from liveness | Owner-authorized trigger inventory and genuine scheduled recurrence are still missing; FL-096 and FL-098 remain Open; do not re-enable/replay |
+| P0.4 telemetry schema | Preserve consistent trace/span/event/release/timestamp/evidence fields | Source-level validator already present; new explicit cross-boundary contract added | Synthetic contract executed in CI | CI log read back; runtime propagation not read back | Current-release worker-to-storage golden execution and independent target readback |
+| P0.5 approved E2E | Enforce approval-before-PDF, renderer integrity and immutable asset evidence | Source-level contracts added; no production path changed | Synthetic negative/positive checks executed | CI log read back | Approved private fixture, official PDF lifecycle, renderer canary and immutable PDF hash |
+| PR safety | Keep PR #55 unmerged and PR #56 draft | Yes | PR state read | PR #55/#56 state read back after change | Protected release approval and target-runtime evidence before any merge |
+
+**Current disposition:** Source-only stabilization increment COMPLETE for its authorized scope; product/release DoD remains INCOMPLETE / HOLD. No unsupported runtime PASS claim.
