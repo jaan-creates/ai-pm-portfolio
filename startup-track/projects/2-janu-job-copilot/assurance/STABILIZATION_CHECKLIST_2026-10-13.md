@@ -300,3 +300,11 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - **N6 — Improvement/outcome gate:** measure recurrence, interventions, user effort and qualified outcomes against an approved baseline; preserve Keep/Revise/Reject evidence.
 
 **Picking rule for the next continuation:** start with N1 if CI is available; otherwise read the next tracker/CI state and take N2 or N3 only when its required authority exists. Do not skip directly to business PASS claims.
+
+
+## 2026-10-13 N1/N3 readback
+
+- [x] **N1 CI availability checked:** No Governance run exists for the newest telemetry source revision `0d663ada0dbeb132ced86c428689974ad5c8b27f` or the later ledger-only heads. The latest available Governance success remains [38372479992](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38372479992) on the preceding head and reports the prior telemetry count (4/3). The newest direct isolated test passed locally at 5/4. Exact-revision full-CI closure remains open; no unsupported PASS claim.
+- [x] **N3 owner boundary rechecked:** Merged PR #57 remains a reviewed read-only inspector, but its actual credentialed inspection is still not demonstrated. Its documented owner-only requirements remain separate OAuth setup, secure GitHub secret configuration, review/approval and manual dispatch. The assistant cannot perform those protected owner steps.
+- [ ] **N2 scheduler proof:** No new genuine scheduled sourcing outcome has been observed; latest tracker state remains stale/open with recovery excluded.
+- [ ] **N4 live telemetry:** Still blocked by missing current target execution and incomplete tracker trace correlation.
