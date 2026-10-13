@@ -217,3 +217,11 @@ The assistant owns all safe, reversible and read-only work. Production enablemen
 ### Current operating decision
 
 Do not resume the paused sourcing task yet. The screenshot explains the stale condition but does not establish canonical trigger ownership, safe runtime identity, or telemetry health. The next assistant-owned work is the Priority 1 reconciliation and source-side proof package. The checklist must remain OPEN/BLOCKED until the exit evidence exists.
+
+
+## 2026-10-13 authorization and post-resume monitoring
+
+- [x] **Owner authorization received:** User explicitly reported that the existing Daily PM Sourcing Worker schedule was resumed. This authorizes the existing task only; it does not authorize trigger edits, worker replay, duplicate canaries, renderer enablement, or unrelated production changes.
+- [x] **Immediate readback:** Tracker still reports Daily Sourcing BLOCKED / OPEN / SOURCING_SCHEDULER_STALE. Worker State reports latestScheduled=2026-10-09, latestAnySuccess=2026-10-13, and missing expected dates including 2026-10-13 and 2026-10-12. This is consistent with recovery success but not genuine scheduled success.
+- [ ] **Post-resume acceptance:** Await and read back the next genuine scheduled cycle. A recovery/manual row cannot satisfy this item. Require durable run ID, scheduled trigger identity, completion status, duplicate audit, promoted/no-op counts, error count, and downstream Applications readback.
+- [ ] **Circuit closure:** Keep the sourcing circuit OPEN until the post-resume acceptance is independently verified. Do not infer health from the task toggle or latestAnySuccess.
