@@ -18,3 +18,13 @@ Status: **INCOMPLETE / RELEASE HOLD**. Checked means the stated acceptance was a
 GitHub main `14c363cb27bda7fa3279aedf9167bbedf94c9570`, PRs #55/#56 draft and unmerged; PR #57 merged; Master Spec v0.26.0. Tracker system health has Daily Sourcing BLOCKED. PR #56's prior governance CI PASSED on draft source, CD SKIPPED. Missing GitHub workflow-dispatch capability prevents this assistant from directly starting the credentialed PR #57 read-only run; do not fake its execution. Do not merge/deploy production scripts, mutate triggers or send applications without protected authorization.
 
 **Acceptance:** Each unchecked line remains outstanding even when part of it has a source-level PASS. Every future update must include exact source revision, CI/run ID, env, trace/correlation ref where applicable, private record/readback, baseline, uncertainty, and gate decision.
+
+
+## 2026-10-13 executed runtime proof — G01 partial closure
+
+- [x] **G01a — First real exact-readonly capture:** GitHub Actions [38356346026](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38356346026), triggered by `workflow_dispatch`; both `assert-read-only` and `inspect-runtime` SUCCESS. Hash-only artifact `11793067679`, observed `2026-10-13T06:22:53.976Z`, read-only scope exact. No worker execution or source body upload.
+- [x] **G01b — Independent HEAD source hash comparison:** downloaded JSON artifact source SHA-256 `e85b177b7c4f5b0d8ac2c5860ba9607c12932010209d45674a65cf48719c4e99` matches independently queried private `__Worker State` key `deployment_source_sha256` row 83, last recorded 11 October. Editable Apps Script HEAD release version `1.3.8`, suite `p0-regression-v19`. Full-project hash `184e7cd3418973f49c501a16b3993ccf262fac298f31a6a8216229023ffe6ac3`, 1 server-JS and 2 total files, has no prior independently recorded full-project baseline.
+- [ ] **G01c — Pinned deployment and owner trigger inventory:** Inspector explicitly reports `pinned_deployment_version=NOT_INSPECTED` and `trigger_inventory=NOT_INSPECTED`. Do not infer installed trigger/version or scheduled liveness from the HEAD match.
+- [ ] **G01d — Fresh repeatability:** Evidence is one successful run, not sustained or automated inspector delivery. OAuth External/Testing refresh token may expire; establish appropriate renewal/revocation monitoring without granting broad permissions.
+
+**Boundary:** These two subchecks are VERIFIED, but parent P0.1 remains unchecked until the pinned version/trigger requirements are resolved. **Human handoff:** not needed for HEAD readback; do not re-request OAuth secret.
