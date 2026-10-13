@@ -247,3 +247,13 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **P0.4 execution:** Not run; current connector has no approved target-runtime invocation or production telemetry mutation capability. Existing Trace Explorer gaps remain open.
 
 **User-facing rule:** If a bounded recovery run is intentionally requested later, record it as recovery/manual, read back all downstream fields, and retain the scheduler circuit OPEN until a separate genuine scheduled cycle is observed.
+
+
+## 2026-10-13 P0.4/P0.3 evidence-boundary hardening
+
+- [x] **Implemented source guard:** `test-escaped-regressions.mjs` now requires the exact Daily PM Sourcing Worker scheduled trigger label, a durable run, and a successful/no-op status before classifying a run as genuine scheduled proof. Recovery, manual, non-durable and failed runs are explicit negative cases.
+- [ ] **Executed CI:** The guard was committed on PR #56 head `11846b142e55ec40d4945a7b08fd594f349b5275`; the workflow result is not yet available at this readback. No PASS is claimed until the actual job and logs are read.
+- [ ] **Runtime proof:** This source guard remains synthetic evidence. It does not create a scheduled run, change the production task, or prove tracker telemetry.
+- [ ] **P0.4 close:** Current runtime Trace Explorer still lacks the required correlated parent/group/release/timestamp/evidence proof. The next acceptance remains one independently read-back current-release execution across worker, queue, tool/model, persistence and verifier boundaries.
+
+**Decision:** Continue monitoring. Do not run a manual sourcing cycle solely to satisfy the scheduled-liveness gate; if a recovery run is later needed for diagnosis, label it recovery/manual and keep the circuit open.
