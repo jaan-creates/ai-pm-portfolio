@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 
-const canRenderOfficialPdf = (s) =>
+const canRenderOfficialPdf = (s) => Boolean(
   s.approved &&
   s.approvedContentHash &&
   s.approvalActor &&
   s.contentHash === s.approvedContentHash &&
   s.rendererVersion &&
   s.qaPassed === true &&
-  s.pdfHash;
+  s.pdfHash
+);
 
 const approved = {
   approved:true, approvedContentHash:'sha256:content-v1', approvalActor:'human-reviewer',
