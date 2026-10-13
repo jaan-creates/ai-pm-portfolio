@@ -93,3 +93,6 @@ jobs:
 
       - name: Run evidence contract negative controls
         run: node "$PROJECT_DIR/assurance/test-contract.mjs"
+
+      - name: Enforce evaluation case coverage and mandatory check mapping
+        run: node "$PROJECT_DIR/assurance/test-eval-coverage.mjs"
