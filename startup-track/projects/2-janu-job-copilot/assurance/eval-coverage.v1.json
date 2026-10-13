@@ -1,0 +1,57 @@
+{
+  "schema": "janu-eval-coverage-v1",
+  "approval_status": "DRAFT",
+  "source": "Master Product & Engineering Specification v0.26.0 + EVAL_PLAN.md; source-level only",
+  "cases": [
+    {
+      "id": "TRACE-GOLDEN-PATCH",
+      "requirement": "Trace assembly, continuation and gold path",
+      "test": "scripts/test-trace-golden-v0-patch.mjs",
+      "workflow_step": "Behavior-test TRACE-GOLDEN-01 patch",
+      "evidence_boundary": "assembled source fixture"
+    },
+    {
+      "id": "P1A-CONVERGENCE",
+      "requirement": "Retry/convergence idempotence",
+      "test": "scripts/test-vacancy-lifecycle-convergence.mjs",
+      "workflow_step": "Guard vacancy lifecycle partial-install convergence",
+      "evidence_boundary": "isolated fixture"
+    },
+    {
+      "id": "RELEASE-PROVENANCE",
+      "requirement": "Rollback and source provenance",
+      "test": "scripts/test-release-provenance-patch.mjs",
+      "workflow_step": "Behavior-test release provenance patch",
+      "evidence_boundary": "source patch fixture"
+    },
+    {
+      "id": "SHIM-COMPATIBILITY",
+      "requirement": "P1 continuation v2/v3 compatibility",
+      "test": "scripts/test-e2e-shim-version.mjs",
+      "workflow_step": "Test continuation compatibility shim v2 and v3",
+      "evidence_boundary": "source fixture"
+    },
+    {
+      "id": "TELEMETRY-SCHEMA",
+      "requirement": "Cross-record telemetry shape and negative join cases",
+      "test": "assurance/test-contract.mjs",
+      "workflow_step": "Run evidence contract negative controls",
+      "evidence_boundary": "schema fixture only; no real propagation"
+    },
+    {
+      "id": "METRIC-DEFINITIONS",
+      "requirement": "Metric numerator/denominator and approval contract",
+      "test": "assurance/test-contract.mjs",
+      "workflow_step": "Run evidence contract negative controls",
+      "evidence_boundary": "metric schema only"
+    }
+  ],
+  "pending_runtime": [
+    "REAL-SCHEDULER-SLOTS",
+    "REAL-CURRENT-SOURCE-CAPTURE",
+    "REAL-TRACE-PROPAGATION",
+    "APPROVAL-FIRST-OFFICIAL-PDF",
+    "LIVE-RENDER-CAREERBREAK-CANARY",
+    "QUALIFIED-INTERVIEW-EFFORT"
+  ]
+}
