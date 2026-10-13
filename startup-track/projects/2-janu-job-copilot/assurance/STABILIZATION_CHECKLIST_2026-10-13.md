@@ -168,3 +168,52 @@ The prior scheduler-stale diagnosis is now explained more precisely: the daily C
 - The renderer canary trigger is disabled and its safe ownership/enablement decision remains separate.
 
 **Current status:** G01 trigger/task diagnosis = PARTIAL VERIFIED; P0.3 scheduler liveness = BLOCKED / OPEN; no production change made.
+
+
+## Execution ownership plan — trust closure priority
+
+The assistant owns all safe, reversible and read-only work. Production enablement, trigger edits, worker replay and protected release remain explicit approval boundaries.
+
+### Priority 1 — Establish the runtime control-plane truth
+
+**Assistant-owned:** reconcile screenshot evidence, tracker health, sourcing-run history, worker state, PR state and release records; preserve contradictions; run source-level topology and negative-control checks; update G01/G03/G11.
+
+**Owner boundary:** do not resume the paused Daily PM Sourcing Worker, edit Apps Script triggers, replay workers, or enable the disabled renderer canary without explicit approval.
+
+**Exit proof:** pinned/current runtime identity, exact trigger ownership/cadence, task state, deployment identity and error semantics agree across independent sources.
+
+### Priority 2 — Prove sourcing safety before reopening the circuit
+
+**Assistant-owned:** validate canonical deduplication, no-op semantics, duplicate audits, failed-run timestamp rules, recovery-vs-scheduled classification, and source-level regression cases; prepare the exact readback query and acceptance record.
+
+**Owner boundary:** only after Priority 1 review may the owner authorize resuming the existing daily task. No new trigger or replay is allowed.
+
+**Exit proof:** two consecutive genuine scheduled cycles, one durable telemetry row per cycle, correct failure/no-op/promoted counts, no duplicate applications, and health circuit transition supported by readback.
+
+### Priority 3 — Prove telemetry before trusting any PASS
+
+**Assistant-owned:** reconcile the source telemetry schema, trace/span/parent/group/release fields, negative controls, self-reported health conflicts, and tracker projection requirements; add or repair source-level validators.
+
+**Owner boundary:** provide authorized target-runtime access only if a protected read-only capture is required.
+
+**Exit proof:** one current-release execution has a correlated trace across worker, queue, model/tool, persistence and verifier records, with independently read-back durable outcomes and no missing required fields.
+
+### Priority 4 — Prove approval-first resume and PDF flow
+
+**Assistant-owned:** maintain approval-before-PDF, renderer, immutable-hash and escaped-regression tests; prepare private fixture acceptance criteria and rollback evidence.
+
+**Owner boundary:** approve the private held-out fixture and any protected target-runtime canary.
+
+**Exit proof:** approved content hash precedes PDF generation; renderer QA passes; final PDF hash and application record are independently read back.
+
+### Priority 5 — Prove AI quality and business improvement
+
+**Assistant-owned:** build the evaluation matrix for vacancy correctness, factual evidence mapping, resume claim support, renderer preservation, approval boundaries, user relay and recovery effort; keep synthetic and private/runtime evidence separate.
+
+**Owner boundary:** approve private candidate fixtures, human rubric decisions and metric cohorts.
+
+**Exit proof:** calibrated private evaluation results, approved baselines, genuine completion/outcome evidence, measured user-effort change and a Keep/Revise/Reject decision.
+
+### Current operating decision
+
+Do not resume the paused sourcing task yet. The screenshot explains the stale condition but does not establish canonical trigger ownership, safe runtime identity, or telemetry health. The next assistant-owned work is the Priority 1 reconciliation and source-side proof package. The checklist must remain OPEN/BLOCKED until the exit evidence exists.
