@@ -67,3 +67,41 @@ GitHub main `14c363cb27bda7fa3279aedf9167bbedf94c9570`, PRs #55/#56 draft and un
 - [ ] **Owner-3 — Controlled release decision:** Provide explicit approval before any re-enable/replay or production configuration change. If approved, change only the named control, record before/after state and rollback, then verify the next scheduled durable outcome and circuit transition. If not approved, leave the circuit OPEN and record the owner decision as HOLD. Never create a duplicate canary or replay the preserved FL-098 queue identity.
 
 **Exact handoff:** return the private evidence references for Owner-1/2/3; do not paste secrets, candidate data, or full private rows into chat. The assistant can then update this same ledger and re-check PR #56/PR #55 state. Until these boxes are checked with evidence, P0.3, FL-096, FL-098 and the overall release DoD remain open.
+
+
+## 2026-10-13 trust audit — attached checklist reconciliation
+
+This audit treats the attached acceptance images as acceptance criteria, not evidence. Current status is based on fresh GitHub and private tracker readback.
+
+| Gate | Current disposition | Evidence read back | Missing proof / action |
+|---|---|---|---|
+| G00 commitments | VERIFIED | PR #55/#56 state and changed-source inventory | None for inventory |
+| G01 runtime identity | PARTIAL / BLOCKED | Historical read-only source/head evidence exists; current checklist still records pinned deployment and trigger topology as not inspected | Owner-authorized pinned deployment and trigger inventory; repeatable inspection |
+| G02 contract/unit tests | VERIFIED for source-only scope | Latest governance run passed; 10 mapped cases, 6 registry negative controls, 35 assurance assertions, approval/renderer/telemetry/escaped-regression checks | This does not prove target runtime |
+| G03 integration/source assembly | PARTIAL | Composed fixture, syntax, compatibility and release-provenance checks pass in CI | Exact deployed Apps Script identity, dependency/runtime compatibility and deployment guard readback |
+| G04 target-runtime/canary | BLOCKED | No current authorized worker/canary execution accepted; FL-098 remains open | Owner-controlled trigger topology plus bounded target canary and durable downstream readback |
+| G05 approval-first golden journey | OPEN | Synthetic approval-before-PDF and renderer contracts pass | Approved private fixture, official PDF render, post-render QA, immutable PDF hash and application readback |
+| G06 governance/source reconciliation | PARTIAL | RUNBOOK, AUTONOMY_CONTRACT, ITERATION_EVIDENCE_GATE, Master Spec v0.26.0 and source register reconciled | Runtime source/config still not reconciled to the documented contracts |
+| G07 continuous improvement | PARTIAL / INSUFFICIENT EVIDENCE | FL-139/140/141 and JC-LAB-003 exist; defects produced prevention tests; JC-LAB-003 decision is “Source Improvements Verified; Runtime/Outcome Pending” | Demonstrate recurrence reduction, reduced user relay, or controlled business improvement |
+| G08 business/metric evaluation | OPEN | Draft metric definitions exist; regression history exists | Approved baseline/cohort, genuine completion and user-effort denominator; QUALIFIED_INTERVIEW_PER_EFFORT remains not instrumented |
+| G09 audit delivery | OPEN | Audit prompts/tasks exist | First execution, cited current sources and notification/delivery evidence |
+| G10 release/Evidence Gate | BLOCKED / HOLD | Production CD skipped; PR #55/#56 remain draft/unmerged | All required runtime, downstream, rollback and improvement evidence |
+
+### Telemetry health verdict
+
+**NOT HEALTHY / NOT PROVEN.** The source-level telemetry contract and negative controls are present, but the authoritative tracker does not show a current correlated telemetry propagation proof:
+
+- 'Trace Explorer' contains records with 'Parent Span ID' blank and incomplete start/end timestamps.
+- No current 'telemetry_schema_version' rows were found in the bounded 'Trace Explorer' or '__Golden Trace' searches.
+- '__Golden Trace' remains a manually assembled evidence ledger, not proof of live cross-boundary telemetry.
+- '__Worker State' contains a self-reported renderer 'CANARY_PASS' / 'runtimeHealthy=true' entry, but this conflicts with open FL-098, missing trigger topology, and the still-open release gate. It is retained as an assertion requiring reconciliation, not accepted as independent proof.
+
+### Continuous-improvement verdict
+
+**Functioning as a learning-record and prevention pipeline; not yet proven effective.** Defects are being recorded, linked to controls and reflected in source tests. The system has not yet demonstrated a measured reduction in recurrence, recovery effort, avoidable user relay, or qualified-interview outcomes. JC-LAB-003 correctly remains **Insufficient Evidence**.
+
+### Newly added gap
+
+- **G11 — Conflicting self-reported runtime health:** Reconcile '__Worker State' renderer containment/CANARY_PASS assertions against authoritative trigger, queue, health, trace and downstream artifact readback. Until reconciled, do not use the self-report to close G03–G05, FL-098, or the release gate.
+
+**Trust decision:** The system is not yet certified as trustworthy end-to-end. It is source-governed and partially regression-tested, but runtime scheduling, telemetry propagation, approval-first artifact execution, and business improvement remain unproven.
