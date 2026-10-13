@@ -148,3 +148,23 @@ If you cannot find the task area, send a screenshot of the page you do see and s
 “Changes made: none”
 
 Until these screenshots or equivalent owner evidence arrive, the related checklist items remain OPEN/BLOCKED. No production change is authorized by this guide.
+
+
+## 2026-10-13 owner screenshot evidence — scheduler diagnosis
+
+- [x] **Owner step A read-only trigger screenshot received:** The Apps Script Triggers page shows four triggers, all owned by “Me” and deployed on “Head”: active time-based phase1OneJobTick (last run 13 Oct 2026 1:40:08 PM, error rate 9.73%), active time-based phase1HealthTick (last run 13 Oct 2026 1:37:51 PM, error rate 15.43%), active spreadsheet-on-edit phase1OnEdit (last run 13 Oct 2026 12:45:51 PM, error rate 33.33%), and disabled time-based runOwnedRendererCanaryTick. Screenshot evidence is user-provided and read-only; no change was made.
+- [x] **Owner step B read-only sourcing-task screenshot received:** The “Daily PM Sourcing Worker” task is configured to repeat daily at 8:57 AM India Time, but the task is paused: the dialog presents “Resume” and “Save”. Screenshot evidence is user-provided and read-only; no change was made.
+- [ ] **Owner step C production decision:** No resume, replay, trigger edit, or production configuration change is authorized by the screenshots alone.
+
+### Scheduler conclusion
+
+The prior scheduler-stale diagnosis is now explained more precisely: the daily ChatGPT sourcing task is paused, while the Apps Script control-plane triggers are active. This does not prove that the paused task was the only source of the expected scheduled sourcing cycle, nor does it prove a successful durable sourcing run. The Daily Sourcing circuit must remain OPEN until a production owner explicitly authorizes the next action and a genuine scheduled cycle is durably read back.
+
+### New runtime evidence gaps
+
+- The screenshots do not show the exact time interval for phase1OneJobTick or phase1HealthTick.
+- The screenshots show nonzero trigger error rates, but not the corresponding execution logs or durable tracker outcomes.
+- The screenshots do not prove that phase1OneJobTick is the canonical sourcing scheduler.
+- The renderer canary trigger is disabled and its safe ownership/enablement decision remains separate.
+
+**Current status:** G01 trigger/task diagnosis = PARTIAL VERIFIED; P0.3 scheduler liveness = BLOCKED / OPEN; no production change made.
