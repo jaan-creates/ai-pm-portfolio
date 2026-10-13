@@ -34,3 +34,14 @@ GitHub main `14c363cb27bda7fa3279aedf9167bbedf94c9570`, PRs #55/#56 draft and un
 - [x] **G02a — Requirement-to-executed-check coverage mapping:** `assurance/eval-coverage.v1.json` enumerates six required source checks, their responsible CI step and six explicitly unverified runtime boundaries. `assurance/test-eval-coverage.mjs` runs as a mandatory GitHub Governance CI step on PR #56 source. GitHub Actions [38356827674](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38356827674) SUCCESS, independently read job log: `mapped:6`, `negative_controls_detected:5`, `unverified_runtime:6`; 35 existing assurance contract checks passed. Production CD skipped.
 - [ ] **G02b — Mainline promotion/whole-contract coverage:** Original synthetic PR #55 remains separate draft and unmerged; the six mapped checks do not cover all Master Spec risks. Current mandatory mapping lives on draft PR #56, not main. Any release remains gated.
 - [ ] **G02c — Target-env regression:** No production worker, model or end-to-end canary executed by these checks. Need approved exact-release target execution and independent private readback.
+
+
+## 2026-10-13 P0.2 canonical registry expansion (implemented source-only)
+
+- [x] **G02d — Approval-before-PDF contract:** Added 'APPROVAL-BEFORE-PDF' with executable positive and negative controls. It requires explicit approval, approval actor, locked approved-content hash, renderer version, QA pass and PDF hash before an official-PDF result can be considered valid. **Evidence:** source-level CI contract only; no official PDF rendered.
+- [x] **G02e — Renderer integrity contract:** Added 'RENDERER-INTEGRITY' with output hash, QA, page-count and exact Career Break integrity controls. **Evidence:** source-level CI contract only; no live renderer canary.
+- [x] **G02f — Telemetry propagation contract:** Added 'TELEMETRY-CROSS-BOUNDARY' with trace/group/release/timestamp/evidence identity and broken-join negative controls. **Evidence:** synthetic event fixture only; no live worker/storage propagation.
+- [x] **G02g — Escaped regression controls:** Added 'ESCAPED-REGRESSIONS' covering FL-096 scheduled-vs-recovery truth, FL-098 queued-vs-executed truth, FL-140 v2/v3 compatibility, FL-141 patch idempotence and CS-20260824-033 approval ordering. **Evidence:** executable synthetic controls only; no production recurrence proof.
+- [ ] **G02h — CI execution/readback:** New checks are committed to draft PR #56 but their post-change GitHub Actions execution and logs are not yet read back. Do not treat registry presence as PASS.
+
+**P0.2 status:** PARTIALLY IMPLEMENTED / NOT CLOSED. Existing mapping remains draft-only; PR #55 remains unmerged. Runtime and approval baselines remain pending.
