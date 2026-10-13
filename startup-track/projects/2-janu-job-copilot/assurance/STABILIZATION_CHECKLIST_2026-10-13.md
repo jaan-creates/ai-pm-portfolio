@@ -277,3 +277,26 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **Runtime health:** Still not proven; local/source tests cannot establish live propagation or durable tracker correlation.
 
 **Regression decision:** The current isolated change passes its direct test and introduces no production mutation. Keep the release hold until the exact revision receives full governance CI and runtime telemetry is independently read back.
+
+
+## 2026-10-13 continuation queue — observations and next items
+
+### Fresh observations
+
+1. **PR safety:** PR #56 remains draft/open/unmerged at head `872c0423f834ae2c4d4b95b7ba87420b6485ae37`; PR #55 remains unmerged. No production deployment occurred.
+2. **CI:** The latest available full Governance run is [38372479992](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38372479992), successful on the preceding documentation head. The newest telemetry source revision has a direct isolated PASS, but no matching full Governance run has appeared yet. This is intentionally not called a full-CI PASS.
+3. **Daily sourcing:** Tracker remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`. The latest genuine scheduled success remains October 9. October 13 has a failed scheduled preflight followed by a recovery success; recovery is excluded from scheduler proof.
+4. **Downstream recovery evidence:** Three Applications were added and read back as `Decision=New`, but vacancy status, direct form health, posting dates and fixed pay remain explicitly unknown. This is useful recovery evidence, not scheduler or full business-quality proof.
+5. **Telemetry/runtime:** Current tracker evidence still contains a renderer control-plane permission failure and incomplete trace correlation. Versioned telemetry is not proven healthy.
+6. **Monitor:** The existing evidence-watch monitor remains the continuing observation mechanism; unchanged evidence should not cause a new completion claim.
+
+### Next-item queue
+
+- **N1 — Exact-revision CI closure:** obtain and read back Governance CI for the newest telemetry-schema negative control; if absent, retain source-local PASS only and do not promote the claim.
+- **N2 — Scheduler proof:** observe the next genuine scheduled weekday outcome, then a second eligible scheduled outcome; read back run identity, status, counts, duplicate audit and Applications effects. Keep recovery separate.
+- **N3 — Runtime identity:** close pinned deployment and trigger-topology gaps through the approved read-only inspector/owner evidence; do not infer from HEAD hash or screenshots.
+- **N4 — Live telemetry:** after authorized target execution exists, verify trace/span/parent/group/release/schema/timestamps across worker, queue, model/tool, persistence and verifier records.
+- **N5 — Approval-first E2E:** execute only an approved private fixture; verify content approval before PDF, locked hash, renderer QA, immutable PDF hash and downstream artifact readback.
+- **N6 — Improvement/outcome gate:** measure recurrence, interventions, user effort and qualified outcomes against an approved baseline; preserve Keep/Revise/Reject evidence.
+
+**Picking rule for the next continuation:** start with N1 if CI is available; otherwise read the next tracker/CI state and take N2 or N3 only when its required authority exists. Do not skip directly to business PASS claims.
