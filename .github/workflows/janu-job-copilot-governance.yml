@@ -85,5 +85,32 @@ jobs:
       - name: Guard vacancy lifecycle partial-install convergence
         run: node "$PROJECT_DIR/scripts/test-vacancy-lifecycle-convergence.mjs" "$PROJECT_DIR"
 
+      - name: Test continuation compatibility shim v2 and v3
+        run: node "$PROJECT_DIR/scripts/test-e2e-shim-version.mjs" "$PROJECT_DIR"
+
+      - name: Test Apply-to-resume timing and JD completeness normalization
+        run: node "$PROJECT_DIR/scripts/test-apply-resume-timing.mjs" "$PROJECT_DIR"
+
+      - name: Test Eltropy continuation admission invariant
+        run: node "$PROJECT_DIR/scripts/test-eltropy-continuation-admission.mjs" "$PROJECT_DIR"
+
       - name: Behavior-test TRACE-GOLDEN-01 patch
         run: node "$PROJECT_DIR/scripts/test-trace-golden-v0-patch.mjs" "$PROJECT_DIR"
+
+      - name: Run evidence contract negative controls
+        run: node "$PROJECT_DIR/assurance/test-contract.mjs"
+
+      - name: Enforce evaluation case coverage and mandatory check mapping
+        run: node "$PROJECT_DIR/assurance/test-eval-coverage.mjs"
+
+      - name: Check approval-before-PDF contract
+        run: node "$PROJECT_DIR/assurance/test-approval-pdf-contract.mjs"
+
+      - name: Check renderer integrity contract
+        run: node "$PROJECT_DIR/assurance/test-renderer-contract.mjs"
+
+      - name: Check telemetry propagation contract
+        run: node "$PROJECT_DIR/assurance/test-telemetry-propagation.mjs"
+
+      - name: Check escaped regression controls
+        run: node "$PROJECT_DIR/assurance/test-escaped-regressions.mjs"

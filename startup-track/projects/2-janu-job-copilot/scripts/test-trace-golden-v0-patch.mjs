@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
+import vm from 'node:vm';
 
 const projectDir=process.argv[2]||path.resolve('startup-track/projects/2-janu-job-copilot');
 const patcher=path.join(projectDir,'scripts','patch-trace-golden-v0-runtime.mjs');
@@ -10,7 +11,8 @@ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'janu-trace-golden-'));
 const target=path.join(tmp,'TrackerWorkflow.js');
 fs.writeFileSync(target,`
 const P12=Object.freeze({VERSION:'1.3.8',SUITE:'p0-regression-v19'});
-const JC={S:{A:'Applications'},W:{}};
+// Worker names must be present so the real continuation patch can resolve its contracts.
+const JC={S:{A:'Applications'},W:{RESUME_GENERATE:true,QA_FINALIZE:true}};
 function verifyReleaseIdentity(){return true;}
 function enqueue_(){return 'Q-1';}
 function upsertWorkerState_(){}
@@ -23,8 +25,19 @@ function find_(){return 0;}
 function now_(){return new Date();}
 function iso_(){return new Date().toISOString();}
 function p1aQueueWorkerState_(){return {state:'NONE'};}
+// Provider guard fixture mirrors the exact pre-patch bounded-paid-fallback seam.
+function fixtureProviderGuard_(q,cfg,ctx){if(q&&cfg.tavilyKey)return true;return false;}
+// Real lifecycle patch inserts a closed-vacancy guard at this existing harness seam.
+function orchestrateOne_(id,a){if(!id||a['Decision']!=='Apply')return 0;return 1;}
 function phase1HealthTick(){return true;}
 `);
+// The TRACE runtime patch composes the *real* E2E continuation patch. Its CLOSED
+// vacancy dependency must be installed through the real vacancy worker ->
+// lifecycle -> E2E composition chain, not mocked or omitted.
+const lifecyclePatcher=path.join(projectDir,'scripts','patch-p1a-vacancy-worker.mjs');
+const lifecycle=spawnSync(process.execPath,[lifecyclePatcher,tmp],{encoding:'utf8'});
+if(lifecycle.status!==0)throw new Error('lifecycle fixture composition failed: '+(lifecycle.stderr||lifecycle.stdout));
+if(!fs.readFileSync(target,'utf8').includes('function p1aWriteVacancyEvidence_(')||!fs.readFileSync(target,'utf8').includes('function p1aPropagateClosedVacancy_('))throw new Error('real vacancy writer/lifecycle dependencies not installed');
 function run(){const r=spawnSync(process.execPath,[patcher,tmp],{encoding:'utf8'});if(r.status!==0)throw new Error(r.stderr||r.stdout);return r.stdout;}
 run();const once=fs.readFileSync(target,'utf8');
 run();const twice=fs.readFileSync(target,'utf8');
@@ -45,4 +58,17 @@ if(!twice.includes(neg))throw new Error('TRACE-DEDUPE-001 Tekion/Easyship negati
 if(!twice.includes("traceNextAppIdFromValues_('2026-08-23',['2026-08-23-001'])==='2026-08-23-002'"))throw new Error('TRACE-ID-001 collision fixture missing');
 if(!twice.includes("if(!raw)continue"))throw new Error('empty existing URLs must never dedupe');
 if(!twice.includes("if(!requested||last<2)"))throw new Error('empty requested URL must never dedupe');
-console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true},null,2));
+// Execute actual generated helper functions, not a simplified model of their logic.
+// No remote requests, model calls, spreadsheet writes or Apps Script invocations.
+const sandbox=vm.createContext({URL,Date,console});
+vm.runInContext(twice,sandbox,{timeout:5000});
+const runtimeChecks=[
+  ['same canonical URL',vm.runInContext("traceUrlIdentityMatch_('https://jobs.ashbyhq.com/example/role/?utm_source=one','https://jobs.ashbyhq.com/example/role')",sandbox)],
+  ['distinct canonical URLs',!vm.runInContext("traceUrlIdentityMatch_('https://jobs.ashbyhq.com/example/role','https://jobs.ashbyhq.com/other/role')",sandbox)],
+  ['empty URL does not dedupe',!vm.runInContext("traceUrlIdentityMatch_('','')",sandbox)],
+  ['collision-proof next ID',vm.runInContext("traceNextAppIdFromValues_('2026-08-23',['2026-08-23-001','2026-08-23-009'])",sandbox)==='2026-08-23-010'],
+  ['closed-vacancy lifecycle self-test',vm.runInContext('p1aVacancyLifecycleSelfTest_().pass',sandbox)],
+  ['recoverable QA failure',vm.runInContext("p1aQaNeedsRepair_({state:'FAILED',errorCode:'CODE_OR_SCHEMA'})",sandbox)]
+];
+for(const [name,pass] of runtimeChecks)if(!pass)throw new Error('generated runtime helper execution failed: '+name);
+console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true,generatedRuntimeHelperChecks:runtimeChecks.length},null,2));

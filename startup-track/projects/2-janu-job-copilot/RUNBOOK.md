@@ -9,7 +9,7 @@ Diagnose from environment evidence outward. Do not start by changing prompts or 
 
 ## 1. Material product iteration
 
-Use `skills/product-iteration/SKILL.md` from the parent AI Systems Lab or the product's `ITERATION_EVIDENCE_GATE.md`.
+Use the product's `ITERATION_EVIDENCE_GATE.md` as the available mandatory closeout. For relevant parent-Lab work, consult the current `jaan-creates/ai-systems-lab/PROJECT_INSTRUCTIONS.md` and `02_SYSTEM_CANON.md`. The previously referenced `skills/product-iteration/SKILL.md` has **not been verified as accessible** in the current parent repo or installed skills catalog; do not claim it was read unless it is located and fetched. Do not substitute ChatGPT history for these current sources.
 
 Sequence:
 1. verify current product/runtime state and exact control surfaces,

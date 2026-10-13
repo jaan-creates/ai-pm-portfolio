@@ -1,0 +1,118 @@
+{
+  "schema_version": "janu-source-register-v1",
+  "evidence_cutoff": "2026-10-12",
+  "classification": "PUBLIC METADATA ONLY",
+  "sources": [
+    {
+      "id": "APPROVED_CANDIDATE_EVIDENCE",
+      "authority": "Candidate factual truth",
+      "locator": "Private canonical Candidate Evidence Registry and approved resume",
+      "read": "AVAILABLE THROUGH AUTHORIZED DRIVE; content not reproduced",
+      "write": "HUMAN APPROVAL",
+      "evidence": "Document revision and approved claim ID",
+      "freshness": "Verify per evaluation run"
+    },
+    {
+      "id": "MASTER_SPEC",
+      "authority": "Product policy and expected behavior",
+      "locator": "Google Doc 1vMnjspHRSr66k_ephii0KKJd_2IdLcGlDHdGDDx2Z3o",
+      "version": "0.26.0; Google revision must be captured",
+      "read": "VERIFIED",
+      "write": "EXPLICIT POLICY APPROVAL",
+      "evidence": "Docs revisionId + relevant section",
+      "freshness": "Re-read on material changes"
+    },
+    {
+      "id": "DECISION_LOG",
+      "authority": "Append-only business decisions",
+      "locator": "Within MASTER_SPEC",
+      "read": "VERIFIED existence",
+      "write": "APPROVED CHANGE SET",
+      "evidence": "Change Set ID and document revision",
+      "freshness": "Review latest entries"
+    },
+    {
+      "id": "REPO",
+      "authority": "Patch source and governance",
+      "locator": "github:jaan-creates/ai-pm-portfolio/startup-track/projects/2-janu-job-copilot",
+      "version": "commit SHA per change",
+      "read": "VERIFIED",
+      "write": "VERIFIED ON ISOLATED BRANCH",
+      "evidence": "blob SHA + commit + PR checks",
+      "freshness": "Read HEAD before material change"
+    },
+    {
+      "id": "LAB",
+      "authority": "Parent learning and promotion policy",
+      "locator": "github:jaan-creates/ai-systems-lab/PROJECT_INSTRUCTIONS.md",
+      "read": "VERIFIED",
+      "write": "NOT VERIFIED",
+      "evidence": "commit/blob SHA",
+      "freshness": "Read for relevant Lab interventions"
+    },
+    {
+      "id": "TRACKER",
+      "authority": "Operational state, not policy",
+      "locator": "Private Google Sheets 1Z80S9hNxUyAm3bggE5xYhKSImf3izdsywNDPU2sXE84",
+      "read": "VERIFIED BOUNDED RANGES",
+      "write": "REQUIRES EXPLICIT SCOPE AND IMMEDIATE READBACK",
+      "evidence": "tab, range, snapshot cutoff; never public row data",
+      "freshness": "At assessment"
+    },
+    {
+      "id": "TRACES",
+      "authority": "Execution reconstruction",
+      "locator": "Tracker: Trace Explorer + __Processing Queue + Audit Log",
+      "read": "PARTIALLY OBSERVABLE",
+      "write": "RUNTIME PATH NOT VERIFIED",
+      "evidence": "trace_id + queue_job_id + release",
+      "freshness": "At assessment"
+    },
+    {
+      "id": "TEST_EVIDENCE",
+      "authority": "Executed verification",
+      "locator": "GitHub Actions, __Regression Results, __Verification Ledger",
+      "read": "VERIFIED FOR KNOWN RUN IDS",
+      "write": "CI / PRIVATE RUNTIME ONLY",
+      "evidence": "run ID + job ID + commit + test ID",
+      "freshness": "At assessed commit"
+    },
+    {
+      "id": "SOURCE_RUNTIME",
+      "authority": "Deployed Google Apps Script truth",
+      "locator": "Google Apps Script projects.getContent HEAD through dedicated read-only OAuth (draft PR #57); historical deployment via GitHub Actions run 38151328846",
+      "read": "HISTORICAL DEPLOYMENT PROVENANCE VERIFIED (2026-10-11); FRESH CURRENT HEAD BLOCKED until dedicated OAuth secret + manual run",
+      "write": "PROTECTED PRODUCTION",
+      "evidence": "Oct 11 GitHub CD run 38151328846 post-push exact hash check agrees with private __Worker State; PR #57 offline CI run 38298198871 PASS; live inspect-runtime SKIPPED",
+      "freshness": "Historical 2026-10-11 source hash cannot certify current HEAD; compare first fresh read-only GET source digest and release identity to tracker + deployment artifact",
+      "scope_gate": "PR #57 uses JANU_INSPECT_OAUTH_JSON refreshed with exact https://www.googleapis.com/auth/script.projects.readonly; never reuse production CD JANU_CLASPRC_JSON. Owner interactive OAuth + GitHub Actions secret required; scope and access not yet proven"
+    },
+    {
+      "id": "SCHEDULE",
+      "authority": "Expected trigger topology",
+      "locator": "Apps Script trigger inventory + Operating Config + __Sourcing Runs",
+      "read": "PARTIALLY OBSERVABLE: primary ChatGPT sourcing task observed disabled; recovery watcher enabled; Apps Script trigger inventory inaccessible",
+      "write": "PROTECTED RUNTIME CONFIG",
+      "evidence": "Daily Sourcing BLOCKED/SOURCING_SCHEDULER_STALE; manual/recovery run is not scheduled-slot liveness",
+      "freshness": "Daily"
+    },
+    {
+      "id": "PRIVATE_OUTCOMES",
+      "authority": "Actual submission and employer results",
+      "locator": "Applications, Resume Registry, Audit Log, employer confirmation",
+      "read": "PARTIALLY OBSERVABLE",
+      "write": "HUMAN/BOUNDARY-SCOPED",
+      "evidence": "immutable version and external confirmation",
+      "freshness": "Event-specific"
+    }
+  ],
+  "unknowns": [
+    "Exact current Apps Script source not independently captured",
+    "Trigger inventory unavailable through current connector",
+    "Approval status of observed historical baselines unresolved",
+    "Branch protection endpoint forbidden to integration",
+    "User-effort/outcome cohort not accepted",
+    "Product iteration skill path referenced by RUNBOOK not found",
+    "First exact-readonly script.projects.readonly OAuth grant/refresh secret not created or observed; current Apps Script HEAD unverified"
+  ]
+}
