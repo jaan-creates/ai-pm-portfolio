@@ -96,3 +96,15 @@ jobs:
 
       - name: Enforce evaluation case coverage and mandatory check mapping
         run: node "$PROJECT_DIR/assurance/test-eval-coverage.mjs"
+
+      - name: Check approval-before-PDF contract
+        run: node "$PROJECT_DIR/assurance/test-approval-pdf-contract.mjs"
+
+      - name: Check renderer integrity contract
+        run: node "$PROJECT_DIR/assurance/test-renderer-contract.mjs"
+
+      - name: Check telemetry propagation contract
+        run: node "$PROJECT_DIR/assurance/test-telemetry-propagation.mjs"
+
+      - name: Check escaped regression controls
+        run: node "$PROJECT_DIR/assurance/test-escaped-regressions.mjs"
