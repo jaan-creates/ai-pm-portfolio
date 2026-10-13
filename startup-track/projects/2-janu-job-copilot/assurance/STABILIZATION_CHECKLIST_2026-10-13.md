@@ -105,3 +105,46 @@ This audit treats the attached acceptance images as acceptance criteria, not evi
 - **G11 — Conflicting self-reported runtime health:** Reconcile '__Worker State' renderer containment/CANARY_PASS assertions against authoritative trigger, queue, health, trace and downstream artifact readback. Until reconciled, do not use the self-report to close G03–G05, FL-098, or the release gate.
 
 **Trust decision:** The system is not yet certified as trustworthy end-to-end. It is source-governed and partially regression-tested, but runtime scheduling, telemetry propagation, approval-first artifact execution, and business improvement remain unproven.
+
+
+## Plain-language owner guide — no technical knowledge required
+
+You do not need to understand Apps Script, triggers, telemetry or worker names. Take screenshots and send only the screenshots or private evidence links. If a field is not visible, write or say “Unknown”; do not guess.
+
+### Owner step A — take one read-only trigger screenshot
+
+1. Open the Google Sheet named “Janu Job Search Command Center — Live Tracker”.
+2. Choose **Extensions → Apps Script**.
+3. In the Apps Script page, choose the **alarm-clock / Triggers** icon on the left.
+4. Do not click any row’s edit, delete, enable, run, or save controls.
+5. Take one screenshot showing the list of scheduled items. If the list is longer than the screen, take additional screenshots while scrolling.
+6. Send one message with the screenshots: “Trigger screenshots — no changes made.”
+
+We will identify the technical names from the screenshot. You do not need to find or understand phase1OneJobTick yourself.
+
+### Owner step B — take one read-only sourcing-task screenshot
+
+1. Open the ChatGPT task/automation area where the Janu daily sourcing task is shown.
+2. Open the task details only; do not edit or run the task.
+3. Take a screenshot showing whether the task is enabled or disabled, its schedule, and any last-run information shown.
+4. Send one message with the screenshot: “Sourcing task screenshot — no changes made.”
+
+If you cannot find the task area, send a screenshot of the page you do see and stop. Do not change settings.
+
+### What happens after screenshots
+
+- The assistant will read the screenshots and fill in handler, owner, schedule, timezone and enabled-state fields.
+- The assistant will compare the inventory with private tracker health and sourcing-run evidence.
+- You do not need to read or record tracker rows.
+- You do not need to run a worker, replay a job, create a canary, enable a task, or edit a trigger.
+- After the inventory, the assistant will wait for genuine scheduled outcomes and perform the tracker readback.
+
+### Simple response template
+
+“Completed Owner step A” + trigger screenshot(s)
+
+“Completed Owner step B” + sourcing-task screenshot(s)
+
+“Changes made: none”
+
+Until these screenshots or equivalent owner evidence arrive, the related checklist items remain OPEN/BLOCKED. No production change is authorized by this guide.
