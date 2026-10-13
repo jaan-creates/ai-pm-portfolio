@@ -316,3 +316,11 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [x] **Result:** No new genuine scheduled success exists. Latest genuine scheduled success remains `SRC-20261009-DAILY-01`; `SRC-20261013-SCHEDULER-MISS` remains FAILED and `SRC-20261013-RECOVERY-01` remains recovery-only.
 - [x] **Health unchanged:** Daily Sourcing remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`; latestScheduled remains `2026-10-09T04:09:00.000Z`; recent gaps remain 2026-10-13, 2026-10-12, 2026-10-08 and 2026-10-07.
 - [ ] **N2 closure:** Two qualifying post-resume genuine scheduled outcomes are still missing. No scheduler PASS or circuit closure claimed.
+
+
+## 2026-10-13 N3 approval/readiness readback
+
+- [x] **Approval recorded:** Owner approval to proceed is recorded for the stabilization continuation.
+- [x] **Read-only inspector boundary confirmed:** PR #57 is merged and its offline fixture checks passed, but no credentialed `inspect-runtime` execution is present in the available workflow history. The existing successful run was pull-request/offline validation with inspection skipped.
+- [ ] **N3 execution:** Cannot be completed by the assistant from the current connector because it requires the owner to configure the separate exact-readonly OAuth secret and manually dispatch the workflow. No secret, token or broad production credential will be requested in chat.
+- [ ] **N3 acceptance:** After the owner-only dispatch, require both inspector jobs successful, hash-only artifact, exact observation time, private `__Worker State` comparison and separate pinned deployment/trigger assessment. HEAD hash agreement alone remains insufficient.
