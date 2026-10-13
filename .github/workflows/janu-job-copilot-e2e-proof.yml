@@ -1,0 +1,82 @@
+name: Janu Job Copilot E2E Live Proof
+
+on:
+  push:
+    branches:
+      - janu-job-copilot/apps-script-ci
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/scripts/control-e2e-live-proof-20260828.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: janu-job-copilot-e2e-live-proof
+  cancel-in-progress: false
+
+jobs:
+  prove-e2e-v4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      LIVE_DIR: .janu-live-proof
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+    steps:
+      - name: Checkout controlled branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify explicit one-shot authorization marker
+        shell: bash
+        run: |
+          grep -q 'EXECUTE_E2E_LIVE_PROOF_20260828' startup-track/projects/2-janu-job-copilot/scripts/control-e2e-live-proof-20260828.mjs
+      - name: Install clasp
+        run: npm install --global @google/clasp
+      - name: Prepare ephemeral Apps Script workspace
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON"
+          test -n "$CLASP_JSON"
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+      - name: Confirm canonical clasp identity
+        shell: bash
+        run: |
+          set -o pipefail
+          out="$(clasp show-authorized-user --user "$CLASP_USER" 2>&1)"
+          printf '%s\n' "$out"
+          grep -q 'You are logged in as ' <<<"$out"
+          ! grep -Eiq 'Not logged in|No credentials found' <<<"$out"
+      - name: Pull target source and verify live entrypoint contract
+        working-directory: .janu-live-proof
+        shell: bash
+        run: |
+          clasp pull --user "$CLASP_USER"
+          grep -q 'function runP1AE2EContinuationTick' TrackerWorkflow.js
+          grep -q 'E2E-LIVE-ENTRYPOINT-001' TrackerWorkflow.js
+          grep -q 'P1-A-E2E-CONTINUATION-4' TrackerWorkflow.js
+      - name: Execute exactly one locked E2E V4 continuation tick
+        working-directory: .janu-live-proof
+        shell: bash
+        run: |
+          set -o pipefail
+          out="$(clasp run runP1AE2EContinuationTick --user "$CLASP_USER" 2>&1)"; rc=$?
+          printf '%s\n' "$out"
+          test "$rc" -eq 0
+          ! grep -Eiq 'Unable to run script function|Script function not found|permission to run the script function|API executable|Execution API|Exception:|^Error:|Error 502|Server Error' <<<"$out"
+          grep -Eiq 'STRANDED_VERIFYING_JD_ENQUEUED|NO_ELIGIBLE_STALL|LOCKED' <<<"$out"
+      - name: Proof summary
+        if: always()
+        shell: bash
+        run: |
+          echo '## E2E V4 live proof' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Exactly one locked continuation tick was authorized.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Target source must contain E2E-LIVE-ENTRYPOINT-001 and P1-A-E2E-CONTINUATION-4.' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Connected Tracker readback is still required before declaring the application path recovered.' >> "$GITHUB_STEP_SUMMARY"

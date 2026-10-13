@@ -1,0 +1,6 @@
+2026-08-28T20:44+05:30
+Run bounded scoring recovery for golden trace application 2026-08-23-002 only.
+Wait until all Janu Job Copilot Apps Script CD runs on janu-job-copilot/apps-script-ci are drained.
+Require JD-SCORE-ADMISSION-001 + JD-SCORE-RECOVERY-001 + CANONICAL-EVIDENCE-DRIVE-EXPORT-001.
+Execute recovery and exactly one worker job on HEAD; nondev/versioned execution is forbidden.
+Normal renderer replay remains blocked until scoring recovery readback succeeds.

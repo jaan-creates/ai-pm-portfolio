@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {spawnSync} from 'node:child_process';
 
 const root = process.argv[2] || '.janu-live';
 const files = fs.readdirSync(root).filter(f => f.endsWith('.gs') || f.endsWith('.js'));
@@ -81,10 +82,20 @@ for (const token of [
 
 if (source !== before) fs.writeFileSync(file, source);
 
+let controlPlane='SKIPPED_FIXTURE';
+const refreshed=fs.readFileSync(file,'utf8');
+if(refreshed.includes('function phase1OneJobTick(')&&refreshed.includes('function phase1OnEdit(')){
+  const takeover=path.join(path.dirname(new URL(import.meta.url).pathname),'patch-control-plane-owner-takeover.mjs');
+  const r=spawnSync(process.execPath,[takeover,root],{encoding:'utf8'});
+  if(r.status!==0)throw new Error('control-plane takeover transform failed: '+(r.stderr||r.stdout));
+  controlPlane='APPLIED';
+}
+
 console.log(JSON.stringify({
   status: 'PASS',
   file: target,
   changed: source !== before,
   contract: 'REL-PROV-1',
+  controlPlaneOwnerTakeover: controlPlane,
   writesSensitiveContent: false
 }, null, 2));

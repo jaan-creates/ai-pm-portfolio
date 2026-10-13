@@ -1,0 +1,55 @@
+name: Janu Job Copilot Circuit Diagnostic
+
+on:
+  push:
+    branches:
+      - janu-job-copilot/apps-script-ci
+    paths:
+      - '.github/workflows/janu-job-copilot-circuit-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      LIVE_DIR: .janu-circuit-diagnostic
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+      CLASP_USER: janu-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --global @google/clasp
+      - name: Prepare runtime workspace
+        shell: bash
+        run: |
+          test -n "$CLASPRC_JSON"
+          test -n "$CLASP_JSON"
+          mkdir -p "$LIVE_DIR"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
+          chmod 600 "$LIVE_DIR/.clasp.json"
+      - name: Pull target source
+        working-directory: .janu-circuit-diagnostic
+        run: clasp pull --user "$CLASP_USER"
+      - name: Emit circuit function structure
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'); const s=fs.readFileSync('.janu-circuit-diagnostic/TrackerWorkflow.js','utf8');
+          function fn(name){
+            const re=new RegExp('function\\s+'+name.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&')+'\\s*\\([^)]*\\)\\s*\\{');
+            const m=re.exec(s); if(!m) return null; const start=m.index, brace=s.indexOf('{',m.index); let d=0,q=null,e=false;
+            for(let i=brace;i<s.length;i++){const c=s[i],n=s[i+1]; if(q){if(e){e=false;continue} if(c==='\\'){e=true;continue} if(c===q)q=null; continue} if(c==='"'||c==="'"||c==='`'){q=c;continue} if(c==='/'&&n==='/'){const j=s.indexOf('\n',i); if(j<0)return s.slice(start); i=j;continue} if(c==='/'&&n==='*'){const j=s.indexOf('*/',i+2); if(j<0)return s.slice(start); i=j+1;continue} if(c==='{')d++; if(c==='}'&&--d===0)return s.slice(start,i+1)} return null;
+          }
+          for(const name of ['circuitOpen_','openCircuit_','closeCircuit_','runtimeBudgetOk_','phase1OneJobTickCore_']) console.log('\n### '+name+'\n'+fn(name));
+          const h=fn('phase1HealthTick')||'';
+          console.log('\n### phase1HealthTick circuit calls\n'+h.split('\n').filter(x=>/circuit|Worker Runtime|runtimeBudget|healthSet_/.test(x)).join('\n'));
+          NODE

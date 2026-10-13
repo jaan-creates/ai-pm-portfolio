@@ -1,0 +1,3 @@
+2026-10-11T10:40+05:30
+Renderer release canary after canonical owner-worker lock repair.
+Metaforms 2026-08-04-002 only; exact artifact/version/QA proof required; no backlog replay.

@@ -50,10 +50,18 @@ if (/API_KEY|SECRET|PRIVATE_KEY|candidate|resume/i.test(JSON.stringify({contract
   throw new Error('test metadata unexpectedly contains sensitive-content marker');
 }
 
+const ownerTest=path.join(projectDir,'scripts','test-control-plane-owner-takeover.mjs');
+if(!fs.existsSync(ownerTest))throw new Error('test-control-plane-owner-takeover.mjs missing');
+const ownerRun=spawnSync(process.execPath,[ownerTest,projectDir],{encoding:'utf8'});
+if(ownerRun.status!==0)throw new Error(`control-plane takeover regression failed: ${ownerRun.stderr||ownerRun.stdout}`);
+const ownerResult=JSON.parse(ownerRun.stdout);
+if(ownerResult.status!=='PASS'||ownerResult.contract!=='CONTROL-PLANE-OWNER-TAKEOVER-001'||!ownerResult.foreignOwnerFailsClosed||!ownerResult.broadWorkerPreflightGated)throw new Error('control-plane takeover regression did not prove required invariants');
+
 console.log(JSON.stringify({
   status:'PASS',
   contract:'REL-PROV-PATCH-1',
   idempotent:true,
   syntax:true,
-  occurrences
+  occurrences,
+  controlPlaneOwnerTakeover:ownerResult
 }, null, 2));
