@@ -28,3 +28,9 @@ GitHub main `14c363cb27bda7fa3279aedf9167bbedf94c9570`, PRs #55/#56 draft and un
 - [ ] **G01d — Fresh repeatability:** Evidence is one successful run, not sustained or automated inspector delivery. OAuth External/Testing refresh token may expire; establish appropriate renewal/revocation monitoring without granting broad permissions.
 
 **Boundary:** These two subchecks are VERIFIED, but parent P0.1 remains unchecked until the pinned version/trigger requirements are resolved. **Human handoff:** not needed for HEAD readback; do not re-request OAuth secret.
+
+## 2026-10-13 evaluation enforcement follow-up (P0.2 partial)
+
+- [x] **G02a — Requirement-to-executed-check coverage mapping:** `assurance/eval-coverage.v1.json` enumerates six required source checks, their responsible CI step and six explicitly unverified runtime boundaries. `assurance/test-eval-coverage.mjs` runs as a mandatory GitHub Governance CI step on PR #56 source. GitHub Actions [38356827674](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38356827674) SUCCESS, independently read job log: `mapped:6`, `negative_controls_detected:5`, `unverified_runtime:6`; 35 existing assurance contract checks passed. Production CD skipped.
+- [ ] **G02b — Mainline promotion/whole-contract coverage:** Original synthetic PR #55 remains separate draft and unmerged; the six mapped checks do not cover all Master Spec risks. Current mandatory mapping lives on draft PR #56, not main. Any release remains gated.
+- [ ] **G02c — Target-env regression:** No production worker, model or end-to-end canary executed by these checks. Need approved exact-release target execution and independent private readback.
