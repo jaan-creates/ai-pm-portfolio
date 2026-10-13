@@ -257,3 +257,13 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **P0.4 close:** Current runtime Trace Explorer still lacks the required correlated parent/group/release/timestamp/evidence proof. The next acceptance remains one independently read-back current-release execution across worker, queue, tool/model, persistence and verifier boundaries.
 
 **Decision:** Continue monitoring. Do not run a manual sourcing cycle solely to satisfy the scheduled-liveness gate; if a recovery run is later needed for diagnosis, label it recovery/manual and keep the circuit open.
+
+
+## 2026-10-13 CI readback — scheduler evidence guard executed
+
+- [x] **Executed source regression guard:** Governance run [38372340411](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38372340411) succeeded on PR #56 head `b5acaaa6afa9dedb9adb113a95279b83ac8ca5fe`. The job log read back `JANU-ESCAPED-REGRESSIONS-1` with 12 checks and 8 negative controls, including recovery, manual, non-durable, failed and exact-trigger cases.
+- [x] **CI scope verified:** The same run passed 35 assurance checks, 10 mapped evaluation cases, approval-before-PDF, renderer and telemetry contract checks. These are source/fixture checks only; the log explicitly states no live worker/storage propagation, no live renderer canary and no production recurrence proof.
+- [x] **Deployment boundary verified:** The matching `deploy-production` check [38372340429](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38372340429) was skipped. No production deployment occurred.
+- [ ] **Runtime acceptance:** Still open. No genuine post-resume scheduled sourcing row or current correlated telemetry execution has been independently read back.
+
+**Evidence decision:** The scheduler classifier is now stronger and CI-proven, but the product remains INCOMPLETE / RELEASE HOLD because source CI cannot substitute for scheduled runtime, telemetry propagation or downstream business proof.
