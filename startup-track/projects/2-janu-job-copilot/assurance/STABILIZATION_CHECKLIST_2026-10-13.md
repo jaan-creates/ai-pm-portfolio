@@ -369,3 +369,14 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **Release/business gates:** Keep approval-first PDF, live renderer, measured improvement and qualified-outcome gates open.
 
 **Ownership plan:** The assistant owns all tracker readbacks, PR/CI checks, ledger maintenance, source-level tests and evidence classification. The owner is needed only for protected account actions: current task re-enable (now reported complete) and the separate read-only inspector credential/dispatch if runtime identity proof is required.
+
+
+## 2026-10-15 build increment — recurring task continuity guard
+
+- [x] **Defect converted to executable prevention:** Added `assurance/test-sourcing-task-continuity.mjs`. It requires a recurring task to remain enabled, repeat-enabled, end-unbounded, not auto-disabled after completion, and to expose a valid next eligible slot.
+- [x] **Canonical registry/CI wiring:** Registered `SOURCING-TASK-CONTINUITY` in `assurance/eval-coverage.v1.json` and added its mandatory Governance CI step.
+- [x] **Direct test execution:** Ran the exact current test in an isolated Node runtime: PASS, 5 checks, 4 negative controls.
+- [ ] **Full Governance CI:** Pending for the latest source revision; no full-CI PASS claimed until the job and logs are read back.
+- [ ] **Runtime repair:** This guard does not re-enable or mutate the production task. The existing task was re-enabled by the owner and must still demonstrate two qualifying scheduled cycles.
+
+**Build decision:** The failure mode is now covered by an executable source contract and remains runtime-gated. No production configuration was changed by this increment.
