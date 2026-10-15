@@ -494,3 +494,13 @@ The current pending gates are therefore:
 - [ ] **P0.4/N4 closure:** Live telemetry propagation remains unproven. Runtime source identity and deployment provenance are verified, but worker/queue/tool-model/storage/verifier correlation and authoritative downstream readback are missing.
 
 **Decision:** The new runtime run improves P0.1/G01 source identity only. It does not change the telemetry, scheduler, approval-first, business-outcome, or overall release-hold decisions.
+
+
+## 2026-10-15 continuous-improvement and outcome readback
+
+- [x] **Learning-record pipeline read back:** Private `__Lab Improvements` entries show JC-LAB-001 = `REVISE`, JC-LAB-002 = `PILOT`, JC-LAB-003 = `Insufficient Evidence — Source Improvements Verified; Runtime/Outcome Pending`, and JC-LAB-004 = `HOLD` for PR #56. Defects are being converted into prevention controls and regression cases.
+- [x] **Failure-learning linkage read back:** FL-098 has an older regression/canary record, but its downstream QA remains pending and the later trigger record says execution is not yet observed. FL-096 remains open as an operational scheduler blocker. Neither is accepted as current recurrence proof.
+- [x] **Outcome evidence search read back:** No current `__Verification Ledger` entry was found for the runtime capture, and no `QUALIFIED_INTERVIEW_PER_EFFORT` metric record was found in the bounded tracker search.
+- [ ] **P1.2/G07 and metrics closure:** Measured recurrence reduction, reduced intervention/user effort, controlled current-release improvement, and qualified business outcome evidence remain missing. No Keep/Revise/Reject decision is supported for the current stabilization intervention beyond the recorded source-level decisions.
+
+**Decision:** Continuous improvement is functioning as a learning-record and prevention pipeline, but its effectiveness and business impact are **not proven**. P1.2/G07 remains **PARTIAL / INSUFFICIENT EVIDENCE**; the release hold is unchanged.
