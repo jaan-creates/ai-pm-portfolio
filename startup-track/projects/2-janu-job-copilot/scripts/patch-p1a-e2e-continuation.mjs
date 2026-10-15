@@ -17,6 +17,7 @@ add('function p1aReadyResumeProjectionNeedsRepair_(',`function p1aReadyResumePro
 function p1aJdCompletenessPercent_(a){const raw=Number(a&&a['JD Completeness %']||0);return raw>0&&raw<=1?raw*100:raw;}
 function p1aApplyToReadyMinutes_(start,end){const s=Date.parse(String(start||'')),e=Date.parse(String(end||''));return Number.isFinite(s)&&Number.isFinite(e)&&e>=s?Math.round((e-s)/60000):'';}
 function replaceFn(name,code){const r=rangeOf(name);if(r){const suffix=s.slice(r.end);s=s.slice(0,r.start)+code+(suffix.startsWith('\n')||suffix.startsWith('\r')?'':'\n')+suffix;}else add('function '+name+'(',code);}
+replaceFn('p1aQaHandoffPriority_',`function p1aQaHandoffPriority_(a){a=a||{};return p1aReadyResumeProjectionNeedsRepair_(a)||(String(a['Decision']||'')==='Apply'&&String(a['Status']||'')==='QA'&&String(a['Resume Version ID']||'')&&String(a['ATS QA Status']||'')!=='Passed'&&String(a['Vacancy Status']||'').toUpperCase()!=='CLOSED');}`);
 function append(name,marker,code){if(s.includes(marker))return;const r=rangeOf(name);if(!r)throw new Error(name+' missing');s=s.slice(0,r.end-1)+code+s.slice(r.end-1);}
 for(const dep of ['function enqueue_(','function upsertWorkerState_('])if(!s.includes(dep))throw new Error('E2E continuation dependency missing '+dep);
 if(!s.includes('RESUME_GENERATE')||!s.includes('QA_FINALIZE'))throw new Error('required worker contract missing');
