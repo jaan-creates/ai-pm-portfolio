@@ -380,3 +380,14 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **Runtime repair:** This guard does not re-enable or mutate the production task. The existing task was re-enabled by the owner and must still demonstrate two qualifying scheduled cycles.
 
 **Build decision:** The failure mode is now covered by an executable source contract and remains runtime-gated. No production configuration was changed by this increment.
+
+
+## 2026-10-15 continuity-guard CI failure and repair
+
+- [x] **Failure observed:** Governance runs [38707994142](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38707994142), [38708012047](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38708012047) and [38708034553](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38708034553) failed before producing jobs after the new workflow step was wired.
+- [x] **Root cause identified:** The workflow update contained literal `\\n` text instead of YAML line breaks around the new step.
+- [x] **Repair applied:** Governance workflow was corrected on head `bf7efa5ab34fa2e9f72f0f6e2c71a9e0e2c56fd5`; fetched file readback confirms normal YAML line breaks and the continuity step is present.
+- [x] **Direct contract test:** `JANU-SOURCING-TASK-CONTINUITY-1` still passes locally with 5 checks and 4 negative controls.
+- [ ] **Repair verification:** No follow-up Governance run has appeared yet for the repaired head. Full CI and exact-revision regression closure remain open.
+
+**Safety decision:** Do not promote the new registry/CI increment or alter production configuration until a successful Governance run reads back the repaired workflow and the new continuity step.
