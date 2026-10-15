@@ -68,7 +68,7 @@ const admissionPlannerFallback="const rawPlan=ownedApplyStatePlan_(state);const 
 if(!s.includes(admissionPlannerFallback)){
   const admissionPlannerOld="const plan=ownedApplyStatePlan_(state);let admission={reused:false,queueJobId:'',state:'NONE'};";
   if(!s.includes(admissionPlannerOld)) throw new Error('Owned Apply admission planner boundary not found; refusing an unsafe broad replacement');
-  s=s.replace(admissionPlannerOld,admissionPlannerFallback+'let admission={reused:false,queueJobId:'',state:'NONE'};');
+  s=s.replace(admissionPlannerOld,admissionPlannerFallback+"let admission={reused:false,queueJobId:'',state:'NONE'};");
 }
 if(!s.includes(replacement)) throw new Error('Owned Apply fifth-argument caller marker missing after patch');
 if(!s.includes(helperReplacement)) throw new Error('Owned Apply helper options signature missing after patch');
