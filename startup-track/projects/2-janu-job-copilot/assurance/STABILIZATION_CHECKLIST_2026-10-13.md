@@ -454,3 +454,13 @@ The current pending gates are therefore:
 - [ ] **Release closure:** all required runtime, downstream, rollback, source synchronization and improvement evidence; PR #55 remains unmerged and PR #56 remains draft.
 
 **Current decision:** source/evaluation stabilization is evidenced; end-to-end trust is not. The system remains **INCOMPLETE / RELEASE HOLD**. No production mutation is authorized or performed by this reconciliation.
+
+
+## 2026-10-15 governance/source-of-truth reconciliation
+
+- [x] **Document inventory read back:** On repository `main`, the current governance artifacts exist and expose their required acceptance sections: RUNBOOK `955c8e2`, AUTONOMY_CONTRACT `2d31a7b`, ITERATION_EVIDENCE_GATE `ee643a5`, FAILURE_TAXONOMY `63c7332`, TOOLS_AND_ENVIRONMENTS `5cba8fbe`, and CURRENT_STATE `433702b`.
+- [x] **Executable structural enforcement:** The successful Governance run `38716929040` executed the product-baseline validator, which passed the required repository governance baseline; this is source/governance evidence, not proof that live runtime state matches the documents.
+- [x] **Authority boundary preserved:** The documents explicitly retain private tracker/runtime evidence as separate product truth and retain approval/stop/external-communication boundaries. No public fixture was populated with private candidate or runtime data.
+- [ ] **P1.1 closure:** Not closed. Current Master Spec/runtime configuration reconciliation, pinned deployment identity, live trigger topology and current private-state agreement remain outstanding. Documentation presence and structural validation cannot certify runtime conformity.
+
+**Decision:** P1.1 is now **PARTIAL with authoritative source evidence**, not complete. This reconciliation introduced no production change and does not alter the release hold.
