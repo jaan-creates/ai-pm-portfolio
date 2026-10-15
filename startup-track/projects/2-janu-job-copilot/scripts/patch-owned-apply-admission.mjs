@@ -31,12 +31,18 @@ if(!s.includes(helperReplacement)){
 
 const planSignature=/function ownedApplyStatePlan_\(a\)\{const vacancy=String\(a\.vacancy\|\|' '\)\.toUpperCase\(\),snap=String\(a\.snap\|\|''\),complete=Number\(a\.complete\|\|0\),fit=Number\(a\.fit\|\|0\),resume=/;
 const planSignatureFallback=/function ownedApplyStatePlan_\(a\)\{const vacancy=String\(a\.vacancy\|\|''\)\.toUpperCase\(\),snap=String\(a\.snap\|\|''\),complete=Number\(a\.complete\|\|0\),fit=Number\(a\.fit\|\|0\),resume=/;
-const planReplacement="function ownedApplyStatePlan_(a){const vacancy=String(a.vacancy||'').toUpperCase(),snap=String(a.snap||''),complete=Number(a.complete||0),fit=Number(a.fit||0),mapReady=!!a.mapReady,resume=";
+const planReplacement="function ownedApplyStatePlan_(a){const vacancy=String(a.vacancy||'').toUpperCase(),snap=String(a.snap||''),complete=Number(a.complete||0),fit=Number(a.fit||0),jdReady=!!a.jdReady,mapReady=!!a.mapReady,resume=";
 if(!s.includes("mapReady=!!a.mapReady")){
   if(!planSignatureFallback.test(s)) throw new Error('Owned Apply state planner not found; refusing an unsafe broad replacement');
   s=s.replace(planSignatureFallback,planReplacement);
 }
 const fitGate="if(!(fit>0))return{status:'Scoring',worker:'JD_PARSE_SCORE_MAP',reason:'APPLY_NEEDS_SCORE'};";
+const jdGate="if(!/Verified Full JD/i.test(snap)||complete<70||!jdReady)return{status:'Verifying JD',worker:'JD_RETRIEVE',reason:'APPLY_NEEDS_JD'};";
+if(!s.includes(jdGate)){
+  const oldJdGate="if(!/Verified Full JD/i.test(snap)||complete<70)return{status:'Verifying JD',worker:'JD_RETRIEVE',reason:'APPLY_NEEDS_JD'};";
+  if(!s.includes(oldJdGate)) throw new Error('Owned Apply JD gate not found; refusing an unsafe broad replacement');
+  s=s.replace(oldJdGate,jdGate);
+}
 const mapGate="if(!(fit>0)||!mapReady)return{status:'Scoring',worker:'JD_PARSE_SCORE_MAP',reason:'APPLY_NEEDS_SCORE_MAP'};";
 if(!s.includes(mapGate)){
   if(!s.includes(fitGate)) throw new Error('Owned Apply score gate not found; refusing an unsafe broad replacement');
@@ -49,7 +55,7 @@ if(!s.includes(scoreAdmissionNew)){
   s=s.replace(scoreAdmissionOld,scoreAdmissionNew);
 }
 const stateWithoutMap="atsQaStatus:get('ATS QA Status')};";
-const stateWithMap="atsQaStatus:get('ATS QA Status'),mapReady:!!has_(JC.S.MAP,id)};";
+const stateWithMap="atsQaStatus:get('ATS QA Status'),jdReady:!!has_(JC.S.JD,id),mapReady:!!has_(JC.S.MAP,id)};";
 if(!s.includes(stateWithMap)){
   if(!s.includes(stateWithoutMap)) throw new Error('Owned Apply admission state object not found; refusing an unsafe broad replacement');
   s=s.replace(stateWithoutMap,stateWithMap);
@@ -75,7 +81,7 @@ if(!s.includes(helperReplacement)) throw new Error('Owned Apply helper options s
 if(!s.includes(helperCallReplacement)) throw new Error('Owned Apply helper options forwarding missing after patch');
 if(!s.includes(mapGate)) throw new Error('Owned Apply map prerequisite gate missing after patch');
 if(!s.includes(scoreAdmissionNew)) throw new Error('Owned Apply scoring admission gate missing after patch');
-if(!s.includes(stateWithMap)) throw new Error('Owned Apply map readiness input missing after patch');
+if(!s.includes(stateWithMap)) throw new Error('Owned Apply JD/map readiness input missing after patch');
 if(!s.includes('function runP1AOwnedApplyAdmissionSelfTest(')) throw new Error('Owned Apply admission regression self-test missing');
 if(s!==before) fs.writeFileSync(file,s);
 console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:'P1-A-OWNED-APPLY-ADMISSION-1',recoverySafe:true,optionsArgument:'fifth',helperForwardsOptions:true,mapPrerequisite:true,scoreAdmissionFromNew:true},null,2));
