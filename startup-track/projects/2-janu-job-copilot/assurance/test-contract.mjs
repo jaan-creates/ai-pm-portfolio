@@ -39,6 +39,8 @@ check('evidence chain missing readback fails',()=>assert(evidenceChain({approved
 check('complete chain still requires review',()=>assert.equal(evidenceChain(Object.fromEntries(['approved_contract','source_version','execution','durable_state','independent_readback','regression','decision'].map(x=>[x,'opaque-ref']))).status,'READY_FOR_REVIEW'));
 const metricRegistry=JSON.parse(fs.readFileSync(new URL('./metrics.v1.json',import.meta.url),'utf8'));
 check('all ten versioned metric definitions are complete',()=>{assert.equal(metricRegistry.definitions.length,10);assert.deepEqual(validateMetricDictionary(metricRegistry),[]);});
+const qualifiedInterviewMetric=metricRegistry.definitions.find(x=>x.metric_id==='QUALIFIED_INTERVIEW_PER_EFFORT');
+check('qualified interview outcome metric remains explicitly uninstrumented',()=>{assert(qualifiedInterviewMetric);assert.equal(qualifiedInterviewMetric.assurance_status,'NOT INSTRUMENTED');assert.match(qualifiedInterviewMetric.missing_data,/do not calculate or report numeric improvement/i);});
 check('missing denominator rejected',()=>{const m=structuredClone(metricRegistry);m.definitions[0].denominator='';assert(validateMetricDictionary(m).some(x=>x.includes('denominator')));});
 check('duplicate metric IDs rejected',()=>{const m=structuredClone(metricRegistry);m.definitions[1].metric_id=m.definitions[0].metric_id;assert(validateMetricDictionary(m).some(x=>x.startsWith('DUPLICATE_METRIC_ID')));});
 check('unapproved numeric baseline rejected',()=>{const m=structuredClone(metricRegistry);m.definitions[0].baseline=1;assert(validateMetricDictionary(m).some(x=>x.startsWith('UNAPPROVED_NUMERICAL_BASELINE')));});
