@@ -5,15 +5,19 @@ const projectDir=process.argv[2]||path.resolve('startup-track/projects/2-janu-jo
 const patch=fs.readFileSync(path.join(projectDir,'scripts','patch-p1a-e2e-continuation.mjs'),'utf8');
 
 const must=[
-  "P1-A-E2E-CONTINUATION-3",
+  "P1-A-E2E-CONTINUATION-4",
   "for(let r=q.getLastRow();r>=2;r--)",
   "closedCount++;continue",
   "STALE_VERIFYING_JD_TO_TAILORING",
   "QA_REPAIR_RESUME_ENQUEUED",
   "QA_ENQUEUED",
   "RESUME_ENQUEUED",
-  "latest terminal state wins"
+  "latest terminal state wins",
+  "function p1aQaHandoffPriority_(a)",
+  "const priority=[]",
+  "const order=priority.concat",
+  "ATS QA Status"
 ];
 for(const token of must)if(!patch.includes(token))throw new Error('missing '+token);
 if(patch.includes("return{status:'CLOSED_PROPAGATED'"))throw new Error('closed vacancy must not starve later rows');
-console.log(JSON.stringify({status:'PASS',contract:'P1-A-E2E-CONTINUATION-3',starvationGuard:true,latestQueueState:true,qaRepair:true,staleStateRepair:true},null,2));
+console.log(JSON.stringify({status:'PASS',contract:'P1-A-E2E-CONTINUATION-4',starvationGuard:true,qaPriority:true,latestQueueState:true,qaRepair:true,staleStateRepair:true},null,2));
