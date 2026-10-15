@@ -14,6 +14,8 @@ const must=[
   "RESUME_ENQUEUED",
   "latest terminal state wins",
   "function p1aQaHandoffPriority_(a)",
+  "add('function p1aJdCompletenessPercent_('",
+  "add('function p1aApplyToReadyMinutes_('",
   "const priority=[]",
   "const order=priority.concat",
   "ATS QA Status"
