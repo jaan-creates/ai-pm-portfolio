@@ -102,6 +102,10 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-p1a-e2e-continuation.mjs" "$LIVE_DIR"
       - name: Apply owned Apply admission repair
         run: node "$PROJECT_DIR/scripts/patch-owned-apply-admission.mjs" "$LIVE_DIR"
+      - name: Apply owned Apply queue reuse repair
+        run: node "$PROJECT_DIR/scripts/patch-p1a-owned-apply-queue-reuse.mjs" "$LIVE_DIR"
+      - name: Run owned Apply queue reuse regression
+        run: node "$PROJECT_DIR/scripts/test-p1a-owned-apply-queue-reuse.mjs" "$PROJECT_DIR"
       - name: Apply score completion admission repair
         run: node "$PROJECT_DIR/scripts/patch-p1a-score-completion-admission.mjs" "$LIVE_DIR"
       - name: Apply P1-A runtime provider adapters
@@ -150,6 +154,8 @@ jobs:
           grep -q "allowPaid!==false" /tmp/janu-job-copilot-combined.js
           grep -q "p1aJdRetrieveForApp_(a,false)" /tmp/janu-job-copilot-combined.js
           grep -q "P1-A-SCORE-COMPLETION-ADMISSION-1" /tmp/janu-job-copilot-combined.js
+          grep -q "P1-A-OWNED-APPLY-QUEUE-REUSE-1" /tmp/janu-job-copilot-combined.js
+          grep -q "ownedFindQueueAdmission_" /tmp/janu-job-copilot-combined.js
       - name: Validate P1-B contracts
         shell: bash
         run: |
