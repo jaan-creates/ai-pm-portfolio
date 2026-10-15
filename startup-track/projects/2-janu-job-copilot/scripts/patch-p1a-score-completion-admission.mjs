@@ -37,7 +37,7 @@ function rangeOf(name){
 function insertBeforeAnchor(code){
   const i=s.indexOf(anchor);
   if(i<0)throw new Error('release identity anchor missing');
-  s=s.slice(0,i)+code+'\\n'+s.slice(i);
+  s=s.slice(0,i)+code+String.fromCharCode(10)+s.slice(i);
 }
 function replaceFunction(name,code){
   const r=rangeOf(name);
