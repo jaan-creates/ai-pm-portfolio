@@ -12,6 +12,8 @@ assert.match(patch,/input,\{recoverySafe:true\}\)/);
 assert.match(patch,/function ownedEnsureQueueAdmission_\(id,worker,payload,input,opts\)/);
 assert.match(patch,/enqueue_\(id,worker,payload,input,opts\)/);
 assert.match(patch,/mapReady/);
+assert.match(patch,/jdReady/);
+assert.match(patch,/!jdReady/);
 assert.match(patch,/!mapReady/);
 assert.match(patch,/has_\(JC\.S\.MAP,id\)/);
 assert.match(patch,/rawPlan\.worker==='RESUME_GENERATE'&&!state\.mapReady/);
