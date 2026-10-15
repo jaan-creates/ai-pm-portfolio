@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {execFileSync} from 'node:child_process';
+const projectDir=process.argv[2]||'.';
+const patcher=path.join(projectDir,'scripts','patch-p1a-jd-official-ats.mjs');
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'janu-jd-official-'));
+const target=path.join(tmp,'TrackerWorkflow.js');
+fs.writeFileSync(target,"const P12={}; function verifyReleaseIdentity(){} function atsHostKind_(x){return'';} function retrievalGatewayFetch_(){} function p1aJdTextFromRetrieval_(){} function ashbyPublicPostingFetch_(){} function p1aJdRetrieveForApp_(a,b){return null;}");
+execFileSync(process.execPath,[patcher,tmp],{stdio:'inherit'});
+const out=fs.readFileSync(target,'utf8');
+for(const t of ['function greenhousePublicJobFetch_(','function leverPublicJobFetch_(','GREENHOUSE_PUBLIC_API','LEVER_PUBLIC_API',"else if(host==='GREENHOUSE')","else if(host==='LEVER')"])if(!out.includes(t))throw new Error('Missing official ATS regression token '+t);
+execFileSync(process.execPath,[patcher,tmp],{stdio:'inherit'});
+if(fs.readFileSync(target,'utf8')!==out)throw new Error('Official ATS patch is not idempotent');
+console.log(JSON.stringify({status:'PASS',contract:'P1-A-JD-OFFICIAL-ATS-ROUTES-001',idempotent:true,fixtures:['Greenhouse','Lever']},null,2));
