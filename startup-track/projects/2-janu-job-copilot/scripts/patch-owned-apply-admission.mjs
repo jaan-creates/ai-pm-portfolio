@@ -55,10 +55,12 @@ if(!s.includes(scoreAdmissionNew)){
   s=s.replace(scoreAdmissionOld,scoreAdmissionNew);
 }
 const stateWithoutMap="atsQaStatus:get('ATS QA Status')};";
+const stateWithoutJd="atsQaStatus:get('ATS QA Status'),mapReady:!!has_(JC.S.MAP,id)};";
 const stateWithMap="atsQaStatus:get('ATS QA Status'),jdReady:!!has_(JC.S.JD,id),mapReady:!!has_(JC.S.MAP,id)};";
 if(!s.includes(stateWithMap)){
-  if(!s.includes(stateWithoutMap)) throw new Error('Owned Apply admission state object not found; refusing an unsafe broad replacement');
-  s=s.replace(stateWithoutMap,stateWithMap);
+  if(s.includes(stateWithoutJd)) s=s.replace(stateWithoutJd,stateWithMap);
+  else if(s.includes(stateWithoutMap)) s=s.replace(stateWithoutMap,stateWithMap);
+  else throw new Error('Owned Apply admission state object not found; refusing an unsafe broad replacement');
 }
 
 function insertBeforeAnchor_(code){
