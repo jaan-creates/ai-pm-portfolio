@@ -414,3 +414,15 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **End-to-end closure:** Telemetry, runtime identity, approval-first artifact, renderer and business-improvement evidence remain open.
 
 **Next automatic decision points:** first post-reenable scheduled run; second consecutive qualifying scheduled run; successful Governance run on repaired head. Any failure will be recorded as a regression and will not be hidden by recovery success.
+
+
+## 2026-10-15 repaired Governance CI closure
+
+- [x] **Exact-revision CI executed:** Manually dispatched only the non-production **Janu Job Copilot Governance** workflow on PR #56 branch `janu-job-copilot/assurance-recovery-20261012`; no Apps Script CD, production workflow, trigger or deployment action was used.
+- [x] **Authoritative run readback:** Governance run [38716929040](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38716929040) completed **SUCCESS** on head `95a2911dd9b83e7a458bb9a7ef551d6f80626a30`; job `validate-product-baseline` `116361800324` completed successfully in 14s.
+- [x] **Repaired workflow verified:** All 21 substantive job steps completed successfully, including approval-before-PDF, renderer integrity, telemetry propagation, escaped-regression and recurring-sourcing-task-continuity checks.
+- [x] **Evidence-boundary readback:** Logs report `JANU-APPROVAL-FIRST-PDF-1` 5 checks/4 negatives (synthetic; no official PDF), `JANU-RENDERER-INTEGRITY-1` 5/4 (synthetic; no live canary), `JANU-TELEMETRY-CROSS-BOUNDARY-1` 5/4 (synthetic; no live worker/storage propagation), `JANU-ESCAPED-REGRESSIONS-1` 12/8 and `JANU-SOURCING-TASK-CONTINUITY-1` 5/4 (synthetic; live recurrence unverified). The CI PASS closes the source/CI repair gap only; it does not close runtime or business gates.
+- [x] **PR safety reverified:** PR #55 remains draft/unmerged; PR #56 remains draft/unmerged. Production CD was not invoked.
+- [ ] **Remaining stabilization gates:** two post-reenable genuine scheduled cycles; current runtime identity/pinned deployment and trigger topology; live telemetry propagation/readback; approved PDF/renderer journey; measured improvement and business outcomes. Overall system remains **INCOMPLETE / RELEASE HOLD**.
+
+**Decision update:** Repaired exact-revision Governance CI is now independently evidenced. This is a source/evaluation-layer closure, not end-to-end stabilization. Continue preserving FL-096/FL-098 and the open scheduler circuit until durable scheduled recurrence is proven.
