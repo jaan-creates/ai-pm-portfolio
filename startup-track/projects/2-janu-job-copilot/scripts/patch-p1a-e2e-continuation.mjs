@@ -2,11 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 const root=process.argv[2]||'.janu-live';
 const files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
-const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function p1aQaHandoffPriority_(a){a=a||{};return String(a['Decision']||'')==='Apply'&&String(a['Status']||'')==='QA'&&String(a['Resume Version ID']||'')&&String(a['ATS QA Status']||'')!=='Passed'&&String(a['Vacancy Status']||'').toUpperCase()!=='CLOSED';}
-function verifyReleaseIdentity()')&&t.includes('const P12');});
+const target=files.find(f=>{const t=fs.readFileSync(path.join(root,f),'utf8');return t.includes('function verifyReleaseIdentity()')&&t.includes('const P12');});
 if(!target)throw new Error('TrackerWorkflow source not found');
 const file=path.join(root,target);let s=fs.readFileSync(file,'utf8'),before=s;
 const anchor='function verifyReleaseIdentity()';
+function p1aQaHandoffPriority_(a){a=a||{};return String(a['Decision']||'')==='Apply'&&String(a['Status']||'')==='QA'&&String(a['Resume Version ID']||'')&&String(a['ATS QA Status']||'')!=='Passed'&&String(a['Vacancy Status']||'').toUpperCase()!=='CLOSED';}
 function rangeOf(name){const sig='function '+name+'(';const start=s.indexOf(sig);if(start<0)return null;const open=s.indexOf('{',start);if(open<0)throw new Error('Malformed '+name);let depth=0,quote=null,esc=false;for(let i=open;i<s.length;i++){const c=s[i];if(quote){if(esc){esc=false;continue;}if(c==='\\'){esc=true;continue;}if(c===quote)quote=null;continue;}if(c==='"'||c==="'"||c==='`'){quote=c;continue;}if(c==='{')depth++;else if(c==='}'&&--depth===0)return{start,end:i+1};}throw new Error('Unterminated '+name);}
 function add(token,code){if(s.includes(token))return;const i=s.indexOf(anchor);if(i<0)throw new Error('release identity anchor missing');s=s.slice(0,i)+code+'\n'+s.slice(i);}
 function p1aJdCompletenessPercent_(a){const raw=Number(a&&a['JD Completeness %']||0);return raw>0&&raw<=1?raw*100:raw;}
