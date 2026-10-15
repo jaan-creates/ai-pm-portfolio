@@ -98,3 +98,6 @@ jobs:
 
       - name: Behavior-test downstream shim contract compatibility
         run: node "$PROJECT_DIR/scripts/test-e2e-shim-contract-compatibility.mjs" "$PROJECT_DIR"
+
+      - name: Behavior-test release validator health-hook contract
+        run: node "$PROJECT_DIR/scripts/test-release-validator-health-hook.mjs" "$PROJECT_DIR"
