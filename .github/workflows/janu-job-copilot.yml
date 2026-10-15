@@ -118,6 +118,10 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-trace-golden-v0-runtime.mjs" "$LIVE_DIR"
       - name: Run owned Apply admission regression
         run: node "$PROJECT_DIR/scripts/test-owned-apply-admission.mjs" "$PROJECT_DIR"
+      - name: Apply official ATS JD retrieval routes
+        run: node "$PROJECT_DIR/scripts/patch-p1a-jd-official-ats.mjs" "$LIVE_DIR"
+      - name: Run official ATS JD retrieval regression
+        run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
