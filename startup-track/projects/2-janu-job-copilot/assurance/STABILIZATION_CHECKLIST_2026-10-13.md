@@ -464,3 +464,12 @@ The current pending gates are therefore:
 - [ ] **P1.1 closure:** Not closed. Current Master Spec/runtime configuration reconciliation, pinned deployment identity, live trigger topology and current private-state agreement remain outstanding. Documentation presence and structural validation cannot certify runtime conformity.
 
 **Decision:** P1.1 is now **PARTIAL with authoritative source evidence**, not complete. This reconciliation introduced no production change and does not alter the release hold.
+
+
+## 2026-10-15 runtime-inspector boundary recheck
+
+- [x] **Read-only workflow contract re-read:** `.github/workflows/janu-job-copilot-runtime-assurance.yml` at main requires `JANU_INSPECT_OAUTH_JSON`, uses the Apps Script read-only API scope, forbids clasp write commands, and explicitly excludes trigger changes, Sheets/Drive writes, source upload and external submission.
+- [x] **Existing CI evidence re-read:** Runtime Provenance run [38298607540](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38298607540) passed `assert-read-only`; its `inspect-runtime` job was **SKIPPED** because it was not a manual credentialed inspection.
+- [ ] **P0.1/G01 execution:** No current credentialed read-only observation, pinned deployment version, trigger inventory, or repeatable inspection proof exists. This remains an owner-controlled setup/dispatch boundary; no secret is requested or exposed and no production mutation is performed.
+
+**Decision:** The inspector is structurally safe and source-validated, but runtime identity remains unproven. Do not promote the successful offline assertion into a runtime PASS.
