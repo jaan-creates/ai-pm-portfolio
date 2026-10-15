@@ -102,6 +102,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-p1a-e2e-continuation.mjs" "$LIVE_DIR"
       - name: Apply owned Apply admission repair
         run: node "$PROJECT_DIR/scripts/patch-owned-apply-admission.mjs" "$LIVE_DIR"
+      - name: Apply score completion admission repair
+        run: node "$PROJECT_DIR/scripts/patch-p1a-score-completion-admission.mjs" "$LIVE_DIR"
       - name: Apply P1-A runtime provider adapters
         run: node "$PROJECT_DIR/scripts/patch-p1a-runtime.mjs" "$LIVE_DIR"
       - name: Apply additive P1-B contracts
@@ -118,6 +120,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-trace-golden-v0-runtime.mjs" "$LIVE_DIR"
       - name: Run owned Apply admission regression
         run: node "$PROJECT_DIR/scripts/test-owned-apply-admission.mjs" "$PROJECT_DIR"
+      - name: Run score completion admission regression
+        run: node "$PROJECT_DIR/scripts/test-p1a-score-completion-admission.mjs" "$PROJECT_DIR"
       - name: Apply official ATS JD retrieval routes
         run: node "$PROJECT_DIR/scripts/patch-p1a-jd-official-ats.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
@@ -145,6 +149,7 @@ jobs:
           grep -q "SERPAPI_API_KEY" /tmp/janu-job-copilot-combined.js
           grep -q "allowPaid!==false" /tmp/janu-job-copilot-combined.js
           grep -q "p1aJdRetrieveForApp_(a,false)" /tmp/janu-job-copilot-combined.js
+          grep -q "P1-A-SCORE-COMPLETION-ADMISSION-1" /tmp/janu-job-copilot-combined.js
       - name: Validate P1-B contracts
         shell: bash
         run: |
