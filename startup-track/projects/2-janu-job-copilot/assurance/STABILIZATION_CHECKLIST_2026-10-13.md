@@ -536,3 +536,13 @@ The current pending gates are therefore:
 - [ ] **P0.3/N2 unchanged:** Continue waiting for two genuine post-reenable scheduled sourcing cycles. Apps Script trigger runs alone are not sourcing-cycle completion proof.
 
 **Decision:** G01 trigger evidence advances from “not inspected” to **PARTIAL / owner-visible inventory readback**. Scheduler and release gates remain open; no production mutation occurred.
+
+
+## 2026-10-16 scheduler evidence correction and monitoring tightening
+
+- [x] **Fresh authoritative check:** `__Sourcing Runs` contains no Oct 16 scheduled or recovery row; `__System Health` remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE` with last checked date Oct 15.
+- [x] **Interpretation correction:** The owner screenshot’s `phase1OneJobTick` Apps Script trigger execution is not a Daily PM Sourcing Worker completion. It cannot satisfy scheduler-cycle proof without a matching durable `__Sourcing Runs` record and downstream Applications readback.
+- [x] **Evidence-watch rule reinforced:** A trigger execution, task status, or reported completion is never promoted to a sourcing-cycle PASS without the durable run ID, genuine scheduled Trigger value, completion status/counts, duplicate audit and Applications readback.
+- [ ] **P0.3/N2:** No qualifying post-reenable scheduled cycle has been independently verified yet. The scheduler circuit remains open and FL-096 remains open.
+
+**Decision:** No stability gate advanced. This correction preserves trustworthy evidence classification and records the monitoring interpretation gap; no production action was performed.
