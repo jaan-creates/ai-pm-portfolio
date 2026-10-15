@@ -68,7 +68,7 @@ if(!s.includes("runP1AScoreCompletionAdmissionSelfTest();")){
   const health='function phase1HealthTick';
   const i=s.indexOf(health);
   if(i<0)throw new Error('health tick anchor missing');
-  s=s.slice(0,i)+"try{runP1AScoreCompletionAdmissionSelfTest();}catch(e){upsertWorkerState_('p1a_score_completion_admission_self_test','FAIL',String((e&&e.stack)||e).slice(0,1500));}\\n"+s.slice(i);
+  s=s.slice(0,i)+"try{runP1AScoreCompletionAdmissionSelfTest();}catch(e){upsertWorkerState_('p1a_score_completion_admission_self_test','FAIL',String((e&&e.stack)||e).slice(0,1500));}"+String.fromCharCode(10)+s.slice(i);
 }
 
 for(const token of ['function p1aScoreCompletionAdmission_(','function p1aScoreCompletionAdmissionSelfTest_(','function runP1AScoreCompletionAdmissionSelfTest(','function workerScoreOriginal_(','SCORE_COMPLETE_NEEDS_RESUME','P1-A-SCORE-COMPLETION-ADMISSION-1'])if(!s.includes(token))throw new Error('score completion admission wiring missing '+token);
