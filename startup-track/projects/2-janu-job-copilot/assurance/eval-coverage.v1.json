@@ -72,6 +72,13 @@
       "test": "assurance/test-escaped-regressions.mjs",
       "workflow_step": "Check escaped regression controls",
       "evidence_boundary": "synthetic escaped-regression controls only; no production recurrence proof"
+    },
+    {
+      "id": "SOURCING-TASK-CONTINUITY",
+      "requirement": "Recurring sourcing task remains enabled after successful completion and has a next eligible slot",
+      "test": "assurance/test-sourcing-task-continuity.mjs",
+      "workflow_step": "Check recurring sourcing task continuity",
+      "evidence_boundary": "synthetic task-state contract only; no live automation execution"
     }
   ],
   "pending_runtime": [
