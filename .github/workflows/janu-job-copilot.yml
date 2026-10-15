@@ -98,6 +98,10 @@ jobs:
         run: node "$PROJECT_DIR/scripts/live-target-structure.mjs" "$LIVE_DIR"
       - name: Apply additive P1-A contracts
         run: node "$PROJECT_DIR/scripts/patch-p1a.mjs" "$LIVE_DIR"
+      - name: Apply P1-A E2E continuation repair
+        run: node "$PROJECT_DIR/scripts/patch-p1a-e2e-continuation.mjs" "$LIVE_DIR"
+      - name: Apply owned Apply admission repair
+        run: node "$PROJECT_DIR/scripts/patch-owned-apply-admission.mjs" "$LIVE_DIR"
       - name: Apply P1-A runtime provider adapters
         run: node "$PROJECT_DIR/scripts/patch-p1a-runtime.mjs" "$LIVE_DIR"
       - name: Apply additive P1-B contracts
@@ -112,6 +116,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-release-provenance.mjs" "$LIVE_DIR"
       - name: Add TRACE-GOLDEN-01 trace and same-fixture runner
         run: node "$PROJECT_DIR/scripts/patch-trace-golden-v0-runtime.mjs" "$LIVE_DIR"
+      - name: Run owned Apply admission regression
+        run: node "$PROJECT_DIR/scripts/test-owned-apply-admission.mjs" "$PROJECT_DIR"
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -126,6 +132,8 @@ jobs:
       - name: Validate P1-A contracts, runtime adapters, vacancy and JD workers
         shell: bash
         run: |
+          grep -q "P1-A-OWNED-APPLY-ADMISSION-1" /tmp/janu-job-copilot-combined.js
+          grep -q "recoverySafe:true" /tmp/janu-job-copilot-combined.js
           for token in retrievalProviderRoute_ retrievalProvenance_ parseJobPostingJsonLd_ deterministicJobParse_ vacancyRevalidationRequired_ vacancyStateDecision_ sourcePromotionKey_ sourcePromotionDecision_ p1aContractSelfTest_ runP1AContractSelfTest p1a_self_test publicHttpUrl_ retrievalProviderConfig_ directOfficialFetch_ tavilySearch_ serpApiSearch_ retrievalGatewayFetch_ p1aRuntimeContractSelfTest_ p1aVacancyCandidate_ p1aVacancyFromRetrieval_ p1aWriteVacancyEvidence_ p1aVacancyMaintenanceTick_ p1aVacancyWorkerSelfTest_ runP1AVacancyWorkerSelfTest p1a_vacancy_self_test p1a_vacancy_last_result ashbyPublicPostingCoordinates_ ashbyPublicPostingFetch_ p1aJdTextFromRetrieval_ p1aJdRetrieveForApp_ p1aRecordJdRetrieval_ p1aJdRecoveryCandidate_ p1aJdRecoveryMaintenanceTick_ p1aJdWorkerSelfTest_ runP1AJdWorkerSelfTest p1a_jd_worker_self_test p1a_jd_recovery_last_result P1-A-JD-WORKER-1; do
             grep -q "$token" /tmp/janu-job-copilot-combined.js || { echo "P1-A contract/runtime/wiring missing: $token"; exit 9; }
           done
@@ -199,6 +207,9 @@ jobs:
           PARAMS="$(node -e 'console.log(JSON.stringify([process.env.GITHUB_SHA,process.env.GITHUB_RUN_ID,process.env.GITHUB_RUN_ATTEMPT,process.env.DEPLOYED_SOURCE_HASH,process.env.EXPECTED_VERSION,process.env.EXPECTED_SUITE]))')"
           echo 'Persisting privacy-safe deployment provenance to connected product state.'
           clasp run recordDeploymentProvenance --params "$PARAMS"
+      - name: Verify owned Apply admission self-test immediately
+        working-directory: .janu-live
+        run: clasp run runP1AOwnedApplyAdmissionSelfTest --nondev
       - name: Attempt P1-A self-test immediately
         continue-on-error: true
         working-directory: .janu-live
