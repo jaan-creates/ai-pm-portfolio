@@ -9,4 +9,6 @@ assert.match(patch,/OWNED-APPLY-STATE-MATRIX-001/);
 assert.match(patch,/recoverySafe:true/);
 assert.match(patch,/queueMutationAllowed_\(options\)!==true/);
 assert.match(patch,/input,\{recoverySafe:true\}\)/);
-console.log(JSON.stringify({status:'PASS',contract:'P1-A-OWNED-APPLY-ADMISSION-1',checks:5,evidence_boundary:'source-level regression; live queue readback remains required'}));
+assert.match(patch,/function ownedEnsureQueueAdmission_\(id,worker,payload,input,opts\)/);
+assert.match(patch,/enqueue_\(id,worker,payload,input,opts\)/);
+console.log(JSON.stringify({status:'PASS',contract:'P1-A-OWNED-APPLY-ADMISSION-1',checks:7,evidence_boundary:'source-level regression; live queue readback remains required'}));
