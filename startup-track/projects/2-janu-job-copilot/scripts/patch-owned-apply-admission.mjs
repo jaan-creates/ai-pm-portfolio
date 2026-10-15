@@ -29,18 +29,40 @@ if(!s.includes(helperReplacement)){
   s=s.replace(helperSignature,helperReplacement).replace(helperCall,helperCallReplacement);
 }
 
+const planSignature=/function ownedApplyStatePlan_\(a\)\{const vacancy=String\(a\.vacancy\|\|' '\)\.toUpperCase\(\),snap=String\(a\.snap\|\|''\),complete=Number\(a\.complete\|\|0\),fit=Number\(a\.fit\|\|0\),resume=/;
+const planSignatureFallback=/function ownedApplyStatePlan_\(a\)\{const vacancy=String\(a\.vacancy\|\|''\)\.toUpperCase\(\),snap=String\(a\.snap\|\|''\),complete=Number\(a\.complete\|\|0\),fit=Number\(a\.fit\|\|0\),resume=/;
+const planReplacement="function ownedApplyStatePlan_(a){const vacancy=String(a.vacancy||'').toUpperCase(),snap=String(a.snap||''),complete=Number(a.complete||0),fit=Number(a.fit||0),mapReady=!!a.mapReady,resume=";
+if(!s.includes("mapReady=!!a.mapReady")){
+  if(!planSignatureFallback.test(s)) throw new Error('Owned Apply state planner not found; refusing an unsafe broad replacement');
+  s=s.replace(planSignatureFallback,planReplacement);
+}
+const fitGate="if(!(fit>0))return{status:'Scoring',worker:'JD_PARSE_SCORE_MAP',reason:'APPLY_NEEDS_SCORE'};";
+const mapGate="if(!(fit>0)||!mapReady)return{status:'Scoring',worker:'JD_PARSE_SCORE_MAP',reason:'APPLY_NEEDS_SCORE_MAP'};";
+if(!s.includes(mapGate)){
+  if(!s.includes(fitGate)) throw new Error('Owned Apply score gate not found; refusing an unsafe broad replacement');
+  s=s.replace(fitGate,mapGate);
+}
+const stateWithoutMap="atsQaStatus:get('ATS QA Status')};";
+const stateWithMap="atsQaStatus:get('ATS QA Status'),mapReady:!!has_(JC.S.MAP,id)};";
+if(!s.includes(stateWithMap)){
+  if(!s.includes(stateWithoutMap)) throw new Error('Owned Apply admission state object not found; refusing an unsafe broad replacement');
+  s=s.replace(stateWithoutMap,stateWithMap);
+}
+
 function insertBeforeAnchor_(code){
   const i=s.indexOf(anchor);
   if(i<0) throw new Error('release identity anchor missing');
   s=s.slice(0,i)+code+'\n'+s.slice(i);
 }
 if(!s.includes('function p1aOwnedApplyAdmissionSelfTest_(')){
-  insertBeforeAnchor_(`function p1aOwnedApplyAdmissionSelfTest_(){const probe={source:'owned-apply-edit',reason:'probe',contract:'OWNED-APPLY-STATE-MATRIX-001'};const options={recoverySafe:true};if(typeof queueMutationAllowed_!=='function'||queueMutationAllowed_(options)!==true)throw new Error('P1-A owned Apply admission safety contract failed');if(typeof ownedEnsureQueueAdmission_!=='function'||!String(ownedEnsureQueueAdmission_).includes('enqueue_(id,worker,payload,input,opts)'))throw new Error('P1-A owned Apply helper forwarding contract failed');return{pass:true,contract:'P1-A-OWNED-APPLY-ADMISSION-1',recoverySafe:true,optionsArgument:'fifth',helperForwardsOptions:true};}
+  insertBeforeAnchor_(`function p1aOwnedApplyAdmissionSelfTest_(){const probe={source:'owned-apply-edit',reason:'probe',contract:'OWNED-APPLY-STATE-MATRIX-001'};const options={recoverySafe:true};if(typeof queueMutationAllowed_!=='function'||queueMutationAllowed_(options)!==true)throw new Error('P1-A owned Apply admission safety contract failed');if(typeof ownedEnsureQueueAdmission_!=='function'||!String(ownedEnsureQueueAdmission_).includes('enqueue_(id,worker,payload,input,opts)'))throw new Error('P1-A owned Apply helper forwarding contract failed');if(typeof ownedApplyStatePlan_!=='function'||!String(ownedApplyStatePlan_).includes('!mapReady'))throw new Error('P1-A owned Apply map prerequisite contract failed');return{pass:true,contract:'P1-A-OWNED-APPLY-ADMISSION-1',recoverySafe:true,optionsArgument:'fifth',helperForwardsOptions:true,mapPrerequisite:true};}
 function runP1AOwnedApplyAdmissionSelfTest(){const x=p1aOwnedApplyAdmissionSelfTest_();upsertWorkerState_('p1a_owned_apply_admission_self_test',x.pass?'PASS':'FAIL',JSON.stringify(x));return x;}`);
 }
 if(!s.includes(replacement)) throw new Error('Owned Apply fifth-argument caller marker missing after patch');
 if(!s.includes(helperReplacement)) throw new Error('Owned Apply helper options signature missing after patch');
 if(!s.includes(helperCallReplacement)) throw new Error('Owned Apply helper options forwarding missing after patch');
+if(!s.includes(mapGate)) throw new Error('Owned Apply map prerequisite gate missing after patch');
+if(!s.includes(stateWithMap)) throw new Error('Owned Apply map readiness input missing after patch');
 if(!s.includes('function runP1AOwnedApplyAdmissionSelfTest(')) throw new Error('Owned Apply admission regression self-test missing');
 if(s!==before) fs.writeFileSync(file,s);
-console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:'P1-A-OWNED-APPLY-ADMISSION-1',recoverySafe:true,optionsArgument:'fifth',helperForwardsOptions:true},null,2));
+console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:'P1-A-OWNED-APPLY-ADMISSION-1',recoverySafe:true,optionsArgument:'fifth',helperForwardsOptions:true,mapPrerequisite:true},null,2));
