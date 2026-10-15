@@ -403,3 +403,14 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **Stabilized-state decision:** NOT REACHED. The system is not yet trustworthy end-to-end because exact-revision CI, two post-reenable scheduled cycles, runtime identity, live telemetry, approval-first artifact proof and measured outcome improvement remain incomplete.
 
 **Surety statement:** With the evidence available on 2026-10-15, the honest classification is **partially stabilized source/evaluation layer; runtime/release system not stabilized**. No PASS, healthy or end-to-end trust claim is supported.
+
+
+## 2026-10-15 continued ownership after stabilization audit
+
+- [x] **Safe work ownership retained:** Assistant continues to own source fixes, direct tests, CI/readback, tracker reads, evidence classification and this ledger. No production trigger, worker replay, deployment or candidate mutation was performed.
+- [x] **Protected boundary retained:** Owner re-enable is acknowledged; owner-only runtime inspector setup/dispatch remains separate. No credentials requested or exposed.
+- [ ] **CI closure:** Repaired workflow head still lacks a successful follow-up Governance run; previous malformed-YAML failures remain recorded as failures, not converted to PASS.
+- [ ] **Scheduled closure:** Wait for the next two eligible scheduled runs after re-enable; recovery cannot satisfy either slot.
+- [ ] **End-to-end closure:** Telemetry, runtime identity, approval-first artifact, renderer and business-improvement evidence remain open.
+
+**Next automatic decision points:** first post-reenable scheduled run; second consecutive qualifying scheduled run; successful Governance run on repaired head. Any failure will be recorded as a regression and will not be hidden by recovery success.
