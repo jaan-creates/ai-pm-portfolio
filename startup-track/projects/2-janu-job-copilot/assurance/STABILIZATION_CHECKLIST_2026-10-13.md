@@ -473,3 +473,14 @@ The current pending gates are therefore:
 - [ ] **P0.1/G01 execution:** No current credentialed read-only observation, pinned deployment version, trigger inventory, or repeatable inspection proof exists. This remains an owner-controlled setup/dispatch boundary; no secret is requested or exposed and no production mutation is performed.
 
 **Decision:** The inspector is structurally safe and source-validated, but runtime identity remains unproven. Do not promote the successful offline assertion into a runtime PASS.
+
+
+## 2026-10-15 credentialed read-only runtime capture
+
+- [x] **Credentialed inspector executed:** Workflow run [38773096788](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38773096788) completed successfully. Both `assert-read-only` and `inspect-runtime` passed. No worker execution occurred.
+- [x] **Exact read-only boundary verified:** Inspector log reports contract `JANU-READONLY-RUNTIME-SNAPSHOT-2`, 13 offline checks, `EXACT_READONLY_SCOPE`, `APPS_SCRIPT_PROJECT_HEAD`, and `worker_execution=NOT_RUN`. The run uploaded hash-only artifact [11991528618](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38773096788/artifacts/11991528618).
+- [x] **Current source/release identity captured:** Runtime log reports source SHA-256 `e9a6de1f883f88fd85eb156bacaf171c99226b2bf91c46e25ae8d26c2df574ee`, release `1.3.8`, regression suite `p0-regression-v19`, and exact read-only scope.
+- [x] **Independent private readback matched:** `__Worker State` row 83 contains the same source hash; row 124 records deployment provenance `PASS` with version `1.3.8`, suite `p0-regression-v19`, source hash and provenance run `38711467142`; row 126 records deployment runtime identity `1.3.8 / p0-regression-v19`.
+- [ ] **P0.1/G01 remaining proof:** The inspector did not inspect pinned deployment version or trigger inventory. Current private control-plane evidence still contains a `phase1OneJobTick:0` claim and a renderer control-plane `FAIL` record, so trigger topology and runtime health are not certified by the source-hash match.
+
+**Decision:** P0.1/G01 is now **PARTIAL — current source/release identity independently matched**. This is meaningful runtime provenance evidence, but not a complete runtime-health or scheduler-liveness PASS.
