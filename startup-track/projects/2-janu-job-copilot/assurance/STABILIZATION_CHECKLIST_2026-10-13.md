@@ -484,3 +484,13 @@ The current pending gates are therefore:
 - [ ] **P0.1/G01 remaining proof:** The inspector did not inspect pinned deployment version or trigger inventory. Current private control-plane evidence still contains a `phase1OneJobTick:0` claim and a renderer control-plane `FAIL` record, so trigger topology and runtime health are not certified by the source-hash match.
 
 **Decision:** P0.1/G01 is now **PARTIAL — current source/release identity independently matched**. This is meaningful runtime provenance evidence, but not a complete runtime-health or scheduler-liveness PASS.
+
+
+## 2026-10-15 post-capture downstream telemetry readback
+
+- [x] **Governance CI trigger check:** The ledger-only commit after the runtime capture produced no new PR-triggered Governance run; the previously read successful Governance run remains the valid source/evaluation evidence.
+- [x] **Verification Ledger check:** A bounded search of private `__Verification Ledger` found no record keyed by runtime inspection run `38773096788`; the inspector’s hash-only artifact is not itself a business/telemetry verification row.
+- [x] **Trace/Golden telemetry check:** Bounded searches of `Trace Explorer` and `__Golden Trace` found no current `telemetry_schema_version` evidence tied to this runtime capture. Existing trace completeness gaps remain.
+- [ ] **P0.4/N4 closure:** Live telemetry propagation remains unproven. Runtime source identity and deployment provenance are verified, but worker/queue/tool-model/storage/verifier correlation and authoritative downstream readback are missing.
+
+**Decision:** The new runtime run improves P0.1/G01 source identity only. It does not change the telemetry, scheduler, approval-first, business-outcome, or overall release-hold decisions.
