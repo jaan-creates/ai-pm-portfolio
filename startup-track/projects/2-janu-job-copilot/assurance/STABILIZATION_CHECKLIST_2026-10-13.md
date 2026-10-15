@@ -324,3 +324,15 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [x] **Read-only inspector boundary confirmed:** PR #57 is merged and its offline fixture checks passed, but no credentialed `inspect-runtime` execution is present in the available workflow history. The existing successful run was pull-request/offline validation with inspection skipped.
 - [ ] **N3 execution:** Cannot be completed by the assistant from the current connector because it requires the owner to configure the separate exact-readonly OAuth secret and manually dispatch the workflow. No secret, token or broad production credential will be requested in chat.
 - [ ] **N3 acceptance:** After the owner-only dispatch, require both inspector jobs successful, hash-only artifact, exact observation time, private `__Worker State` comparison and separate pinned deployment/trigger assessment. HEAD hash agreement alone remains insufficient.
+
+
+## 2026-10-15 cross-chat continuation readback
+
+- [x] **Owner action confirmation:** The user previously resumed the existing Daily PM Sourcing Worker schedule. This is accepted as owner authorization for that existing task only; no trigger edits, replay, renderer enablement or production deployment were authorized or performed.
+- [x] **First post-resume genuine scheduled outcome:** `SRC-20261014-DAILY-01` completed successfully on 2026-10-14 09:05–09:07 IST with 18 raw roles, 2 qualified, 2 duplicates, 3 promoted and 0 errors. Two roles were durably promoted/read back: Tala Senior Product Manager Fraud & Risk and Spotnana Senior Product Manager Payments. Spotnana direct ATS form remained UNKNOWN and was not misrepresented.
+- [x] **Next scheduled-slot observation:** `SRC-20261015-SCHEDULER-MISS` FAILED at 10:30 IST, followed by `SRC-20261015-RECOVERY-01` SUCCEEDED. Recovery does not count as scheduled proof.
+- [ ] **Scheduler acceptance:** The first post-resume scheduled cycle succeeded, but the next scheduled slot missed. Therefore consecutive scheduled proof is not established and the circuit remains `BLOCKED / OPEN`.
+- [x] **Independent downstream evidence:** The October 14 scheduled row contains durable sourcing counts and Applications promotion evidence; no write errors were reported. This proves one bounded scheduled outcome, not sustained reliability, telemetry health or business success.
+- [ ] **Telemetry/release acceptance:** No change—current Trace Explorer remains structurally incomplete and no current cross-boundary telemetry proof exists.
+
+**Updated decision:** The user’s resume action was effective enough to produce one real scheduled run, but the October 15 miss is an escaped reliability failure. Preserve FL-096/FL-098 and keep the circuit open until the scheduler topology/root cause is reconciled and sustained scheduled recurrence is proven.
