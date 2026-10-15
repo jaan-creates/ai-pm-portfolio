@@ -13,10 +13,12 @@ const file=path.join(root,target);
 let s=fs.readFileSync(file,'utf8');
 const before=s;
 const anchor='function verifyReleaseIdentity()';
-const oldCall=/ownedEnsureQueueAdmission_\(\s*id\s*,\s*plan\.worker\s*,\s*\{\s*source:\s*['"]owned-apply-edit['"]\s*,\s*reason:\s*plan\.reason\s*,\s*contract:\s*['"]OWNED-APPLY-STATE-MATRIX-001['"]\s*\}\s*,\s*input\s*\)/;
 const replacement="ownedEnsureQueueAdmission_(id,plan.worker,{source:'owned-apply-edit',reason:plan.reason,contract:'OWNED-APPLY-STATE-MATRIX-001'},input,{recoverySafe:true})";
-if(!oldCall.test(s)) throw new Error('Owned Apply admission call not found; refusing an unsafe broad replacement');
-s=s.replace(oldCall,replacement);
+const oldCall=/ownedEnsureQueueAdmission_\(\s*id\s*,\s*plan\.worker\s*,\s*\{\s*source:\s*['"]owned-apply-edit['"]\s*,\s*reason:\s*plan\.reason\s*,\s*contract:\s*['"]OWNED-APPLY-STATE-MATRIX-001['"]\s*(?:,\s*recoverySafe\s*:\s*true\s*)?\}\s*,\s*input\s*\)/;
+if(!s.includes(replacement)){
+  if(!oldCall.test(s)) throw new Error('Owned Apply admission call not found; refusing an unsafe broad replacement');
+  s=s.replace(oldCall,replacement);
+}
 
 function insertBeforeAnchor_(code){
   const i=s.indexOf(anchor);
@@ -27,7 +29,7 @@ if(!s.includes('function p1aOwnedApplyAdmissionSelfTest_(')){
   insertBeforeAnchor_(`function p1aOwnedApplyAdmissionSelfTest_(){const probe={source:'owned-apply-edit',reason:'probe',contract:'OWNED-APPLY-STATE-MATRIX-001'};const options={recoverySafe:true};if(typeof queueMutationAllowed_!=='function'||queueMutationAllowed_(options)!==true)throw new Error('P1-A owned Apply admission safety contract failed');return{pass:true,contract:'P1-A-OWNED-APPLY-ADMISSION-1',recoverySafe:true,optionsArgument:'fifth'};}
 function runP1AOwnedApplyAdmissionSelfTest(){const x=p1aOwnedApplyAdmissionSelfTest_();upsertWorkerState_('p1a_owned_apply_admission_self_test',x.pass?'PASS':'FAIL',JSON.stringify(x));return x;}`);
 }
-if(!s.includes("ownedEnsureQueueAdmission_(id,plan.worker,{source:'owned-apply-edit',reason:plan.reason,contract:'OWNED-APPLY-STATE-MATRIX-001'},input,{recoverySafe:true})")) throw new Error('Owned Apply fifth-argument safety marker missing after patch');
+if(!s.includes(replacement)) throw new Error('Owned Apply fifth-argument safety marker missing after patch');
 if(!s.includes('function runP1AOwnedApplyAdmissionSelfTest(')) throw new Error('Owned Apply admission regression self-test missing');
 if(s!==before) fs.writeFileSync(file,s);
 console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:'P1-A-OWNED-APPLY-ADMISSION-1',recoverySafe:true,optionsArgument:'fifth'},null,2));
