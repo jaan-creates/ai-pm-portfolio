@@ -20,5 +20,5 @@ assert.match(patch,/has_\(JC\.S\.MAP,id\)/);
 assert.match(patch,/rawPlan\.worker==='RESUME_GENERATE'&&!state\.mapReady/);
 assert.match(patch,/\['New','Scoring'\]\.includes\(status\)/);
 assert.match(patch,/owned-apply-queue-repair-v3/);assert.match(patch,/\['succeeded','completed'\]\.includes\(rb\.status\)/);assert.match(patch,/recovery:false/);
-assert.match(patch,/ownedApplyReplay:true/);assert.match(patch,/ownedApplyReplay===true/);assert.match(patch,/APPLY_NEEDS_SCORE_MAP/);
-console.log(JSON.stringify({status:'PASS',contract:'P1-A-OWNED-APPLY-ADMISSION-1',checks:11,evidence_boundary:'source-level regression; live queue readback remains required'}));
+assert.match(patch,/ownedApplyReplay:true/);assert.match(patch,/ownedApplyReplay===true/);assert.match(patch,/APPLY_NEEDS_SCORE_MAP/);assert.match(patch,/score-completion-admission-v1/);assert.match(patch,/SCORE_COMPLETE_NEEDS_RESUME/);assert.match(patch,/P1-A-SCORE-COMPLETION-ADMISSION-1/);assert.match(patch,/payload\.recoverySafe===true/);assert.match(patch,/payload\.ownedAdmission===true/);assert.match(patch,/type===JC\.W\.RES/);
+console.log(JSON.stringify({status:'PASS',contract:'P1-A-OWNED-APPLY-ADMISSION-1',checks:17,evidence_boundary:'source-level regression; live queue readback remains required'}));
