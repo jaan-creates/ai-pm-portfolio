@@ -32,11 +32,11 @@ if(!s.includes(helperReplacement)){
 const planSignature=/function ownedApplyStatePlan_\(a\)\{const vacancy=String\(a\.vacancy\|\|' '\)\.toUpperCase\(\),snap=String\(a\.snap\|\|''\),complete=Number\(a\.complete\|\|0\),fit=Number\(a\.fit\|\|0\),resume=/;
 const planSignatureFallback=/function ownedApplyStatePlan_\(a\)\{const vacancy=String\(a\.vacancy\|\|''\)\.toUpperCase\(\),snap=String\(a\.snap\|\|''\),complete=Number\(a\.complete\|\|0\),fit=Number\(a\.fit\|\|0\),resume=/;
 const planReplacement="function ownedApplyStatePlan_(a){const vacancy=String(a.vacancy||'').toUpperCase(),snap=String(a.snap||''),complete=Number(a.complete||0),fit=Number(a.fit||0),jdReady=!!a.jdReady,mapReady=!!a.mapReady,resume=";
-if(!s.includes("mapReady=!!a.mapReady")){
-  if(!planSignatureFallback.test(s)) throw new Error('Owned Apply state planner not found; refusing an unsafe broad replacement');
-  s=s.replace(planSignatureFallback,planReplacement);
+if(!s.includes("jdReady=!!a.jdReady")){
+  const planWithMap=/function ownedApplyStatePlan_\(a\)\{const vacancy=String\(a\.vacancy\|\|''\)\.toUpperCase\(\),snap=String\(a\.snap\|\|''\),complete=Number\(a\.complete\|\|0\),fit=Number\(a\.fit\|\|0\),mapReady=!!a\.mapReady,resume=/;
+  if(!planWithMap.test(s)) throw new Error('Owned Apply state planner not found; refusing an unsafe broad replacement');
+  s=s.replace(planWithMap,planReplacement);
 }
-const fitGate="if(!(fit>0))return{status:'Scoring',worker:'JD_PARSE_SCORE_MAP',reason:'APPLY_NEEDS_SCORE'};";
 const jdGate="if(!/Verified Full JD/i.test(snap)||complete<70||!jdReady)return{status:'Verifying JD',worker:'JD_RETRIEVE',reason:'APPLY_NEEDS_JD'};";
 if(!s.includes(jdGate)){
   const oldJdGate="if(!/Verified Full JD/i.test(snap)||complete<70)return{status:'Verifying JD',worker:'JD_RETRIEVE',reason:'APPLY_NEEDS_JD'};";
