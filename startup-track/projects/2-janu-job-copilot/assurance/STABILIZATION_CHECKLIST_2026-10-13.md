@@ -515,3 +515,14 @@ The current pending gates are therefore:
 - [ ] **Next evidence gate:** The first two genuine scheduled cycles after re-enable remain the next runtime decision point. No owner action is required now unless the owner is asked to provide a read-only topology screenshot or a protected configuration decision.
 
 **Decision:** No gate advanced. The evidence-watch refresh confirms the existing release hold; no production mutation was performed.
+
+
+## 2026-10-15 outcome-metric honesty guard and exact-revision Governance execution
+
+- [x] **Source guard implemented:** Extended `assurance/test-contract.mjs` so the canonical `QUALIFIED_INTERVIEW_PER_EFFORT` metric must remain `NOT INSTRUMENTED` and must retain its explicit prohibition on calculating/reporting numeric improvement without a verified effort denominator.
+- [x] **Exact-revision Governance run:** Manual non-production run [38775869355](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38775869355) executed on PR #56 branch head `559d865d2ff0f9dc53f062ac834417b7667f919f`; job [116563231573](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38775869355/job/116563231573) completed SUCCESS.
+- [x] **Execution readback:** All 21 substantive Governance steps completed successfully. The contract test reported 36 checks, including the new outcome-metric honesty guard; evaluation coverage reported 11 mapped cases, 6 negative controls and 10 explicitly unverified runtime boundaries.
+- [x] **Safety readback:** Workflow was Governance-only with read-only repository permissions; no Apps Script CD, worker execution, trigger change, deployment, tracker write or external submission occurred. GitHub emitted only environment deprecation warnings.
+- [ ] **Evidence boundary:** This closes the source-level regression/CI gap for truthful outcome-metric status only. It does not prove qualified interviews, user effort, live telemetry, scheduler recurrence, renderer/PDF execution or end-to-end stabilization.
+
+**Decision:** Source/evaluation safeguards improved and exact-revision execution is verified. Product/runtime release status remains **INCOMPLETE / RELEASE HOLD**.
