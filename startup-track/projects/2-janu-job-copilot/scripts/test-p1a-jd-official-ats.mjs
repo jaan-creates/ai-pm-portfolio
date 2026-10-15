@@ -10,6 +10,10 @@ fs.writeFileSync(target,"const P12={}; function verifyReleaseIdentity(){} functi
 execFileSync(process.execPath,[patcher,tmp],{stdio:'inherit'});
 const out=fs.readFileSync(target,'utf8');
 for(const t of ['function greenhousePublicJobFetch_(','function leverPublicJobFetch_(','GREENHOUSE_PUBLIC_API','LEVER_PUBLIC_API',"else if(host==='GREENHOUSE')","else if(host==='LEVER')"])if(!out.includes(t))throw new Error('Missing official ATS regression token '+t);
+if(!out.includes('function leverPublicJdContent_(')||!out.includes('j.lists')||!out.includes('descriptionBodyPlain'))throw new Error('Missing Lever completeness regression token');
+const helper=new Function(out+'; return leverPublicJdContent_;')();
+const fixture=helper({text:'Senior Product Manager, Fraud & Risk',openingPlain:'About Tala',descriptionBodyPlain:'Own authentication strategy',lists:[{text:"What You'll Need",content:'<li>5+ years of product management experience</li>'}]});
+if(!fixture.includes("What You'll Need")||!fixture.includes('5+ years of product management experience'))throw new Error('Lever JD completeness fixture failed');
 execFileSync(process.execPath,[patcher,tmp],{stdio:'inherit'});
 if(fs.readFileSync(target,'utf8')!==out)throw new Error('Official ATS patch is not idempotent');
 console.log(JSON.stringify({status:'PASS',contract:'P1-A-JD-OFFICIAL-ATS-ROUTES-001',idempotent:true,fixtures:['Greenhouse','Lever']},null,2));
