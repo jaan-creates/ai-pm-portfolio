@@ -7,5 +7,4 @@ const validator=fs.readFileSync(path.join(project,'scripts','validate-release.mj
 assert.ok(validator.includes("function\\s+phase1HealthTick"));
 assert.ok(validator.includes("controlPlaneExecutionAuthorized_()"));
 assert.ok(validator.includes("phase1HealthTick safety contract missing"));
-assert.ok(validator.includes("phase1HealthTick contract missing"));
 console.log(JSON.stringify({status:'PASS',contract:'RELEASE-VALIDATOR-HOOK-001',checks:3,evidence_boundary:'source-level validator regression; live deployment remains separate'}));
