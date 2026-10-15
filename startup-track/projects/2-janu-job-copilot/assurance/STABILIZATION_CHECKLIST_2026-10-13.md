@@ -347,3 +347,13 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **Circuit closure:** Keep `SOURCING_SCHEDULER_STALE` OPEN until the trigger/task contradiction is reconciled and two qualifying scheduled cycles are read back.
 
 **Simple owner instruction if needed:** send two screenshots with the captions “Current sourcing task — no changes made” and “Current Apps Script triggers — no changes made.” No tracker reading or technical interpretation is required from the owner.
+
+
+## 2026-10-15 owner screenshot reconciliation and monitor repair
+
+- [x] **Current sourcing-task evidence received:** User-provided screenshot shows the Daily PM Sourcing Worker result for October 14 with durable telemetry marked Verified, 18 roles reviewed, 3 existing vacancies rejected, 13 excluded, 2 net-new roles added and 0 write errors. It also states the recurring sourcing worker was disabled after the completed execution by the automation runtime completion rule; future automatic sourcing requires re-enablement.
+- [x] **Current trigger evidence received:** User-provided Apps Script screenshot shows `phase1OneJobTick` present, owned by Me, Head deployment, time-based, last run 15 Oct 2026 2:05:09 PM, error rate 11.46%; `phase1HealthTick` last ran 2:07:51 PM with 20.13% error rate; renderer canary remains disabled.
+- [x] **Contradiction resolved precisely:** The visible Apps Script trigger exists and ran, but the ChatGPT Daily PM Sourcing Worker was disabled by its completion rule. The prior tracker `phase1OneJobTick: 0` remains stale or represents a different control-plane measurement; it is not accepted as proof that the visible trigger is absent.
+- [x] **Monitoring repaired:** The existing `Janu Stabilization Evidence Watch` was found paused and has been reactivated as the same hourly monitor. No duplicate monitor remains. It continues to stay quiet on unchanged state and notify only on meaningful checklist, CI, PR, scheduler or owner-action changes.
+- [ ] **Owner-only production decision:** Re-enable the existing Daily PM Sourcing Worker if recurring automatic sourcing is intended. Do not create a new task. This is the only remaining user action for schedule continuity; the assistant will then verify subsequent scheduled outcomes and circuit state.
+- [ ] **Scheduler closure:** October 14 is one genuine scheduled success; October 15 missed. Require two qualifying scheduled outcomes after re-enablement before closing the circuit.
