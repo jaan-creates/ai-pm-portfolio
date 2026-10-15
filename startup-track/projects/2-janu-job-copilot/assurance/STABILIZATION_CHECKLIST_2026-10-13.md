@@ -546,3 +546,13 @@ The current pending gates are therefore:
 - [ ] **P0.3/N2:** No qualifying post-reenable scheduled cycle has been independently verified yet. The scheduler circuit remains open and FL-096 remains open.
 
 **Decision:** No stability gate advanced. This correction preserves trustworthy evidence classification and records the monitoring interpretation gap; no production action was performed.
+
+
+## 2026-10-16 accelerated schedule attempt readback
+
+- [x] **Authoritative result checked:** After the owner moved the existing Daily PM Sourcing Worker to 12:15 AM, fresh `__Sourcing Runs` search for 2026-10-16 returned no row—neither scheduled success, scheduled failure, nor recovery.
+- [x] **Health readback:** `__System Health` was checked on 2026-10-16 and still reports `Daily Sourcing = BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`, with last successful scheduled date remaining 2026-10-15 only in the stale health record.
+- [x] **Evidence classification:** The absence of a durable run means the expected 12:15 AM execution cannot be counted as a scheduled cycle. No manual replay or trigger mutation was performed by the assistant.
+- [ ] **P0.3/N2:** Scheduler liveness remains unproven and FL-096 remains open. The next owner-visible check is whether the existing task is still enabled, recurring, and saved with the intended next-run time; do not use “Run now” as a substitute.
+
+**Decision:** The accelerated schedule attempt did not produce authoritative sourcing evidence. Release hold and open scheduler circuit remain unchanged.
