@@ -13,6 +13,6 @@ assert.match(patch,/function ownedEnsureQueueAdmission_\(id,worker,payload,input
 assert.match(patch,/enqueue_\(id,worker,payload,input,opts\)/);
 assert.match(patch,/mapReady/);
 assert.match(patch,/!mapReady/);
-assert.match(patch,/has_\(JC\.S\.MAP,id\)/);
+assert.match(patch,/has_\(JC\.S\.MAP,id\)/);\nassert.match(patch,/rawPlan\.worker===\\'RESUME_GENERATE\\'&&!state\.mapReady/);
 assert.match(patch,/\['New','Scoring'\]\.includes\(status\)/);
 console.log(JSON.stringify({status:'PASS',contract:'P1-A-OWNED-APPLY-ADMISSION-1',checks:11,evidence_boundary:'source-level regression; live queue readback remains required'}));
