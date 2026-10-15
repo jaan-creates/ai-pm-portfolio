@@ -556,3 +556,14 @@ The current pending gates are therefore:
 - [ ] **P0.3/N2:** Scheduler liveness remains unproven and FL-096 remains open. The next owner-visible check is whether the existing task is still enabled, recurring, and saved with the intended next-run time; do not use “Run now” as a substitute.
 
 **Decision:** The accelerated schedule attempt did not produce authoritative sourcing evidence. Release hold and open scheduler circuit remain unchanged.
+
+
+## 2026-10-16 accelerated scheduled-cycle proof
+
+- [x] **First qualifying post-reenable scheduled cycle:** Private `__Sourcing Runs` row 71 records `SRC-20261016-DAILY-01`, `SUCCEEDED`, Trigger=`Daily PM Sourcing Worker — scheduled`, started 00:23 IST and finished 00:26 IST. This is accepted as scheduled evidence because the existing recurring task was temporarily configured for the 00:15 slot and the durable row identifies the scheduled trigger.
+- [x] **Durable sourcing evidence:** 21 roles assessed, 3 qualified, 5 duplicates rejected, 3 promoted, 13 excluded, 0 errors, no Sources Inbox writes. CROSS-SOURCE-VACANCY-IDENTITY-001 audited 85 existing Applications before writes.
+- [x] **Independent Applications readback:** Applications rows 90–92 were read back for Okta Product Manager Product Platform — Backup & Recovery, Syndigo PXM / AI-Driven Development, and GeneralMind Enterprise AI Workflows; all have Decision=New and Status=New.
+- [x] **Health readback:** `__System Health` records `2026-10-16 00:26 IST` as the latest scheduled success but correctly remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE` because the Oct 15 miss and historical liveness gaps remain unresolved.
+- [ ] **P0.3/N2 remaining proof:** One additional qualifying scheduled cycle is required under the restored intended cadence. Do not use recovery/manual execution to satisfy it. The current cycle proves scheduled execution and downstream sourcing integrity, not full recurrence stability.
+
+**Decision:** P0.3 advances from no post-reenable proof to **1 qualifying scheduled cycle verified**. The scheduler circuit remains open; no production mutation was performed by this readback.
