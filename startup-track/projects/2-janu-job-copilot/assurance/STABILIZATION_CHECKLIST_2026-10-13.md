@@ -567,3 +567,16 @@ The current pending gates are therefore:
 - [ ] **P0.3/N2 remaining proof:** One additional qualifying scheduled cycle is required under the restored intended cadence. Do not use recovery/manual execution to satisfy it. The current cycle proves scheduled execution and downstream sourcing integrity, not full recurrence stability.
 
 **Decision:** P0.3 advances from no post-reenable proof to **1 qualifying scheduled cycle verified**. The scheduler circuit remains open; no production mutation was performed by this readback.
+
+
+## 2026-10-16 recurring-task lifecycle diagnosis
+
+- [x] **Failure confirmed from the sourcing task thread:** The Oct 16 successful cycle produced durable `SRC-20261016-DAILY-01`, but the task thread then reported that the recurring Daily PM Sourcing Worker was disabled after the completed execution by the automation runtime. The task’s Daily / Repeat / Never-end settings therefore do not guarantee that the task remains active after a terminal completion state.
+- [x] **Root cause classification:** This is a ChatGPT automation lifecycle/completion-rule failure, distinct from Apps Script trigger liveness. The Apps Script trigger can run while the ChatGPT sourcing task is paused, and a configured repeat schedule can still be inactive after the runtime marks the task complete.
+- [x] **Safe repair boundary:** The repair must preserve the existing task and its daily recurrence, but explicitly make each execution a nonterminal sourcing cycle: remain recurring and enabled after success, failure or no-op; record durable telemetry; never self-disable; and leave production triggers unchanged.
+- [ ] **Owner configuration repair:** Apply the lifecycle wording to the existing Daily PM Sourcing Worker, resume that same task, and verify the next automatic cycle. Do not create a duplicate task.
+- [ ] **P0.3/N2:** The Oct 16 scheduled cycle remains the first qualifying post-reenable proof. After lifecycle repair, one additional qualifying scheduled cycle is still required.
+
+**Post-sourcing task ownership plan:** Each cycle should finish by (1) reading back Applications and `__Sourcing Runs`, (2) preserving Daily Sourcing health truth, (3) sending the shortlist only when roles were added, and (4) explicitly remaining active for the next scheduled cycle. The evidence-watch task remains separate and must monitor task-active state plus durable tracker outcomes.
+
+**Decision:** The scheduler failure is now narrowed to a confirmed recurring-task lifecycle defect. No Apps Script trigger or production data was changed by this diagnosis.
