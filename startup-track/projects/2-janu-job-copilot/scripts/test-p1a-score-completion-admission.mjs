@@ -26,19 +26,19 @@ const exactFailure={
   Status:'Scoring',
   'Resume Version ID':'',
   'JD Snapshot Status':'Verified Full JD',
-  'JD Completeness %':'95',
+  'JD Completeness %':'50',
   'Vacancy Status':'OPEN'
 };
 assert.equal(exactFailure.Decision,'Apply');
 assert.equal(exactFailure.Status,'Scoring');
 assert.equal(exactFailure['Resume Version ID'],'');
 assert.match(exactFailure['JD Snapshot Status'],/Verified/);
-assert.ok(Number(exactFailure['JD Completeness %'])>=70);
+assert.ok(Number(exactFailure['JD Completeness %'])<70);
 assert.equal(exactFailure['Vacancy Status'],'OPEN');
 
 console.log(JSON.stringify({
   status:'PASS',
   contract:'P1-A-SCORE-COMPLETION-ADMISSION-1',
-  exactFailure:'Apply + Scoring + verified JD + no resume must enqueue RESUME_GENERATE',
+  exactFailure:'Apply + Scoring + verified JD + 50% completeness + no resume must enqueue RESUME_GENERATE',
   checks:14
 },null,2));
