@@ -391,3 +391,15 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **Repair verification:** No follow-up Governance run has appeared yet for the repaired head. Full CI and exact-revision regression closure remain open.
 
 **Safety decision:** Do not promote the new registry/CI increment or alter production configuration until a successful Governance run reads back the repaired workflow and the new continuity step.
+
+
+## 2026-10-15 stabilization decision audit
+
+- [x] **PR safety reverified:** PR #55 remains open/draft/unmerged. PR #56 remains open/draft/unmerged at head `727c4b193e2c48ff8e8ee754c5a9ab9f1be07875`.
+- [x] **CI failure/repair status reverified:** The three continuity-guard workflow failures occurred before jobs because of malformed YAML introduced by the change. The YAML was repaired on the current head and read back, but no follow-up Governance run exists for the repaired revision. Exact-revision CI closure is therefore still open.
+- [x] **Scheduler state reverified:** Daily Sourcing remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`. October 14 was one genuine scheduled success; October 15 was a scheduled miss followed by recovery. The task was re-enabled after that miss; no post-reenable scheduled result exists yet.
+- [x] **Telemetry state reverified:** Trace Explorer still contains blank Parent Span ID and incomplete timestamps; no current correlated cross-boundary telemetry proof exists.
+- [x] **Monitor state reverified:** Existing evidence-watch monitor is ACTIVE hourly and remains the monitoring mechanism.
+- [ ] **Stabilized-state decision:** NOT REACHED. The system is not yet trustworthy end-to-end because exact-revision CI, two post-reenable scheduled cycles, runtime identity, live telemetry, approval-first artifact proof and measured outcome improvement remain incomplete.
+
+**Surety statement:** With the evidence available on 2026-10-15, the honest classification is **partially stabilized source/evaluation layer; runtime/release system not stabilized**. No PASS, healthy or end-to-end trust claim is supported.
