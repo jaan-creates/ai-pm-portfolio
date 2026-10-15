@@ -336,3 +336,14 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **Telemetry/release acceptance:** No change—current Trace Explorer remains structurally incomplete and no current cross-boundary telemetry proof exists.
 
 **Updated decision:** The user’s resume action was effective enough to produce one real scheduled run, but the October 15 miss is an escaped reliability failure. Preserve FL-096/FL-098 and keep the circuit open until the scheduler topology/root cause is reconciled and sustained scheduled recurrence is proven.
+
+
+## 2026-10-15 scheduler-miss diagnosis
+
+- [x] **New root-cause contradiction identified:** The owner-provided Apps Script screenshot showed an active `phase1OneJobTick` trigger, but current private `__Worker State` row 501 records the claimed topology as `phase1OneJobTick: 0`. Current FL-098 still states that canonical broad-worker liveness is not durably established. These are conflicting evidence sources; neither is silently preferred.
+- [x] **Current runtime failure corroboration:** `__Worker State` row 535 records `renderer_canary_control_plane=FAIL` on 2026-10-15 due to a Spreadsheet permission failure. This further prevents treating control-plane self-reports as healthy.
+- [x] **Sourcing sequence readback:** October 14 genuine scheduled success followed by October 15 scheduled miss and recovery success. This demonstrates intermittent scheduling, not sustained liveness.
+- [ ] **Required owner-only reconciliation:** Provide one fresh read-only screenshot after the resumed task state showing the current ChatGPT Daily PM Sourcing Worker status/last-run and one fresh Apps Script Triggers screenshot showing the current `phase1OneJobTick` row and its cadence. Do not click Run, edit, enable, disable, delete or save anything.
+- [ ] **Circuit closure:** Keep `SOURCING_SCHEDULER_STALE` OPEN until the trigger/task contradiction is reconciled and two qualifying scheduled cycles are read back.
+
+**Simple owner instruction if needed:** send two screenshots with the captions “Current sourcing task — no changes made” and “Current Apps Script triggers — no changes made.” No tracker reading or technical interpretation is required from the owner.
