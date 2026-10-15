@@ -114,4 +114,6 @@ jobs:
 
       - name: Check escaped regression controls
         run: node "$PROJECT_DIR/assurance/test-escaped-regressions.mjs"
-\n      - name: Check recurring sourcing task continuity\n        run: node "$PROJECT_DIR/assurance/test-sourcing-task-continuity.mjs"\n
+
+      - name: Check recurring sourcing task continuity
+        run: node "$PROJECT_DIR/assurance/test-sourcing-task-continuity.mjs"
