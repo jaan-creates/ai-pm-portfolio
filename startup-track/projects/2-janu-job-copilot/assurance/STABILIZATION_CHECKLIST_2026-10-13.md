@@ -434,3 +434,23 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [x] **Latest scheduler evidence re-read:** `SRC-20261015-SCHEDULER-MISS` remains FAILED and `SRC-20261015-RECOVERY-01` remains recovery-only. Daily Sourcing remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`; FL-096 remains Open / Operational Blocker and FL-098 remains Open / Release Blocker.
 - [x] **Tracker health change observed:** `__System Health` now reports Worker Runtime `HEALTHY/CLOSED` and Renderer Release `HEALTHY/CLOSED` as of 2026-10-15. These are recorded as tracker assertions, not independently accepted runtime proof, because canonical phase1OneJobTick liveness, live telemetry correlation and the preserved queued FL-098 identity remain unresolved.
 - [ ] **Stabilization decision unchanged:** This health-row change does not close runtime identity, live telemetry, scheduler recurrence, approval-first artifact, or business-improvement gates. Overall status remains **INCOMPLETE / RELEASE HOLD**.
+
+
+## 2026-10-15 pending-item reconciliation
+
+The following historical unchecked entries are superseded by later authoritative evidence in this same ledger and must not be treated as current blockers:
+
+- [x] **Exact-revision Governance CI:** superseded by run [38716929040](https://github.com/jaan-creates/ai-pm-portfolio/actions/runs/38716929040), SUCCESS on code head `95a2911dd9b83e7a458bb9a7ef551d6f80626a30`; continuity, approval/PDF, renderer, telemetry and escaped-regression source contracts executed and read back.
+- [x] **Owner re-enable action:** superseded by the owner’s explicit confirmation that the existing Daily PM Sourcing Worker was re-enabled. No new task or Apps Script trigger was created.
+- [x] **Checklist/monitor continuity:** superseded by the active evidence-watch monitor and the subsequent tracker-refresh entry; PR #55/#56 safety remains unchanged.
+
+The current pending gates are therefore:
+
+- [ ] **P0.1 / G01:** current pinned deployment identity, exact trigger topology and repeatable read-only runtime inspection.
+- [ ] **P0.3 / N2:** two qualifying post-reenable genuine scheduled cycles with durable sourcing telemetry and downstream Applications readback; recovery does not count.
+- [ ] **P0.4 / N4:** live cross-boundary telemetry propagation and authoritative trace/readback, including schema version, parent/group/release/timestamps and evidence identity.
+- [ ] **P0.5 / G05:** approved private source-to-resume/PDF journey, renderer QA and immutable artifact proof; no external submission.
+- [ ] **P1.2 / G07 and metrics/outcomes:** measured recurrence reduction, intervention/user-effort change and qualified-outcome baseline.
+- [ ] **Release closure:** all required runtime, downstream, rollback, source synchronization and improvement evidence; PR #55 remains unmerged and PR #56 remains draft.
+
+**Current decision:** source/evaluation stabilization is evidenced; end-to-end trust is not. The system remains **INCOMPLETE / RELEASE HOLD**. No production mutation is authorized or performed by this reconciliation.
