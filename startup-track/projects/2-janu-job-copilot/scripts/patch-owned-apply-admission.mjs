@@ -96,3 +96,4 @@ if(!s.includes(jdAdmissionOverride)) throw new Error('Owned Apply JD admission o
 if(!s.includes('function runP1AOwnedApplyAdmissionSelfTest(')) throw new Error('Owned Apply admission regression self-test missing');
 if(s!==before) fs.writeFileSync(file,s);
 console.log(JSON.stringify({status:'PASS',file:target,changed:s!==before,contract:'P1-A-OWNED-APPLY-ADMISSION-1',recoverySafe:true,optionsArgument:'fifth',helperForwardsOptions:true,mapPrerequisite:true,scoreAdmissionFromNew:true},null,2));
+ 
