@@ -426,3 +426,11 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [ ] **Remaining stabilization gates:** two post-reenable genuine scheduled cycles; current runtime identity/pinned deployment and trigger topology; live telemetry propagation/readback; approved PDF/renderer journey; measured improvement and business outcomes. Overall system remains **INCOMPLETE / RELEASE HOLD**.
 
 **Decision update:** Repaired exact-revision Governance CI is now independently evidenced. This is a source/evaluation-layer closure, not end-to-end stabilization. Continue preserving FL-096/FL-098 and the open scheduler circuit until durable scheduled recurrence is proven.
+
+
+## 2026-10-15 evidence-watch tracker refresh
+
+- [x] **PR safety unchanged:** PR #55 remains open/draft/unmerged; PR #56 remains open/draft/unmerged. Current PR #56 head is ledger commit `eafec28875333256c7cf3a315b4ea15c395f8c46`.
+- [x] **Latest scheduler evidence re-read:** `SRC-20261015-SCHEDULER-MISS` remains FAILED and `SRC-20261015-RECOVERY-01` remains recovery-only. Daily Sourcing remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`; FL-096 remains Open / Operational Blocker and FL-098 remains Open / Release Blocker.
+- [x] **Tracker health change observed:** `__System Health` now reports Worker Runtime `HEALTHY/CLOSED` and Renderer Release `HEALTHY/CLOSED` as of 2026-10-15. These are recorded as tracker assertions, not independently accepted runtime proof, because canonical phase1OneJobTick liveness, live telemetry correlation and the preserved queued FL-098 identity remain unresolved.
+- [ ] **Stabilization decision unchanged:** This health-row change does not close runtime identity, live telemetry, scheduler recurrence, approval-first artifact, or business-improvement gates. Overall status remains **INCOMPLETE / RELEASE HOLD**.
