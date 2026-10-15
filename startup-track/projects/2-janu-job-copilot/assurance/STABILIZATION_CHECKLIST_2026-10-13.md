@@ -580,3 +580,12 @@ The current pending gates are therefore:
 **Post-sourcing task ownership plan:** Each cycle should finish by (1) reading back Applications and `__Sourcing Runs`, (2) preserving Daily Sourcing health truth, (3) sending the shortlist only when roles were added, and (4) explicitly remaining active for the next scheduled cycle. The evidence-watch task remains separate and must monitor task-active state plus durable tracker outcomes.
 
 **Decision:** The scheduler failure is now narrowed to a confirmed recurring-task lifecycle defect. No Apps Script trigger or production data was changed by this diagnosis.
+
+
+## 2026-10-16 recurring-task lifecycle repair reported
+
+- [x] **Owner implementation reported:** User confirmed the existing Daily PM Sourcing Worker was updated with the persistent recurring-cycle wording, retained Daily / Repeat / Never-end configuration, restored 8:45 AM IST, and resumed. No duplicate task or Apps Script trigger change was reported.
+- [ ] **Repair execution proof:** Observe the next automatic cycle and verify both: (a) a durable scheduled `__Sourcing Runs` record with downstream Applications readback, and (b) the same existing task remains active after completion rather than becoming paused/inactive.
+- [ ] **P0.3/N2:** The Oct 16 scheduled cycle remains the first qualifying post-repair/post-reenable proof; one additional qualifying cycle is still required after the lifecycle repair.
+
+**Decision:** Lifecycle repair is **IMPLEMENTED / NOT YET EXECUTED-VERIFIED**. No PASS or stability claim is made until the next automatic run remains active and durable tracker evidence is read back.
