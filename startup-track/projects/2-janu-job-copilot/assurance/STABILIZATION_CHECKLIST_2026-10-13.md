@@ -504,3 +504,14 @@ The current pending gates are therefore:
 - [ ] **P1.2/G07 and metrics closure:** Measured recurrence reduction, reduced intervention/user effort, controlled current-release improvement, and qualified business outcome evidence remain missing. No Keep/Revise/Reject decision is supported for the current stabilization intervention beyond the recorded source-level decisions.
 
 **Decision:** Continuous improvement is functioning as a learning-record and prevention pipeline, but its effectiveness and business impact are **not proven**. P1.2/G07 remains **PARTIAL / INSUFFICIENT EVIDENCE**; the release hold is unchanged.
+
+
+## 2026-10-15 post-reenable evidence-watch refresh
+
+- [x] **Scheduler readback:** Fresh bounded read of `__Sourcing Runs` still shows only `SRC-20261015-SCHEDULER-MISS` (FAILED) and `SRC-20261015-RECOVERY-01` (SUCCEEDED/recovery). No qualifying post-reenable genuine scheduled cycle is present.
+- [x] **Health readback:** `__System Health` still reports Daily Sourcing `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`; the last-success field does not override the explicit rule that recovery/manual success cannot prove scheduler liveness.
+- [x] **Telemetry readback:** No verification-ledger row is keyed by runtime capture `38773096788`; no current `telemetry_schema_version` match was found in `Trace Explorer` or `__Golden Trace`.
+- [x] **Improvement readback:** `__Lab Improvements` remains at JC-LAB-001 `REVISE`, JC-LAB-002 `PILOT`, JC-LAB-003 `Insufficient Evidence`, JC-LAB-004 `HOLD`; no qualified-interview-per-effort outcome evidence was found.
+- [ ] **Next evidence gate:** The first two genuine scheduled cycles after re-enable remain the next runtime decision point. No owner action is required now unless the owner is asked to provide a read-only topology screenshot or a protected configuration decision.
+
+**Decision:** No gate advanced. The evidence-watch refresh confirms the existing release hold; no production mutation was performed.
