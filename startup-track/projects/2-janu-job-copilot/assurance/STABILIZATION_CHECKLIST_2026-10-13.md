@@ -526,3 +526,13 @@ The current pending gates are therefore:
 - [ ] **Evidence boundary:** This closes the source-level regression/CI gap for truthful outcome-metric status only. It does not prove qualified interviews, user effort, live telemetry, scheduler recurrence, renderer/PDF execution or end-to-end stabilization.
 
 **Decision:** Source/evaluation safeguards improved and exact-revision execution is verified. Product/runtime release status remains **INCOMPLETE / RELEASE HOLD**.
+
+
+## 2026-10-15 owner trigger inventory readback
+
+- [x] **Owner evidence received:** User supplied a timestamped Apps Script Triggers screenshot marked “Trigger inventory — no changes made.” It visibly shows four triggers, all owned by “Me”, deployment “Head”: `phase1OnEdit` (spreadsheet edit), `phase1OneJobTick` (time-based; last run Oct 15, 2026 11:30:08 PM; displayed error rate 14.81%), `phase1HealthTick` (time-based; last run Oct 15, 2026 11:22:51 PM; displayed error rate 23.15%), and `runOwnedRendererCanaryTick` (time-based; Disabled).
+- [x] **Safety boundary confirmed:** The screenshot is read-only evidence; no trigger was created, deleted, enabled, disabled, edited, run or replayed by this action.
+- [ ] **P0.1/G01 remaining proof:** The screenshot does not expose exact timezone/cadence details, versioned pinned deployment identity, ChatGPT Daily PM Sourcing Worker task state, recovery-watcher configuration, or durable downstream correlation. The tracker’s conflicting historical `phase1OneJobTick:0` control-plane record remains unresolved; do not promote this screenshot to a complete topology PASS.
+- [ ] **P0.3/N2 unchanged:** Continue waiting for two genuine post-reenable scheduled sourcing cycles. Apps Script trigger runs alone are not sourcing-cycle completion proof.
+
+**Decision:** G01 trigger evidence advances from “not inspected” to **PARTIAL / owner-visible inventory readback**. Scheduler and release gates remain open; no production mutation occurred.
