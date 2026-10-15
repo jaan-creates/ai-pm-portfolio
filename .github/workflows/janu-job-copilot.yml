@@ -37,7 +37,6 @@ jobs:
       LIVE_DIR: .janu-live
       CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
       CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
-      CLASP_USER: janu-build
     steps:
       - name: Checkout isolated Job Copilot branch
         uses: actions/checkout@v4
@@ -71,10 +70,10 @@ jobs:
           printf '%s' "$CLASP_JSON" > "$LIVE_DIR/.clasp.json"
           chmod 600 "$LIVE_DIR/.clasp.json"
       - name: Confirm CI clasp identity
-        run: clasp show-authorized-user --user "$CLASP_USER"
+        run: clasp show-authorized-user
       - name: Pull current production Apps Script
         working-directory: .janu-live
-        run: clasp pull --user "$CLASP_USER"
+        run: clasp pull
       - name: Snapshot pre-deploy source for in-run rollback
         shell: bash
         run: |
@@ -174,17 +173,17 @@ jobs:
           retention-days: 30
       - name: Push validated P1 source to Apps Script production project
         working-directory: .janu-live
-        run: clasp push --force --user "$CLASP_USER"
+        run: clasp push --force
       - name: Verify deployed source hash and rollback on mismatch
         shell: bash
         run: |
-          (cd "$LIVE_DIR" && clasp pull --user "$CLASP_USER")
+          (cd "$LIVE_DIR" && clasp pull)
           ACTUAL_SOURCE_HASH="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$LIVE_DIR" --hash-only)"
           if [ "$ACTUAL_SOURCE_HASH" != "$EXPECTED_SOURCE_HASH" ]; then
             echo "Deployed source hash mismatch: expected $EXPECTED_SOURCE_HASH, got $ACTUAL_SOURCE_HASH"
             find "$LIVE_DIR" -maxdepth 1 -type f \( -name '*.gs' -o -name '*.js' -o -name 'appsscript.json' \) -delete
             cp /tmp/janu-predeploy/* "$LIVE_DIR"/
-            (cd "$LIVE_DIR" && clasp push --force --user "$CLASP_USER")
+            (cd "$LIVE_DIR" && clasp push --force)
             echo 'Pre-deploy source restored after hash mismatch.'
             exit 12
           fi
@@ -196,26 +195,26 @@ jobs:
         run: |
           # These functions were just pushed in this workflow. Execute against current HEAD/dev source;
           # --nondev targets the previously deployed executable and can hide newly pushed functions.
-          clasp run runReleaseProvenanceContractSelfTest --user "$CLASP_USER"
+          clasp run runReleaseProvenanceContractSelfTest
           PARAMS="$(node -e 'console.log(JSON.stringify([process.env.GITHUB_SHA,process.env.GITHUB_RUN_ID,process.env.GITHUB_RUN_ATTEMPT,process.env.DEPLOYED_SOURCE_HASH,process.env.EXPECTED_VERSION,process.env.EXPECTED_SUITE]))')"
           echo 'Persisting privacy-safe deployment provenance to connected product state.'
-          clasp run recordDeploymentProvenance --params "$PARAMS" --user "$CLASP_USER"
+          clasp run recordDeploymentProvenance --params "$PARAMS"
       - name: Attempt P1-A self-test immediately
         continue-on-error: true
         working-directory: .janu-live
-        run: clasp run runP1AContractSelfTest --nondev --user "$CLASP_USER"
+        run: clasp run runP1AContractSelfTest --nondev
       - name: Attempt P1-B self-test immediately
         continue-on-error: true
         working-directory: .janu-live
-        run: clasp run runP1BContractSelfTest --nondev --user "$CLASP_USER"
+        run: clasp run runP1BContractSelfTest --nondev
       - name: Attempt P1-C self-test immediately
         continue-on-error: true
         working-directory: .janu-live
-        run: clasp run runP1CContractSelfTest --nondev --user "$CLASP_USER"
+        run: clasp run runP1CContractSelfTest --nondev
       - name: Attempt bounded health/control tick
         continue-on-error: true
         working-directory: .janu-live
-        run: clasp run phase1HealthTick --nondev --user "$CLASP_USER"
+        run: clasp run phase1HealthTick --nondev
       - name: Deployment summary
         if: always()
         shell: bash
