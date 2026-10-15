@@ -357,3 +357,15 @@ Do not resume the paused sourcing task yet. The screenshot explains the stale co
 - [x] **Monitoring repaired:** The existing `Janu Stabilization Evidence Watch` was found paused and has been reactivated as the same hourly monitor. No duplicate monitor remains. It continues to stay quiet on unchanged state and notify only on meaningful checklist, CI, PR, scheduler or owner-action changes.
 - [ ] **Owner-only production decision:** Re-enable the existing Daily PM Sourcing Worker if recurring automatic sourcing is intended. Do not create a new task. This is the only remaining user action for schedule continuity; the assistant will then verify subsequent scheduled outcomes and circuit state.
 - [ ] **Scheduler closure:** October 14 is one genuine scheduled success; October 15 missed. Require two qualifying scheduled outcomes after re-enablement before closing the circuit.
+
+
+## 2026-10-15 post-reenable operating plan
+
+- [x] **Owner action received:** User confirmed the existing Daily PM Sourcing Worker was re-enabled. This is accepted as authorization for the existing task only; no new task or Apps Script trigger change is permitted.
+- [x] **Immediate tracker readback:** No new post-reenable scheduled cycle exists yet. The latest scheduled evidence remains `SRC-20261014-DAILY-01`; the October 15 miss and recovery occurred before this re-enable confirmation.
+- [x] **Evidence-watch continuity:** The existing `Janu Stabilization Evidence Watch` is confirmed `ACTIVE`, hourly, with the same ledger-monitoring prompt. It is not a duplicate and does not mutate production workers or triggers.
+- [ ] **Next scheduled proof:** Read the first scheduled cycle after this re-enable, then the following eligible scheduled cycle. Accept only genuine scheduled rows with durable telemetry, counts, duplicate audit and downstream Applications readback.
+- [ ] **Runtime identity/telemetry:** Continue source/CI verification and preserve the owner-only read-only inspector boundary; no production health claim until actual current-release evidence exists.
+- [ ] **Release/business gates:** Keep approval-first PDF, live renderer, measured improvement and qualified-outcome gates open.
+
+**Ownership plan:** The assistant owns all tracker readbacks, PR/CI checks, ledger maintenance, source-level tests and evidence classification. The owner is needed only for protected account actions: current task re-enable (now reported complete) and the separate read-only inspector credential/dispatch if runtime identity proof is required.
