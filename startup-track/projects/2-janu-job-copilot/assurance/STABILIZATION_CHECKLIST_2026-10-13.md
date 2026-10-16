@@ -589,3 +589,15 @@ The current pending gates are therefore:
 - [ ] **P0.3/N2:** The Oct 16 scheduled cycle remains the first qualifying post-repair/post-reenable proof; one additional qualifying cycle is still required after the lifecycle repair.
 
 **Decision:** Lifecycle repair is **IMPLEMENTED / NOT YET EXECUTED-VERIFIED**. No PASS or stability claim is made until the next automatic run remains active and durable tracker evidence is read back.
+
+
+## 2026-10-16 second post-repair scheduled cycle and health closure
+
+- [x] **Second qualifying automatic scheduled cycle:** `SRC-20261016-0845-DAILY-02`, Trigger=`Daily PM Sourcing Worker — scheduled 08:45 cycle`, SUCCESS 08:56–08:58 IST; 16 raw, 2 qualified, 3 duplicates, 2 promoted, 11 excluded, 0 errors. This is the second post-reenable scheduled cycle; the first was `SRC-20261016-DAILY-01` at 00:23–00:26 IST.
+- [x] **Downstream Applications readback:** Applications rows 93–94 contain `2026-10-16-004` (Zuddl, Decision=New, Status=New) and `2026-10-16-005` (First Advantage, Decision=New, Status=New); canonical vacancy identity and duplicate audit were recorded by the sourcing cycle.
+- [x] **Health readback:** `__System Health` now reports Daily Sourcing `HEALTHY / CLOSED`, last success 2026-10-16, no error, latest scheduled sourcing age about 9 hours.
+- [x] **Recurrence result:** Two qualifying scheduled cycles are now durably evidenced after repair/re-enable, with the second under the restored 08:45 cadence. This closes the current P0.3/N2 scheduler recurrence proof window.
+- [ ] **Lifecycle post-run active-state readback:** The scheduled output and health record are verified, but the ChatGPT task’s enabled/recurring state after completion has not been independently read back in this turn. Do not claim that the automation runtime defect is permanently fixed solely from tracker success.
+- [ ] **FL-096 / FL-098 closure:** FL-096 remains Open / Operational Blocker and FL-098 closure evidence was not established by these two rows alone. Reconcile their status and the broader release gates before changing them.
+
+**Decision:** P0.3/N2 advances to **VERIFIED for the current two-cycle window**; overall product DoD remains **INCOMPLETE / RELEASE HOLD** because lifecycle active-state, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
