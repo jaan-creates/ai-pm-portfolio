@@ -601,3 +601,14 @@ The current pending gates are therefore:
 - [ ] **FL-096 / FL-098 closure:** FL-096 remains Open / Operational Blocker and FL-098 closure evidence was not established by these two rows alone. Reconcile their status and the broader release gates before changing them.
 
 **Decision:** P0.3/N2 advances to **VERIFIED for the current two-cycle window**; overall product DoD remains **INCOMPLETE / RELEASE HOLD** because lifecycle active-state, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+
+## 2026-10-24 evidence-watch regression refresh
+
+- [x] **Scheduler health re-read:** `__System Health` now reports Daily Sourcing `BLOCKED / OPEN`, error `SOURCING_SCHEDULER_STALE`, affected count 94, last checked 2026-10-24. Although last success is dated 2026-10-24, the health rule explicitly says a successful run does not clear the incident because historical missed weekday executions (Oct 12/13/15) and authoritative scheduler-liveness proof remain unresolved.
+- [x] **Evidence classification correction:** The earlier two-cycle proof remains valid for that historical window, but it did not close the durable incident or prove ongoing recurrence through 2026-10-24. Do not claim current scheduler stability from the prior HEALTHY/CLOSED snapshot.
+- [x] **New downstream failures read back:** Verification Ledger contains open FL-143 (resume generation did not enqueue QA), FL-144 (unresolved evidence lacks open My Actions projection), FL-145 (resume-ready action required manual recovery), and FL-146 (production CD blocked by OAuth invalid_grant). These are additional release blockers outside the original P0.3 proof.
+- [ ] **P0.3 current liveness:** Current scheduler incident remains open; new authoritative scheduled-vs-recovery evidence through the latest expected weekday window is required before closure. No worker, trigger, or protected production configuration was changed by this monitor.
+- [ ] **Release/telemetry/E2E:** FL-143–FL-146, FL-098, runtime identity, versioned telemetry, approval-first PDF/renderer, and business outcome evidence remain open.
+
+**Decision:** Overall DoD is **INCOMPLETE / RELEASE HOLD**. The prior P0.3 two-cycle verification is historical, not a current all-clear. No production mutation or unsupported PASS claim was made.
