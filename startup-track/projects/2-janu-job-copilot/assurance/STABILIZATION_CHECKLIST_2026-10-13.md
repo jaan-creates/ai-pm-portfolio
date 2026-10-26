@@ -612,3 +612,14 @@ The current pending gates are therefore:
 - [ ] **Release/telemetry/E2E:** FL-143–FL-146, FL-098, runtime identity, versioned telemetry, approval-first PDF/renderer, and business outcome evidence remain open.
 
 **Decision:** Overall DoD is **INCOMPLETE / RELEASE HOLD**. The prior P0.3 two-cycle verification is historical, not a current all-clear. No production mutation or unsupported PASS claim was made.
+
+
+## 2026-10-26 scheduled-cycle refresh
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261026-0845-DAILY-01` succeeded 09:36–09:38 IST with 16 raw roles, 4 qualified, 4 duplicates rejected, 4 promoted, 8 excluded, and 0 errors. The run performed a full audit against 106 populated Applications and wrote no Sources Inbox rows.
+- [x] **Downstream sourcing integrity:** Four distinct requisitions were promoted with CROSS-SOURCE-VACANCY-IDENTITY-001; the durable run is independently present in `__Sourcing Runs`.
+- [x] **Health truth preserved:** `__System Health` remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`; the successful Oct 26 cycle does not clear the historical Oct 12/13/15 misses or the missing independent liveness proof.
+- [ ] **Current scheduler closure:** The new successful cycle is additional execution evidence, not a closure of the scheduler incident. Independent expected-date/liveness proof and reconciliation of the stale circuit remain required.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** Latest sourcing execution is healthy at the cycle level, but overall scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
