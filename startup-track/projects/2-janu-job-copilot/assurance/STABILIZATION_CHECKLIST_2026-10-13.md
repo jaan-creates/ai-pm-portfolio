@@ -623,3 +623,14 @@ The current pending gates are therefore:
 - [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
 
 **Decision:** Latest sourcing execution is healthy at the cycle level, but overall scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
+
+
+## 2026-10-27 scheduled-cycle refresh
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261027-0845-DAILY-01` succeeded 08:55–08:56 IST with 20 raw roles, 1 qualified, 6 duplicates rejected, 1 promoted, 13 excluded, and 0 errors. The cycle audited all 110 populated Applications and wrote no Sources Inbox rows.
+- [x] **Downstream sourcing integrity:** OneTrust Staff Product Manager (Greenhouse requisition 8207523) was promoted as a distinct vacancy; six existing canonical vacancies were suppressed using the cross-source identity controls.
+- [x] **Health truth preserved:** `__System Health` remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`; the successful Oct 27 cycle does not clear historical Oct 12/13/15 misses or the missing independent scheduler-liveness proof.
+- [ ] **Current scheduler closure:** Repeated successful cycles improve cycle-level evidence but do not close the stale circuit without independent expected-date/liveness reconciliation.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** Latest sourcing execution is healthy at the cycle level, but scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
