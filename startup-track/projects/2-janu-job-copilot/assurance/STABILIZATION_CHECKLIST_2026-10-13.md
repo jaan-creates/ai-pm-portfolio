@@ -634,3 +634,14 @@ The current pending gates are therefore:
 - [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
 
 **Decision:** Latest sourcing execution is healthy at the cycle level, but scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
+
+
+## 2026-10-28 scheduled-cycle refresh
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261028-0845-DAILY-01` succeeded 09:10–09:13 IST with 12 raw roles, 2 qualified, 1 duplicate rejected, 2 promoted, 9 excluded, and 0 errors. The cycle audited all 111 existing Applications and wrote no Sources Inbox rows.
+- [x] **Downstream sourcing integrity:** Rippling Payroll Integrations (Rippling ATS ID 30ecc735-369a-429f-8df5-585b1516cef7) and SpotDraft Product Manager Core Contract Collaboration (Ashby 4c635c45-27c4-4e53-892d-da09156ef0e6) were promoted as distinct vacancies; Atomicwork was suppressed as a cross-source duplicate and its existing provenance was refreshed without creating a new ID.
+- [x] **Health truth preserved:** `__System Health` remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`; the successful Oct 28 cycle does not clear historical Oct 12/13/15 misses or the missing independent scheduler-liveness proof.
+- [ ] **Current scheduler closure:** Repeated successful cycles improve cycle-level evidence but do not close the stale circuit without independent expected-date/liveness reconciliation.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** Latest sourcing execution is healthy at the cycle level, but scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
