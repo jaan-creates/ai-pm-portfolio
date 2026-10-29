@@ -645,3 +645,14 @@ The current pending gates are therefore:
 - [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
 
 **Decision:** Latest sourcing execution is healthy at the cycle level, but scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
+
+
+## 2026-10-29 scheduled-cycle refresh
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261029-0845-DAILY-01` succeeded 09:37–09:39 IST with 18 raw roles, 5 qualified, 3 duplicates rejected, 5 promoted, 10 excluded, and 0 errors. The cycle completed a full 113-Application prewrite and final identity audit with no Sources Inbox writes.
+- [x] **Downstream sourcing integrity:** Five distinct vacancies were promoted under CROSS-SOURCE-VACANCY-IDENTITY-001; three canonical duplicates were rejected. JS-only direct forms remain explicitly UNKNOWN rather than being overstated as OPEN.
+- [x] **Health truth preserved:** `__System Health` remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`; the successful Oct 29 cycle does not clear historical Oct 12/13/15 misses or missing independent scheduler-liveness proof.
+- [ ] **Current scheduler closure:** Repeated successful cycles improve cycle-level evidence but do not close the stale circuit without independent expected-date/liveness reconciliation.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** Latest sourcing execution is healthy at the cycle level, but scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
