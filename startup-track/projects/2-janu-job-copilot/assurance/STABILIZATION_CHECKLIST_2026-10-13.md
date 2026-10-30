@@ -656,3 +656,14 @@ The current pending gates are therefore:
 - [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
 
 **Decision:** Latest sourcing execution is healthy at the cycle level, but scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
+
+
+## 2026-10-30 scheduled-cycle refresh
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261030-0845-DAILY-01` succeeded 09:20–09:22 IST with 13 raw roles, 2 qualified, 2 duplicates rejected, 2 promoted, 9 excluded, and 0 errors. The cycle audited all 118 existing Applications and wrote no Sources Inbox rows.
+- [x] **Downstream sourcing integrity:** Fivetran Staff PM Connectors (Greenhouse gh_jid=7735295003) and BJAK Senior Technical PM AI-native Communication (Ashby eb2f2dee...) were promoted as distinct vacancies; direct JS application forms remain UNKNOWN where not independently rendered.
+- [x] **Health truth preserved:** `__System Health` remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE`; the successful Oct 30 cycle does not clear historical Oct 12/13/15 misses or missing independent scheduler-liveness proof.
+- [ ] **Current scheduler closure:** Repeated successful cycles improve cycle-level evidence but do not close the stale circuit without independent expected-date/liveness reconciliation.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** Latest sourcing execution is healthy at the cycle level, but scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
