@@ -8,7 +8,7 @@ function fixture(decision='Pending Review'){
   const actions=[['Record ID','Record Type','Company','Role','Action Type','Exact Action Needed','Urgency','Workflow Status','Relevant Link','Your Response / Artifact Link','Response Status','Last Updated']];
   const records=[['Application ID','Resume Version ID','Review Decision'],['fixture','v1','Approved'],['fixture','v2',decision]];
   function sheet(rows){return {getDataRange:()=>({getDisplayValues:()=>rows}),appendRow:r=>rows.push(r)};}
-  const ctx=vm.createContext({now_:()=>new Date(0),SpreadsheetApp:{getActive:()=>({getSheetByName:n=>sheet(n==='My Actions'?actions:records)})}});
+  const ctx=vm.createContext({now_:()=>new Date(0),SH_:n=>sheet(n==='My Actions'?actions:records)});
   vm.runInContext(source,ctx);
   return {actions,records,request:(a=app)=>ctx.p1aEnsureResumeReviewAction_(a)};
 }

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import {scheduledTriggerMatches} from './contract.mjs';
 
 const schedulerTruth = (s) =>
-  s.trigger === 'Daily PM Sourcing Worker — scheduled' &&
+  scheduledTriggerMatches(s.trigger,'08:45') &&
   s.durableRun === true &&
   (s.status === 'SUCCEEDED' || s.status === 'NOOP_TARGET_SATISFIED' || s.status === 'NOOP_ALL_DEDUPLICATED');
 

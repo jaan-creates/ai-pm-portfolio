@@ -52,6 +52,9 @@ if(!twice.includes("'Decision':'New'"))throw new Error('fresh system intake must
 if(!twice.includes(".replace(/[/]$/,'')"))throw new Error('safe generated slash matcher missing');
 if(twice.includes(".replace(//$/,'')"))throw new Error('malformed generated slash matcher survived');
 if(/UrlFetchApp\.fetch|OpenAI|TAVILY_API_KEY|SERPAPI_API_KEY/.test(twice.slice(twice.indexOf('function traceStateValue_('),twice.indexOf('function verifyReleaseIdentity()'))))throw new Error('trace layer must not introduce its own paid/network retrieval path');
+const refreshStart=twice.indexOf('function traceRefreshGolden_(');
+const refresh=twice.slice(refreshStart,twice.indexOf('\nfunction ',refreshStart+1));
+if (refresh.includes('clearContent()') || !refresh.includes('traceUpsertSpans_(ex,rows)')) throw new Error('Destructive TRACE refresh');
 const occurrences=(twice.match(/function traceGoldenTick_\(/g)||[]).length;if(occurrences!==1)throw new Error('traceGoldenTick_ duplicated');
 const neg="traceUrlIdentityMatch_('https://jobs.ashbyhq.com/tekion/e0956a72-ce85-4e10-a34d-f5c4d630d8e0','https://job-boards.greenhouse.io/easyship/jobs/4706111006?gh_jid=4706111006')===false";
 if(!twice.includes(neg))throw new Error('TRACE-DEDUPE-001 Tekion/Easyship negative fixture missing');

@@ -198,6 +198,41 @@
       "test": "assurance/test-trace-release.mjs",
       "workflow_step": "Check cross-release traces and duplicate slots",
       "evidence_boundary": "isolated executable source fixture"
+    },
+    {
+      "id": "RESTORE-READBACK",
+      "requirement": "Check restored source against private preimage",
+      "test": "scripts/test-rollback-readback.mjs",
+      "workflow_step": "Check restored source against private preimage",
+      "evidence_boundary": "isolated source fixture"
+    },
+    {
+      "id": "TRACE-PROJECTION",
+      "requirement": "Check trace isolation and lock ownership",
+      "test": "scripts/test-trace-projection.mjs",
+      "workflow_step": "Check trace isolation and lock ownership",
+      "evidence_boundary": "isolated source fixture"
+    },
+    {
+      "id": "RENDER-EXACT3-SEAM",
+      "requirement": "Check Career Break rendering through the patched entry point",
+      "test": "assurance/test-rendered-career-break.mjs",
+      "workflow_step": "Check Career Break rendering through the patched entry point",
+      "evidence_boundary": "isolated assembled renderer fixture"
+    },
+    {
+      "id": "RECOVERY-JOURNEY",
+      "requirement": "Check isolated vacancy to verified PDF journey",
+      "test": "assurance/test-recovery-journey.mjs",
+      "workflow_step": "Check isolated vacancy to verified PDF journey",
+      "evidence_boundary": "isolated assembled source fixture"
+    },
+    {
+      "id": "PERSISTED-RECEIPT",
+      "requirement": "Read the persisted receipt after full and partial writes",
+      "test": "scripts/test-persisted-release-receipt.mjs",
+      "workflow_step": "Read the persisted receipt after full and partial writes",
+      "evidence_boundary": "isolated assembled source fixture"
     }
   ],
   "pending_runtime": [

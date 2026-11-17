@@ -10,7 +10,7 @@ const check=(c,actual,detail='')=>{const passed=actual===c.expected;results.push
 function assessSourcing(run){return run.attempted&&run.fetchOk&&run.persistOk&&run.reportOk?'COMPLETED':'FAILED';}
 function promoteIntake(s){if(!s.eligible||!s.writeSucceeded)return {state:'BLOCKED',count:0};return {state:'PROMOTED',count:1};}
 function canSubmit(a){return !!(a.approved&&a.qaPassed&&a.vacancy==='OPEN'&&a.resumeVersion&&a.confirmedExternally);}
-function compare(baseline,current){return baseline.filter(b=>b.status==='PASS'&&current.some(c=>c.id===b.id&&c.status!=='PASS')).map(b=>b.id);}
+function compare(baseline,current){return baseline.filter(b=>b.status==='PASS'&&!current.some(c=>c.id===b.id&&c.status==='PASS')).map(b=>b.id);}
 const functions={
  'SOURCING-MISSED':()=>assessSourcing({attempted:false,fetchOk:false,persistOk:false,reportOk:false})==='FAILED',
  'SOURCING-WRITE-FAIL':()=>assessSourcing({attempted:true,fetchOk:true,persistOk:false,reportOk:true})==='FAILED',
@@ -24,6 +24,8 @@ const functions={
  'REPOSITORY-RELEASE-GATE':()=>{const s=fs.readFileSync(path.join(root,'.github/workflows/janu-job-copilot.yml'),'utf8');return s.includes('validate-release.mjs')&&s.includes('Verify deployed source hash and rollback on mismatch');},
  'SOURCE-TEST-EXISTS':()=>['test-trace-golden-v0-patch.mjs','test-release-provenance-patch.mjs','test-vacancy-lifecycle-convergence.mjs'].every(f=>fs.existsSync(path.join(root,'startup-track/projects/2-janu-job-copilot/scripts',f))),
 };
+assert.deepEqual(registry.cases.map(c=>c.id).sort(),Object.keys(functions).sort(),'Missing, duplicate or unknown offline case');
+assert.deepEqual(compare([{id:'A',status:'PASS'}],[]),['A'],'missing execution must block');
 for(const c of registry.cases){try{assert.equal(typeof functions[c.id],'function');check(c,functions[c.id]());}catch(e){check(c,false,String(e.message));}}
 const mutants=[{...promoteIntake({eligible:true,writeSucceeded:false}),state:'PROMOTED'},{...promoteIntake({eligible:true,writeSucceeded:true}),count:2}];
 assert.equal(mutants[0].state==='BLOCKED',false,'mutation of write failure must be detected');

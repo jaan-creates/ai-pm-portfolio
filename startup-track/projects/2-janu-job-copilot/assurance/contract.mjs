@@ -57,13 +57,20 @@ export function stateConsistencySummary(rows){
   }
   return {...result,assurance:'PARTIALLY OBSERVABLE',invariant_evidence_verified:false}; // Label classification alone cannot verify state invariants.
 }
+export function scheduledTriggerMatches(label, configuredTime) {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(configuredTime)) return false;
+  const scheduled='Daily PM Sourcing Worker — scheduled';
+  return label===scheduled || label===scheduled+' '+configuredTime+' cycle';
+}
+
 export function scheduledCycleSummary(expectedSlots,runs){
   if(!Array.isArray(expectedSlots)||!Array.isArray(runs))throw new TypeError('slots and runs required');
   const valid=expectedSlots.filter(s=>s.enabled&&!s.approved_suspension);
   let succeeded=0,missing=0;
   for(const slot of valid){
     // Recovery/manual success cannot satisfy an expected scheduled slot.
-    const scheduled=runs.filter(r=>r.slot_id===slot.id && r.trigger_type==='scheduled');
+    const scheduled=runs.filter(r=>r.slot_id===slot.id && r.trigger_type==='scheduled' &&
+      (r.trigger_label===undefined || scheduledTriggerMatches(r.trigger_label,slot.local_time)));
     const matched=scheduled.length===1 && scheduled[0].status==='SUCCEEDED' && hasText(scheduled[0].verified_outcome_ref);
     if(matched)succeeded++;else missing++;
   }

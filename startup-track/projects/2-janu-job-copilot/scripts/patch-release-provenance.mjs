@@ -84,7 +84,7 @@ if (!source.includes("upsertWorkerState_('deployment_provenance_status','PENDING
 }
 if (!source.includes('function readJanuDeploymentProvenance(')) {
   const reader = `function readJanuDeploymentProvenance(){
-    const sheet = SpreadsheetApp.getActive().getSheetByName('__Worker State');
+    const sheet = SH_('__Worker State');
     if (!sheet) throw new Error('Worker State unavailable');
     const values = new Map();
     const fields = ['deployment_git_commit','deployment_github_run_id','deployment_github_run_attempt',

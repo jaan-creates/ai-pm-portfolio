@@ -4,7 +4,7 @@ function p1aMayRequestResumeReview_(app) {
   if (!pending(app['Resume Review Decision'])) return false;
   const id = app['Application ID'], version = app['Resume Version ID'];
   if (!id || !version) return false;
-  const sheet = SpreadsheetApp.getActive().getSheetByName('Resume Registry');
+  const sheet = SH_('Resume Registry');
   if (!sheet) return false;
   const [header, ...rows] = sheet.getDataRange().getDisplayValues();
   const ix = ['Application ID', 'Resume Version ID', 'Review Decision'].map(name => header.indexOf(name));
@@ -15,7 +15,7 @@ function p1aMayRequestResumeReview_(app) {
 
 function p1aEnsureResumeReviewAction_(app) {
   if (!p1aMayRequestResumeReview_(app)) return {created:false, reason:'NO_VERIFIED_PENDING_REVIEW'};
-  const sheet = SpreadsheetApp.getActive().getSheetByName('My Actions');
+  const sheet = SH_('My Actions');
   if (!sheet) throw new Error('My Actions unavailable');
   const [header, ...rows] = sheet.getDataRange().getDisplayValues();
   const values = {
