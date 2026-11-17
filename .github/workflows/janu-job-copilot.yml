@@ -29,7 +29,7 @@ on:
         required: false
         type: string
       verify_hash:
-        description: 'Exact source SHA-256 from the original push manifest'
+        description: 'fullProjectSha256 from the original push manifest (script, HTML and manifest)'
         required: false
         type: string
 
@@ -277,7 +277,7 @@ jobs:
       EXPECTED_SUITE: 'p0-regression-v19'
       ORIGINAL_RUN: ${{ inputs.verify_run }}
       ORIGINAL_ATTEMPT: ${{ inputs.verify_attempt }}
-      DEPLOYED_SOURCE_HASH: ${{ inputs.verify_hash }}
+      ORIGINAL_PROJECT_HASH: ${{ inputs.verify_hash }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -288,7 +288,7 @@ jobs:
       - name: Check original release identity inputs
         shell: bash
         run: |
-          [[ "$ORIGINAL_RUN" =~ ^[1-9][0-9]*$ && "$ORIGINAL_ATTEMPT" =~ ^[1-9][0-9]*$ && "$DEPLOYED_SOURCE_HASH" =~ ^[a-f0-9]{64}$ ]]
+          [[ "$ORIGINAL_RUN" =~ ^[1-9][0-9]*$ && "$ORIGINAL_ATTEMPT" =~ ^[1-9][0-9]*$ && "$ORIGINAL_PROJECT_HASH" =~ ^[a-f0-9]{64}$ ]]
       - name: Install release CLI
         run: npm install --global @google/clasp@3.4.1
       - name: Verify original build without pushing source
@@ -304,6 +304,9 @@ jobs:
           printf '%s' "$CLASP_JSON" > "$scratch/.clasp.json"
           cd "$scratch"
           clasp pull
-          actual="$(node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/deployment-manifest.mjs" "$scratch" --hash-only)"
-          test "$actual" = "$DEPLOYED_SOURCE_HASH"
+          manifest="$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/deployment-manifest.mjs"
+          actual="$(node "$manifest" "$scratch" --full-project-hash)"
+          test "$actual" = "$ORIGINAL_PROJECT_HASH"
+          DEPLOYED_SOURCE_HASH="$(node "$manifest" "$scratch" --hash-only)"
+          export DEPLOYED_SOURCE_HASH
           GITHUB_RUN_ID="$ORIGINAL_RUN" GITHUB_RUN_ATTEMPT="$ORIGINAL_ATTEMPT" node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/verify-runtime-release.mjs"

@@ -11,6 +11,12 @@ export function sourceSnapshot(directory) {
 export function checkSnapshot(expected,actual) {
   if (JSON.stringify(sourceSnapshot(expected))!==JSON.stringify(sourceSnapshot(actual))) throw new Error('Independent source snapshot mismatch');
 }
+export function fullProjectDigest(directory) {
+  const entries = sourceSnapshot(directory)
+    .map(([name, hash]) => [name.split(path.sep).join('/'), hash])
+    .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+  return createHash('sha256').update(JSON.stringify(entries)).digest('hex');
+}
 if (process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href) {
   if (process.argv[2]==='--backup') {
     const [, , , source, backup]=process.argv;
