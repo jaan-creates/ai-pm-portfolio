@@ -70,8 +70,17 @@ jobs:
           tmp="$(mktemp -d)"
           printf 'function alpha(){return 1;}\n' > "$tmp/A.js"
           printf 'function beta(){return 2;}\n' > "$tmp/B.gs"
+          if node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" >/dev/null 2>&1; then
+            echo 'Incomplete project accepted without appsscript.json'
+            exit 20
+          fi
+          printf '{}' > "$tmp/appsscript.json"
           h1="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" --hash-only)"
+          whole="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" --full-project-hash)"
           node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" > /tmp/deployment-manifest-test.json
+          grep -q "$whole" /tmp/deployment-manifest-test.json
+          printf '<p>fixture</p>' > "$tmp/View.html"
+          test "$whole" != "$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$tmp" --full-project-hash)"
           grep -q 'JANU-DEPLOYMENT-MANIFEST-1' /tmp/deployment-manifest-test.json
           grep -q "$h1" /tmp/deployment-manifest-test.json
           if grep -q 'function alpha' /tmp/deployment-manifest-test.json; then
