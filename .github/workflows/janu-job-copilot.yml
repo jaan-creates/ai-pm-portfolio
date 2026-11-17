@@ -8,6 +8,7 @@ on:
       - janu-job-copilot/p1a-release
     paths:
       - 'startup-track/projects/2-janu-job-copilot/scripts/**'
+      - 'startup-track/projects/2-janu-job-copilot/runtime/**'
       - '.github/workflows/janu-job-copilot.yml'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -15,6 +16,7 @@ on:
       - main
     paths:
       - 'startup-track/projects/2-janu-job-copilot/scripts/**'
+      - 'startup-track/projects/2-janu-job-copilot/runtime/**'
       - '.github/workflows/janu-job-copilot.yml'
   workflow_dispatch:
 
@@ -118,6 +120,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-p1a-vacancy-worker.mjs" "$LIVE_DIR"
       - name: Wire RetrievalProvider into JD worker
         run: node "$PROJECT_DIR/scripts/patch-p1a-jd-worker.mjs" "$LIVE_DIR"
+      - name: Add deterministic queue admission quarantine
+        run: node "$PROJECT_DIR/scripts/patch-recovery-admission.mjs" "$LIVE_DIR"
       - name: Add connected release provenance writeback
         run: node "$PROJECT_DIR/scripts/patch-release-provenance.mjs" "$LIVE_DIR"
       - name: Add TRACE-GOLDEN-01 trace and same-fixture runner
@@ -130,6 +134,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-p1a-jd-official-ats.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
         run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
+      - name: Stamp the candidate for independent runtime comparison
+        run: node "$PROJECT_DIR/scripts/stamp-release-build.mjs" "$LIVE_DIR" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT"
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -212,37 +218,13 @@ jobs:
           fi
           echo "DEPLOYED_SOURCE_HASH=$ACTUAL_SOURCE_HASH" >> "$GITHUB_ENV"
           echo "Verified deployed source hash: $ACTUAL_SOURCE_HASH"
-      - name: Persist and verify connected deployment provenance
+      - name: Verify runtime contracts and independently read back release identity
         working-directory: .janu-live
-        shell: bash
-        run: |
-          # These functions were just pushed in this workflow. Execute against current HEAD/dev source;
-          # --nondev targets the previously deployed executable and can hide newly pushed functions.
-          clasp run runReleaseProvenanceContractSelfTest
-          PARAMS="$(node -e 'console.log(JSON.stringify([process.env.GITHUB_SHA,process.env.GITHUB_RUN_ID,process.env.GITHUB_RUN_ATTEMPT,process.env.DEPLOYED_SOURCE_HASH,process.env.EXPECTED_VERSION,process.env.EXPECTED_SUITE]))')"
-          echo 'Persisting privacy-safe deployment provenance to connected product state.'
-          clasp run recordDeploymentProvenance --params "$PARAMS"
-      - name: Verify owned Apply admission self-test immediately
-        working-directory: .janu-live
-        run: clasp run runP1AOwnedApplyAdmissionSelfTest --nondev
-      - name: Attempt P1-A self-test immediately
-        continue-on-error: true
-        working-directory: .janu-live
-        run: clasp run runP1AContractSelfTest --nondev
-      - name: Attempt P1-B self-test immediately
-        continue-on-error: true
-        working-directory: .janu-live
-        run: clasp run runP1BContractSelfTest --nondev
-      - name: Attempt P1-C self-test immediately
-        continue-on-error: true
-        working-directory: .janu-live
-        run: clasp run runP1CContractSelfTest --nondev
-      - name: Attempt bounded health/control tick
-        continue-on-error: true
-        working-directory: .janu-live
-        run: clasp run phase1HealthTick --nondev
+        run: node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/verify-runtime-release.mjs"
       - name: Deployment summary
         if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
         shell: bash
         run: |
           echo '## Janu Job Copilot P1 deployment' >> "$GITHUB_STEP_SUMMARY"
@@ -250,7 +232,7 @@ jobs:
           echo "- Git commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "- GitHub Actions run: $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
           echo "- Verified transformed-source SHA-256: ${DEPLOYED_SOURCE_HASH:-not verified}" >> "$GITHUB_STEP_SUMMARY"
-          echo '- Verified deployment identity is persisted to connected Job Copilot Worker State only after post-push source-hash verification.' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Runtime acceptance job status: $JOB_STATUS" >> "$GITHUB_STEP_SUMMARY"
           echo '- Privacy-safe source manifest uploaded; source text is not published as an artifact.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1 contract telemetry is not treated as end-to-end feature completion.' >> "$GITHUB_STEP_SUMMARY"
           echo '- TRACE-GOLDEN-01 adds bounded same-fixture trace reconstruction and does not create an independent retrieval/provider path.' >> "$GITHUB_STEP_SUMMARY"

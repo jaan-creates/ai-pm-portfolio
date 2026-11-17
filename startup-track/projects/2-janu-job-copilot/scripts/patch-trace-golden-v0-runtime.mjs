@@ -1,9 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 
 const root=process.argv[2]||'.janu-live';
-const dir=path.dirname(new URL(import.meta.url).pathname);
+const dir=path.dirname(fileURLToPath(import.meta.url));
 const base=path.resolve(dir,'patch-trace-golden-v0.mjs');
 let files=fs.readdirSync(root).filter(f=>f.endsWith('.gs')||f.endsWith('.js'));
 const hasTrace=files.some(f=>fs.readFileSync(path.join(root,f),'utf8').includes('function traceGoldenTick_('));

@@ -43,23 +43,50 @@ add_('function p1aJdRecoveryMaintenanceTick_(',`function p1aJdRecoveryMaintenanc
 add_('function p1aJdWorkerSelfTest_(',`function p1aJdWorkerSelfTest_(){const c=[],a=ashbyPublicPostingCoordinates_('https://jobs.ashbyhq.com/metaforms/d6406949-6a4b-44b0-af33-cefdf02afc72');c.push(!!a&&a.slug==='metaforms'&&a.id==='d6406949-6a4b-44b0-af33-cefdf02afc72');c.push(!ashbyPublicPostingCoordinates_('https://example.com/job'));c.push(p1aJdTextFromRetrieval_('https://jobs.ashbyhq.com/x/00000000-0000-0000-0000-000000000000',{provider:'ASHBY_PUBLIC_API',content:JSON.stringify({title:'Product Manager',descriptionPlain:'x'.repeat(900)})}).length>900);c.push(p1aJdRecoveryCandidate_({'Decision':'Apply','Status':'Blocked','Blocker Category':'full_jd_unavailable','Canonical Apply URL':'https://jobs.ashbyhq.com/x/00000000-0000-0000-0000-000000000000'})===true);if(c.some(x=>!x))throw new Error('P1-A JD worker self-test failed '+JSON.stringify(c));return{pass:true,total:c.length,contract:'P1-A-JD-WORKER-1'};}`);
 add_('function runP1AJdWorkerSelfTest()',`function runP1AJdWorkerSelfTest(){const x=p1aJdWorkerSelfTest_();upsertWorkerState_('p1a_jd_worker_self_test',x.pass?'PASS':'FAIL',JSON.stringify(x));upsertWorkerState_('p1a_jd_worker_contract_version','P1-A-JD-WORKER-1','RetrievalProvider-backed JD recovery with Ashby public posting adapter');return x;}`);
 
+add_('function jdReadbackPercent_(', `function jdReadbackPercent_(application){
+  const raw=application && application['JD Completeness %'];
+  const text=String(raw == null ? '' : raw).trim();
+  const explicit=text.endsWith('%');
+  const number=Number(explicit ? text.slice(0,-1) : text);
+  if (!text || !Number.isFinite(number) || number<0 || number>100) return 0;
+  return !explicit && number<=1 ? number*100 : number;
+}`);
+add_('function jdAdmitScore_(', `function jdAdmitScore_(id,payload,input){
+  const worker=JC.W.SCORE;
+  const job=enqueue_(id,worker,payload,input);
+  if(job)return job;
+  const existing=typeof ownedFindQueueAdmission_==='function' && ownedFindQueueAdmission_(id,worker,input);
+  if(existing && existing.queueJobId)return existing.queueJobId;
+  throw new Error('JD_SCORE_ADMISSION_UNVERIFIED');
+}`);
 const worker=`function workerJD_(appId,p){
   const r=find_(JC.S.A,appId);if(!r)throw new Error('Application missing '+appId);const a=obj_(SH_(JC.S.A),r);
-  const existing=loadJDArtifact_(appId),existingCompleteness=Number(a['JD Completeness %']||0);
-  if(existing&&existingCompleteness>=70){set_(JC.S.A,r,{'Status':'Scoring','Blocker Category':'','Exact Input Needed':'','Your Required Action':'No action','Last Operator Update':now_(),'Next Action':'System-owned: canonical JD already exists; scoring queued.'});resolve_(appId,'Canonical JD already available');const q=enqueue_(appId,JC.W.SCORE,{source:'p1a-jd-existing'},hash_(appId+'|'+existingCompleteness+'|p1a-jd-existing'));upsertWorkerState_('p1a_jd_last_result','PASS',JSON.stringify({applicationId:appId,mode:'EXISTING_ARTIFACT',queueJobId:q}));return{status:'EXISTING_ARTIFACT',queueJobId:q};}
+  const existing=loadJDArtifact_(appId),existingCompleteness=jdReadbackPercent_(a);
+  if(existing && existingCompleteness>=70){
+    const q=jdAdmitScore_(appId,{source:'p1a-jd-existing'},hash_(appId+'|'+existingCompleteness+'|p1a-jd-existing'));
+    set_(JC.S.A,r,{'Status':'Scoring','Blocker Category':'','Exact Input Needed':'','Your Required Action':'No action','Last Operator Update':now_(),'Next Action':'System-owned: canonical JD already exists; scoring queued.'});
+    resolve_(appId,'Canonical JD already available');
+    upsertWorkerState_('p1a_jd_last_result','PASS',JSON.stringify({applicationId:appId,mode:'EXISTING_ARTIFACT',queueJobId:q}));
+    return{status:'EXISTING_ARTIFACT',queueJobId:q};
+  }
   const ret=p1aJdRetrieveForApp_(a,false);p1aRecordJdRetrieval_(appId,ret);
   if(ret.explicitClosed){set_(JC.S.A,r,{'Status':'Closed','Submission Ready?':'No','Blocker Category':'','Exact Input Needed':'','Your Required Action':'No action','Next Action':'Official ATS no longer lists this vacancy.','Last Operator Update':now_(),'State Consistency':'OK'});resolve_(appId,'Vacancy closed');upsertWorkerState_('p1a_jd_last_result','CLOSED',JSON.stringify({applicationId:appId,provider:ret.provider,url:ret.url}));return{status:'CLOSED',provider:ret.provider};}
   const raw=p1aJdTextFromRetrieval_(ret.url||a['Canonical Apply URL']||a['Job URL'],ret);
-  if(!ret.ok||!raw){block_(appId,a['Company'],a['Role'],'JD Capture','Open the job, expand the full description, Save as PDF, upload it to Job Copilot — JD Captures as '+appId+'.pdf. No summary is needed.',a['Job URL']||a['Canonical Apply URL']);set_(JC.S.A,r,{'Status':'Blocked','Blocker Category':'full_jd_unavailable','Exact Input Needed':'Upload full JD PDF named '+appId+'.pdf','Your Required Action':'Upload the JD PDF; automation resumes automatically.'});upsertWorkerState_('p1a_jd_last_result','USER_BLOCKER',JSON.stringify({applicationId:appId,provider:ret.provider,error:ret.error||'NO_SUFFICIENT_JD_EVIDENCE'}));throw new Error('USER_BLOCKER: JD unavailable');}
+  if(!ret.ok||!raw){block_(appId,a['Company'],a['Role'],'JD Capture','Open the job, expand the full description, Save as PDF, upload it to Job Copilot â€” JD Captures as '+appId+'.pdf. No summary is needed.',a['Job URL']||a['Canonical Apply URL']);set_(JC.S.A,r,{'Status':'Blocked','Blocker Category':'full_jd_unavailable','Exact Input Needed':'Upload full JD PDF named '+appId+'.pdf','Your Required Action':'Upload the JD PDF; automation resumes automatically.'});upsertWorkerState_('p1a_jd_last_result','USER_BLOCKER',JSON.stringify({applicationId:appId,provider:ret.provider,error:ret.error||'NO_SUFFICIENT_JD_EVIDENCE'}));throw new Error('USER_BLOCKER: JD unavailable');}
   parseSaveJD_(appId,a,ret.url||a['Canonical Apply URL']||a['Job URL'],raw);
-  const ar=find_(JC.S.A,appId),after=ar?obj_(SH_(JC.S.A),ar):null,artifact=loadJDArtifact_(appId),complete=after?Number(after['JD Completeness %']||0):0;
+  const ar=find_(JC.S.A,appId),after=ar?obj_(SH_(JC.S.A),ar):null,artifact=loadJDArtifact_(appId),complete=jdReadbackPercent_(after);
   if(!artifact||complete<70)throw new Error('DETERMINISTIC:P1A_JD_PERSISTENCE_OR_COMPLETENESS_FAILED');
-  const q=enqueue_(appId,JC.W.SCORE,{source:'p1a-jd-recovery',provider:ret.provider},hash_(appId+'|'+hash_(raw)+'|p1a-jd-recovery'));
+  const q=jdAdmitScore_(appId,{source:'p1a-jd-recovery',provider:ret.provider},hash_(appId+'|'+hash_(raw)+'|p1a-jd-recovery'));
   upsertWorkerState_('p1a_jd_last_result','PASS',JSON.stringify({applicationId:appId,provider:ret.provider,url:ret.url,completeness:complete,queueJobId:q}).slice(0,1500));
   return{status:'RECOVERED',provider:ret.provider,completeness:complete,queueJobId:q};
 }`;
 const wr=functionRange_('workerJD_');if(!wr)throw new Error('workerJD_ missing');
-const oldWorker=s.slice(wr.start,wr.end);if(!oldWorker.includes("P1-A-JD-WORKER-1"))s=s.slice(0,wr.start)+worker+'\n'+s.slice(wr.end);
+const oldWorker=s.slice(wr.start,wr.end);
+if (oldWorker.includes('P1-A-JD-WORKER-1') && !oldWorker.includes('jdReadbackPercent_(')) {
+  // Previously customized handlers must be reconciled before replacement.
+  throw new Error('Existing custom JD worker requires reviewed migration');
+}
+if(oldWorker!==worker)s=s.slice(0,wr.start)+worker+s.slice(wr.end);
 
 appendToFunction_('phase1HealthTick',"runP1AJdWorkerSelfTest();",`try{runP1AJdWorkerSelfTest();}catch(e){upsertWorkerState_('p1a_jd_worker_self_test','FAIL',String((e&&e.stack)||e).slice(0,1500));}try{p1aJdRecoveryMaintenanceTick_();}catch(e){upsertWorkerState_('p1a_jd_recovery_last_result','FAIL',String((e&&e.stack)||e).slice(0,1500));}`);
 
