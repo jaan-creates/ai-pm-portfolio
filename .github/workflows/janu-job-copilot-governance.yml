@@ -159,6 +159,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/test-stale-queue-hold.mjs"
       - name: Check uncertain worker error hold and retry due time
         run: node "$PROJECT_DIR/scripts/test-queue-worker-uncertainty.mjs"
+      - name: Check fair queue continuation across applications
+        run: node "$PROJECT_DIR/scripts/test-queue-fairness.mjs"
       - name: Check version-bound review actions
         run: node "$PROJECT_DIR/scripts/test-resume-review-action.mjs"
       - name: Check approved PDF bytes and extracted text

@@ -211,6 +211,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-stale-queue-hold.mjs" "$LIVE_DIR"
       - name: Hold worker errors with unknown side effects and honor retry due time
         run: node "$PROJECT_DIR/scripts/patch-queue-worker-uncertainty.mjs" "$LIVE_DIR"
+      - name: Age eligible queue work to prevent application starvation
+        run: node "$PROJECT_DIR/scripts/patch-queue-fairness.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
         run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
       - name: Stamp the candidate for independent runtime comparison
