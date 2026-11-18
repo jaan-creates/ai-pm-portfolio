@@ -143,6 +143,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/test-recovery-admission.mjs"
       - name: Check candidate claim support
         run: node "$PROJECT_DIR/scripts/test-candidate-claim-guard.mjs"
+      - name: Check approval before official PDF publication
+        run: node "$PROJECT_DIR/scripts/test-approval-before-pdf-patch.mjs"
       - name: Check version-bound review actions
         run: node "$PROJECT_DIR/scripts/test-resume-review-action.mjs"
       - name: Check approved PDF bytes and extracted text

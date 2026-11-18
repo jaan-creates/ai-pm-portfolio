@@ -136,6 +136,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-recovery-admission.mjs" "$LIVE_DIR"
       - name: Add candidate claim wording guard
         run: node "$PROJECT_DIR/scripts/patch-candidate-claim-guard.mjs" "$LIVE_DIR"
+      - name: Defer official PDF until candidate approval
+        run: node "$PROJECT_DIR/scripts/patch-approval-before-pdf.mjs" "$LIVE_DIR"
       - name: Add connected release provenance writeback
         run: node "$PROJECT_DIR/scripts/patch-release-provenance.mjs" "$LIVE_DIR"
       - name: Add TRACE-GOLDEN-01 trace and same-fixture runner
