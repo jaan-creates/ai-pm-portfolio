@@ -73,7 +73,9 @@ export function createController({ invoke, read, write }) {
 }
 
 function clasp(...args) {
-  const result = spawnSync('clasp',['--json',...args],{encoding:'utf8',timeout:120000,maxBuffer:1024*1024});
+  const cli=process.env.JANU_CLASP_CLI;
+  if (cli && !path.isAbsolute(cli)) throw new Error('JANU_CLASP_CLI must be an absolute local path');
+  const result = spawnSync(cli ? process.execPath : 'clasp',cli ? [cli,'--json',...args] : ['--json',...args],{encoding:'utf8',timeout:120000,maxBuffer:1024*1024});
   if (result.error || result.status !== 0) throw new Error(`clasp ${args[0]} failed`);
   try { return JSON.parse(result.stdout); } catch { throw new Error(`clasp ${args[0]} returned invalid JSON`); }
 }
