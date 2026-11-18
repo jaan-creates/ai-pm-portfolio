@@ -148,6 +148,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/test-p1a-score-completion-admission.mjs" "$PROJECT_DIR"
       - name: Apply official ATS JD retrieval routes
         run: node "$PROJECT_DIR/scripts/patch-p1a-jd-official-ats.mjs" "$LIVE_DIR"
+      - name: Reject terminal queue replay
+        run: node "$PROJECT_DIR/scripts/patch-queue-claim-status.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
         run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
       - name: Stamp the candidate for independent runtime comparison
