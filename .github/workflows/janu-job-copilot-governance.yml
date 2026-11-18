@@ -147,6 +147,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/test-approval-before-pdf-patch.mjs"
       - name: Check terminal queue replay guard
         run: node "$PROJECT_DIR/scripts/test-queue-claim-status.mjs"
+      - name: Check direct queue lock and flush
+        run: node "$PROJECT_DIR/scripts/test-queue-run-lock.mjs"
       - name: Check version-bound review actions
         run: node "$PROJECT_DIR/scripts/test-resume-review-action.mjs"
       - name: Check approved PDF bytes and extracted text
