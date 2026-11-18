@@ -42,7 +42,7 @@ concurrency:
 
 jobs:
   release-readiness-probe:
-    if: github.event_name == 'pull_request'
+    if: github.event_name != 'workflow_dispatch' || (inputs.verify_run == '' && inputs.verify_attempt == '' && inputs.verify_hash == '')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -72,14 +72,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          (cd .janu-readonly && clasp --json run diagnoseTriggersPhase1_2 --params '[]') > /tmp/janu-readonly-probe.json
+          (cd .janu-readonly && clasp --json run runRendererCanaryControlStatus --params '[]') > /tmp/janu-readonly-probe.json
           node - <<'NODE'
           const fs=require('fs'),raw=fs.readFileSync('/tmp/janu-readonly-probe.json','utf8');
           let result;try{result=JSON.parse(raw)}catch{throw Error('Release credential cannot execute the read-only live diagnostic')}
-          if(result.error||!result.response||!result.response.counts)throw Error('Read-only live diagnostic returned no trigger evidence');
-          console.log('Release credential pulled live source and read trigger topology successfully');
+          if(result.error||!result.response||result.response.contract!=='CANARY-SCHEDULER-HANDOFF-001')throw Error('Read-only live diagnostic returned no control status');
+          console.log('Release credential pulled live source and read control status successfully');
           NODE
   deploy-production:
+    needs: release-readiness-probe
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["main","janu-job-copilot/apps-script-ci","janu-job-copilot/p1a-release"]'), github.ref_name) && inputs.verify_run == '' && inputs.verify_attempt == '' && inputs.verify_hash == '')
     runs-on: ubuntu-latest
     timeout-minutes: 15
