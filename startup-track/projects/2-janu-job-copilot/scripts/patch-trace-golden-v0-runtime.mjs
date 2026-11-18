@@ -31,11 +31,24 @@ else addBefore('function traceRefreshGolden_(','function traceUpsertSpans_(',pro
 const range=rangeOf('traceRefreshGolden_');
 let refresh=s.slice(range.start,range.end);
 if (!refresh.includes('traceUpsertSpans_(ex,rows)')) {
-  const start=refresh.indexOf('const ex=traceEnsureExplorer_(),ann={};');
+  const start=refresh.indexOf('const ex=traceEnsureExplorer_(),');
   const finish=refresh.indexOf('const release=', start);
   const oldWriter="for(const o of rows){const a=ann[o['Span ID']]||{};o['Human Eval']=a.eval||'';o['Human Note']=a.note||'';traceAppendObject_(ex,o);}";
-  if (start<0 || finish<0 || !refresh.slice(start,finish).includes('.clearContent();') || !refresh.includes(oldWriter)) {
+  const oldAppendWriter="if(!rows.length)throw new Error('DETERMINISTIC:TRACE_REFRESH_EMPTY_CANDIDATE');";
+  const appendStart=refresh.indexOf(oldAppendWriter);
+  const appendEnd=refresh.indexOf("upsertWorkerState_('golden_trace_last_refresh'",appendStart);
+  const appendBody=refresh.slice(appendStart,appendEnd);
+  const isAppendWriter=appendStart>=0 && appendEnd>appendStart
+    && refresh.slice(start,finish).includes('headers=ex.getRange(')
+    && appendBody.includes('ex.deleteRows(2,oldLast-1)')
+    && appendBody.includes('TRACE_CANDIDATE_READBACK_FAILED')
+    && appendBody.includes('TRACE_FINAL_READBACK_MISMATCH');
+  if (start<0 || finish<0 || (!isAppendWriter && (!refresh.slice(start,finish).includes('.clearContent();') || !refresh.includes(oldWriter)))) {
     throw new Error('Unrecognized trace refresh writer');
+  }
+  if (isAppendWriter) {
+    refresh=refresh.slice(0,appendStart)+oldAppendWriter+'traceUpsertSpans_(ex,rows);'+refresh.slice(appendEnd);
+    refresh=refresh.replace("publication:'ATOMIC_APPEND_VERIFY_RETIRE'","publication:'UPSERT_VERIFY_PRESERVE_HISTORY'");
   }
   refresh=refresh.slice(0,start)+'const ex=traceEnsureExplorer_();'+refresh.slice(finish);
   replaceFunction('traceRefreshGolden_',refresh.replace(oldWriter,'traceUpsertSpans_(ex,rows);'));

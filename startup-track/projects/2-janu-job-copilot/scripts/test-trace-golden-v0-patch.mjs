@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import vm from 'node:vm';
+import assert from 'node:assert/strict';
 
 const projectDir=process.argv[2]||path.resolve('startup-track/projects/2-janu-job-copilot');
 const patcher=path.join(projectDir,'scripts','patch-trace-golden-v0-runtime.mjs');
@@ -74,4 +75,92 @@ const runtimeChecks=[
   ['recoverable QA failure',vm.runInContext("p1aQaNeedsRepair_({state:'FAILED',errorCode:'CODE_OR_SCHEMA'})",sandbox)]
 ];
 for(const [name,pass] of runtimeChecks)if(!pass)throw new Error('generated runtime helper execution failed: '+name);
+
+// Model the installed append/verify/retire writer with synthetic trace rows.
+// The generated source and service adapters below contain no private project data.
+const appendHeader=`const ex=traceEnsureExplorer_(),headers=ex.getRange(1,1,1,ex.getLastColumn()).getDisplayValues()[0],oldLast=ex.getLastRow(),ann={};
+if(oldLast>1){const old=ex.getRange(2,1,oldLast-1,ex.getLastColumn()).getDisplayValues();for(const r of old)if(r[0]===traceId&&r[2])ann[r[2]]={eval:r[20],note:r[21]};}`;
+const appendWriter=`if(!rows.length)throw new Error('DETERMINISTIC:TRACE_REFRESH_EMPTY_CANDIDATE');
+for(const o of rows){const a=ann[o['Span ID']]||{};o['Human Eval']=a.eval||'';o['Human Note']=a.note||'';}
+const candidate=rows.map(o=>headers.map(k=>o[k]===undefined?'':o[k])),start=oldLast+1;
+ex.getRange(start,1,candidate.length,headers.length).setValues(candidate);
+SpreadsheetApp.flush();
+const rb=ex.getRange(start,1,candidate.length,2).getDisplayValues();
+if(rb.length!==candidate.length||rb.some(r=>String(r[0])!==traceId||String(r[1])!==String(appId)))throw new Error('DETERMINISTIC:TRACE_CANDIDATE_READBACK_FAILED');
+if(oldLast>1)ex.deleteRows(2,oldLast-1);
+SpreadsheetApp.flush();
+const finalRows=ex.getLastRow()-1,final=finalRows>0?ex.getRange(2,1,finalRows,2).getDisplayValues():[];
+const count=final.filter(r=>String(r[0])===traceId&&String(r[1])===String(appId)).length;
+if(count!==rows.length)throw new Error('DETERMINISTIC:TRACE_FINAL_READBACK_MISMATCH');
+`;
+const legacyRefresh=refresh.replace('const ex=traceEnsureExplorer_();',appendHeader)
+  .replace('traceUpsertSpans_(ex,rows);',appendWriter);
+assert.notEqual(legacyRefresh,refresh);
+const legacySource=twice.replace(refresh,legacyRefresh);
+
+function refreshHarness(source) {
+  const headers=['Trace ID','Group ID','Span ID','Parent Span ID','Stage','Type','Status','Started At','Ended At','Duration ms','Attempt','Provider / Model','Input Ref','Output Ref','Error Class','Error Code','Cost USD','Release','Git Commit','Verified Ref','Human Eval','Human Note'];
+  const other=['other','other-app','other-span',...Array(17).fill(''),'Approved','Preserve unrelated note'];
+  const current=['fixture-trace','fixture-app','intake:fixture-app',...Array(17).fill(''),'Reviewed','Preserve current note'];
+  const rows=[headers,other.slice(),current.slice()];
+  const receipts=[];
+  const lock={held:false,hasLock(){return this.held;},tryLock(){this.held=true;return true;},releaseLock(){this.held=false;}};
+  const sheet={
+    dropWrites:false,getLastRow:()=>rows.length,getLastColumn:()=>headers.length,
+    getDataRange:()=>sheet.getRange(1,1,rows.length,headers.length),
+    deleteRows(start,count){rows.splice(start-1,count);},
+    getRange(row,column,height=1,width=1){
+      const values=()=>Array.from({length:height},(_,i)=>Array.from({length:width},(_,j)=>rows[row+i-1]?.[column+j-1]??''));
+      return {
+        getValues:values,getDisplayValues:()=>values().map(r=>r.map(String)),
+        setValues(incoming){
+          if(sheet.dropWrites)return;
+          for(let i=0;i<height;i++){
+            rows[row+i-1]??=[];
+            for(let j=0;j<width;j++)rows[row+i-1][column+j-1]=incoming[i][j];
+          }
+        }
+      };
+    }
+  };
+  const context=vm.createContext({
+    SpreadsheetApp:{getActive:()=>({getSheetByName:()=>null}),flush(){}},
+    LockService:{getScriptLock:()=>lock}
+  });
+  vm.runInContext(source,context,{timeout:5000});
+  context.traceEnsureExplorer_=()=>sheet;
+  context.traceStateValue_=()=> 'fixture-release';
+  context.upsertWorkerState_=(...args)=>receipts.push(args);
+  return {rows,other,sheet,receipts,lock,run:()=>context.traceRefreshGolden_('fixture-app','fixture-trace')};
+}
+const before=refreshHarness(legacySource);
+before.run();
+assert.equal(before.rows.some(row=>row[0]==='other'),false,'The legacy fixture must reproduce history loss');
+fs.writeFileSync(target,legacySource);
+run();
+const upgraded=fs.readFileSync(target,'utf8');
+run();
+assert.equal(fs.readFileSync(target,'utf8'),upgraded,'Installed-writer upgrade must be idempotent');
+for(const source of [twice,upgraded]){
+  const fixture=refreshHarness(source);
+  fixture.run();
+  fixture.run();
+  assert.deepEqual(fixture.rows[1],fixture.other);
+  assert.deepEqual(fixture.rows[2].slice(20),['Reviewed','Preserve current note']);
+  assert.equal(fixture.rows.length,3,'Repeated refresh must reuse the same span');
+  assert.equal(fixture.receipts.length,2);
+  assert.equal(fixture.lock.held,false);
+  const broken=refreshHarness(source);
+  broken.sheet.dropWrites=true;
+  assert.throws(broken.run,/Trace projection readback mismatch/);
+  assert.equal(broken.receipts.length,0,'A lost write must not publish a successful refresh receipt');
+  assert.equal(broken.lock.held,false);
+}
+const unknown=legacySource.replace('TRACE_FINAL_READBACK_MISMATCH','UNRECOGNIZED_WRITER');
+fs.writeFileSync(target,unknown);
+const rejected=spawnSync(process.execPath,[patcher,tmp],{encoding:'utf8'});
+assert.notEqual(rejected.status,0,'An unrecognized installed writer must stop the patch');
+assert.match(rejected.stderr,/Unrecognized trace refresh writer/);
+assert.equal(fs.readFileSync(target,'utf8'),unknown,'Rejected source must remain intact');
+console.log(JSON.stringify({installedWriterUpgrade:'PASS',legacyHistoryLossReproduced:true,supportedWriterForms:2,idempotentUpgrade:true,historyAndNotesPreserved:true,lostWritesBlockReceipt:true,unknownWriterRejected:true}));
 console.log(JSON.stringify({status:'PASS',contract:'TRACE-GOLDEN-V0-2',idempotent:true,syntax:true,decisionStartsNew:true,noOwnPaidRetrieval:true,generatedEscapeSafe:true,dedupeNegativeFixture:true,uniqueIdFixture:true,duplicateEvidence:true,generatedRuntimeHelperChecks:runtimeChecks.length},null,2));

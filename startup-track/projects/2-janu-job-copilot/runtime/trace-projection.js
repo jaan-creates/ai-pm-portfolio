@@ -26,8 +26,15 @@ function traceUpsertSpans_(sheet, spans) {
       return {row:locations.get(k),values:owned.map(name=>span[name] ?? '')};
     });
     let next=sheet.getLastRow()+1;
-    for (const change of changes) sheet.getRange(change.row || next++,1,1,owned.length).setValues([change.values]);
+    for (const change of changes) {
+      change.row = change.row || next++;
+      sheet.getRange(change.row,1,1,owned.length).setValues([change.values]);
+    }
     SpreadsheetApp.flush();
+    for (const change of changes) {
+      const actual = sheet.getRange(change.row,1,1,owned.length).getValues()[0];
+      if (JSON.stringify(actual) !== JSON.stringify(change.values)) throw new Error('Trace projection readback mismatch');
+    }
   } finally {
     if (acquiredHere) lock.releaseLock();
   }
