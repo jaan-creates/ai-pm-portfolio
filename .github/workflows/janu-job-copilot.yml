@@ -134,6 +134,13 @@ jobs:
           backup="$(mktemp -d)"
           node "$PROJECT_DIR/scripts/check-source-snapshot.mjs" --backup "$LIVE_DIR" "$backup"
           echo "JANU_PREIMAGE=$backup" >> "$GITHUB_ENV"
+      - name: Snapshot canonical API executable for rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="$RUNNER_TEMP/janu-canonical-pin.json"
+          (cd "$LIVE_DIR" && node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/manage-canonical-pin.mjs" snapshot "$state")
+          echo "JANU_PIN_STATE=$state" >> "$GITHUB_ENV"
       - name: Assert accepted P0 baseline
         shell: bash
         run: |
@@ -294,25 +301,42 @@ jobs:
           test "$EXPECTED_SOURCE_HASH" = "$ACTUAL_SOURCE_HASH"
           echo "DEPLOYED_SOURCE_HASH=$ACTUAL_SOURCE_HASH" >> "$GITHUB_ENV"
           echo "Verified deployed source hash: $ACTUAL_SOURCE_HASH"
-      - name: Verify runtime contracts and independently read back release identity
+      - name: Promote canonical API executable and verify runtime identity
         working-directory: .janu-live
         shell: bash
         run: |
           set -euo pipefail
-          if node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/verify-runtime-release.mjs"; then
+          pin="$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/manage-canonical-pin.mjs"
+          if node "$pin" promote "$JANU_PIN_STATE" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+            && node "$pin" verify "$JANU_PIN_STATE" \
+            && node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/verify-runtime-release.mjs"; then
             exit 0
           fi
-          echo 'Runtime identity check failed. Restoring the pre-push source.'
+          echo 'Canonical pin promotion or runtime identity failed. Restoring pin and source.'
+          set +e
+          node "$pin" rollback "$JANU_PIN_STATE"
+          pin_status=$?
+          set -e
           cd "$GITHUB_WORKSPACE"
           restore="$(mktemp -d)"
           cp "$LIVE_DIR/.clasp.json" "$restore/.clasp.json"
           cp -R "$JANU_PREIMAGE/." "$restore/"
+          set +e
           (cd "$restore" && clasp push --force)
+          source_status=$?
+          set -e
           reread="$(mktemp -d)"
           cp "$LIVE_DIR/.clasp.json" "$reread/.clasp.json"
           (cd "$reread" && clasp pull)
+          set +e
           node "$PROJECT_DIR/scripts/check-source-snapshot.mjs" "$JANU_PREIMAGE" "$reread"
-          echo 'Pre-push source restored and independently read back. Candidate rejected.'
+          readback_status=$?
+          set -e
+          if (( pin_status != 0 || source_status != 0 || readback_status != 0 )); then
+            echo 'Rollback failed or readback mismatched. Manual recovery required.'
+            exit 13
+          fi
+          echo 'Canonical pin and pre-push source restored and independently read back. Candidate rejected.'
           exit 12
       - name: Deployment summary
         if: always()

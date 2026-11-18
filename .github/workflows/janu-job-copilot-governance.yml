@@ -129,6 +129,8 @@ jobs:
         run: node "$PROJECT_DIR/evals/run.mjs"
       - name: Verify release execution and readback failures
         run: node "$PROJECT_DIR/scripts/test-runtime-release.mjs"
+      - name: Verify canonical API pin promotion and rollback
+        run: node "$PROJECT_DIR/scripts/test-canonical-pin.mjs"
       - name: Verify evaluation coverage mapping
         run: node "$PROJECT_DIR/assurance/test-eval-coverage.mjs"
       - name: Set up PDF extraction for isolated acceptance fixtures
