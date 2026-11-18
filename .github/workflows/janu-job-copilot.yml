@@ -296,7 +296,24 @@ jobs:
           echo "Verified deployed source hash: $ACTUAL_SOURCE_HASH"
       - name: Verify runtime contracts and independently read back release identity
         working-directory: .janu-live
-        run: node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/verify-runtime-release.mjs"
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/verify-runtime-release.mjs"; then
+            exit 0
+          fi
+          echo 'Runtime identity check failed. Restoring the pre-push source.'
+          cd "$GITHUB_WORKSPACE"
+          restore="$(mktemp -d)"
+          cp "$LIVE_DIR/.clasp.json" "$restore/.clasp.json"
+          cp -R "$JANU_PREIMAGE/." "$restore/"
+          (cd "$restore" && clasp push --force)
+          reread="$(mktemp -d)"
+          cp "$LIVE_DIR/.clasp.json" "$reread/.clasp.json"
+          (cd "$reread" && clasp pull)
+          node "$PROJECT_DIR/scripts/check-source-snapshot.mjs" "$JANU_PREIMAGE" "$reread"
+          echo 'Pre-push source restored and independently read back. Candidate rejected.'
+          exit 12
       - name: Deployment summary
         if: always()
         env:
