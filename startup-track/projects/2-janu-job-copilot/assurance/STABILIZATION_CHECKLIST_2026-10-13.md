@@ -678,3 +678,14 @@ The current pending gates are therefore:
 - [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
 
 **Decision:** Latest sourcing execution is healthy at the cycle level and correctly recorded a no-op, but scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
+
+
+## 2026-11-18 scheduled-cycle refresh
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261118-0845-DAILY-01` succeeded 09:25–09:29 IST with 6 raw roles, 1 qualified, 1 canonical duplicate rejected, 1 promoted, 4 excluded, and 0 errors. The cycle audited 129 populated Application IDs and recorded one durable sourcing row.
+- [x] **Downstream sourcing integrity:** Razorpay Senior PM Greenhouse 4749341005 was promoted as `2026-11-18-001`; the GitLab recruiter mirror was rejected as a canonical duplicate. PeopleGrove was held/excluded because exact identity was not provable, rather than being falsely deduplicated.
+- [x] **Health truth preserved:** `__System Health` remains `BLOCKED / OPEN / SOURCING_SCHEDULER_STALE` with last publisher update 2026-11-02; the successful Nov 18 cycle does not clear historical misses or the stale health publisher.
+- [ ] **Current scheduler closure:** Current scheduled execution is healthy at the cycle level, but the health record must be refreshed and independently reconciled before scheduler health can be reclassified.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** Latest sourcing execution is healthy at the cycle level, but scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
