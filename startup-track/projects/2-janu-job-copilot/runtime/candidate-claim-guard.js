@@ -44,3 +44,34 @@ function candidateSourceGuard_(resume,approvedBase,registry){
   }
   return {checked:fields.length};
 }
+function candidateReusableResume_(reuse,approvedBase,registry){
+  if(!reuse)return null;
+  try{
+    validateEvidence_(reuse.doc,registry);
+    candidateSourceGuard_(reuse.doc,approvedBase,registry);
+    return reuse;
+  }catch(e){
+    const message=String((e&&e.message)||e);
+    if(/CANDIDATE_(?:CLAIM|PROSE)|Unknown evidence ID|Bullet lacks evidence ID/.test(message))return null;
+    throw e;
+  }
+}
+function candidatePackGuard_(drafts,approvedBase,registry,jd,company,contacts){
+  if(!drafts||typeof drafts!=='object')throw new Error('DETERMINISTIC:CANDIDATE_PACK_MISSING');
+  const entries=candidateApprovedWording_(registry),approved=[];
+  Object.keys(entries).forEach(id=>approved.push(...(entries[id].safe.length?entries[id].safe:entries[id].claim)));
+  const base=candidateClaimNorm_(approvedBase),role=candidateClaimNorm_(JSON.stringify(jd||{})),context=candidateClaimNorm_(JSON.stringify(company||{})+' '+JSON.stringify(contacts||[]));
+  const proof=(value,allowRole)=>{
+    const text=candidateClaimNorm_(value);
+    if(!text)return true;
+    if(approved.includes(text)||base.includes(text)&&text.length>=12)return true;
+    return !!allowRole&&text.length>=12&&(role.includes(text)||context.includes(text));
+  };
+  for(const key of ['why_role','why_company'])if(!proof(drafts[key],true))throw new Error('DETERMINISTIC:CANDIDATE_PACK_UNVERIFIED:'+key);
+  for(const key of ['recruiter_message','hiring_manager_message'])if(!proof(drafts[key],false))throw new Error('DETERMINISTIC:CANDIDATE_PACK_UNVERIFIED:'+key);
+  if(!['','yes','no','not requested','draft only'].includes(candidateClaimNorm_(drafts.cover_letter_decision)))throw new Error('DETERMINISTIC:CANDIDATE_PACK_UNVERIFIED:cover_letter_decision');
+  if(!Array.isArray(drafts.submission_answers)||!Array.isArray(drafts.interview_questions))throw new Error('DETERMINISTIC:CANDIDATE_PACK_SCHEMA');
+  if(drafts.submission_answers.length)throw new Error('DETERMINISTIC:CANDIDATE_PACK_FORM_NOT_CAPTURED');
+  for(const question of drafts.interview_questions)if(!proof(question,true))throw new Error('DETERMINISTIC:CANDIDATE_PACK_UNVERIFIED:interview_questions');
+  return {checked:true};
+}
