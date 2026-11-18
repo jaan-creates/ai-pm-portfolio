@@ -43,13 +43,45 @@ add_('function p1aJdRecoveryMaintenanceTick_(',`function p1aJdRecoveryMaintenanc
 add_('function p1aJdWorkerSelfTest_(',`function p1aJdWorkerSelfTest_(){const c=[],a=ashbyPublicPostingCoordinates_('https://jobs.ashbyhq.com/metaforms/d6406949-6a4b-44b0-af33-cefdf02afc72');c.push(!!a&&a.slug==='metaforms'&&a.id==='d6406949-6a4b-44b0-af33-cefdf02afc72');c.push(!ashbyPublicPostingCoordinates_('https://example.com/job'));c.push(p1aJdTextFromRetrieval_('https://jobs.ashbyhq.com/x/00000000-0000-0000-0000-000000000000',{provider:'ASHBY_PUBLIC_API',content:JSON.stringify({title:'Product Manager',descriptionPlain:'x'.repeat(900)})}).length>900);c.push(p1aJdRecoveryCandidate_({'Decision':'Apply','Status':'Blocked','Blocker Category':'full_jd_unavailable','Canonical Apply URL':'https://jobs.ashbyhq.com/x/00000000-0000-0000-0000-000000000000'})===true);if(c.some(x=>!x))throw new Error('P1-A JD worker self-test failed '+JSON.stringify(c));return{pass:true,total:c.length,contract:'P1-A-JD-WORKER-1'};}`);
 add_('function runP1AJdWorkerSelfTest()',`function runP1AJdWorkerSelfTest(){const x=p1aJdWorkerSelfTest_();upsertWorkerState_('p1a_jd_worker_self_test',x.pass?'PASS':'FAIL',JSON.stringify(x));upsertWorkerState_('p1a_jd_worker_contract_version','P1-A-JD-WORKER-1','RetrievalProvider-backed JD recovery with Ashby public posting adapter');return x;}`);
 
-add_('function jdReadbackPercent_(', `function jdReadbackPercent_(application){
-  const raw=application && application['JD Completeness %'];
+function replaceHelper_(name,code){const r=functionRange_(name);if(r)s=s.slice(0,r.start)+code+s.slice(r.end);else insertBeforeAnchor_(code);}
+replaceHelper_('jdCompletenessPercent_', `function jdCompletenessPercent_(raw){
+  if(typeof raw!=='number' && typeof raw!=='string')return NaN;
   const text=String(raw == null ? '' : raw).trim();
   const explicit=text.endsWith('%');
-  const number=Number(explicit ? text.slice(0,-1) : text);
-  if (!text || !Number.isFinite(number) || number<0 || number>100) return 0;
+  const numeric=(explicit ? text.slice(0,-1) : text).trim();
+  if(!/^(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)$/.test(numeric))return NaN;
+  const number=Number(numeric);
+  if (!Number.isFinite(number) || number<0 || number>100) return NaN;
   return !explicit && number<=1 ? number*100 : number;
+}`);
+replaceHelper_('jdReadbackPercent_', `function jdReadbackPercent_(application){return jdCompletenessPercent_(application && application['JD Completeness %']);}`);
+// Normalize the shared parser result before any durable write, including PDF callers.
+const parserRange=functionRange_('parseSaveJD_');
+let parser=s.slice(parserRange.start,parserRange.end);
+const normalization="d.completeness=jdCompletenessPercent_(d.completeness);if(!Number.isFinite(d.completeness))throw new Error('DETERMINISTIC:P1A_JD_PERSISTENCE_OR_COMPLETENESS_FAILED');";
+if(!parser.includes(normalization)){
+  const boundaries=[...parser.matchAll(/const snapshotId\s*=/g)];
+  if(boundaries.length!==1 || !parser.includes('persistJDArtifact_(appId,snapshotId,d)'))throw new Error('Unknown parseSaveJD_ persistence boundary');
+  const i=boundaries[0].index;parser=parser.slice(0,i)+normalization+'\n  '+parser.slice(i);
+  s=s.slice(0,parserRange.start)+parser+s.slice(parserRange.end);
+}
+replaceHelper_('jdVerifySaved_', `function jdVerifySaved_(id,artifact,canonical){
+  const ar=find_(JC.S.A,id),jr=find_(JC.S.JD,id,'Application ID');
+  const a=ar?obj_(SH_(JC.S.A),ar):{},j=jr?obj_(SH_(JC.S.JD),jr):{};
+  const complete=jdReadbackPercent_(a),stored=jdCompletenessPercent_(artifact && artifact.completeness),snapshot=jdCompletenessPercent_(j['Completeness %']);
+  if(!ar||!jr||!artifact||!Number.isFinite(complete)||complete<70||complete!==stored||complete!==snapshot)throw new Error('DETERMINISTIC:P1A_JD_PERSISTENCE_OR_COMPLETENESS_FAILED');
+  const expectedStatus=complete>=90?'Verified Full JD':'Partial JD';
+  if(canonical && (Number(a['JD Completeness %'])!==complete || Number(j['Completeness %'])!==complete || a['Status']!=='Scoring' || a['JD Snapshot Status']!==expectedStatus || j['Snapshot Status']!==expectedStatus || a['Blocker Category'] || a['Exact Input Needed']))throw new Error('DETERMINISTIC:P1A_JD_PERSISTENCE_OR_COMPLETENESS_FAILED');
+  return {row:ar,snapshotRow:jr,application:a,completeness:complete};
+}`);
+replaceHelper_('jdPrepareExisting_', `function jdPrepareExisting_(id,artifact){
+  const saved=jdVerifySaved_(id,artifact),a=saved.application,c=saved.completeness;
+  if(!['New','Apply'].includes(String(a['Decision']))||!['New','Verifying JD','Scoring','Blocked'].includes(String(a['Status'])) || (a['Blocker Category'] && a['Blocker Category']!=='full_jd_unavailable') || (a['Exact Input Needed'] && a['Blocker Category']!=='full_jd_unavailable'))throw new Error('JD_SCORE_ADMISSION_UNVERIFIED');
+  const snapshotStatus=c>=90?'Verified Full JD':'Partial JD';
+  set_(JC.S.JD,saved.snapshotRow,{'Completeness %':c,'Snapshot Status':snapshotStatus});
+  set_(JC.S.A,saved.row,{'JD Completeness %':c,'JD Snapshot Status':snapshotStatus,'Status':'Scoring','Blocker Category':'','Exact Input Needed':''});
+  const after=jdVerifySaved_(id,loadJDArtifact_(id),true);
+  return after;
 }`);
 add_('function jdAdmitScore_(', `function jdAdmitScore_(id,payload,input){
   const worker=JC.W.SCORE;
@@ -63,7 +95,8 @@ const worker=`function workerJD_(appId,p){
   const r=find_(JC.S.A,appId);if(!r)throw new Error('Application missing '+appId);const a=obj_(SH_(JC.S.A),r);
   const existing=loadJDArtifact_(appId),existingCompleteness=jdReadbackPercent_(a);
   if(existing && existingCompleteness>=70){
-    const q=jdAdmitScore_(appId,{source:'p1a-jd-existing'},hash_(appId+'|'+existingCompleteness+'|p1a-jd-existing'));
+    jdPrepareExisting_(appId,existing);
+    const q=jdAdmitScore_(appId,{source:'p1a-jd-existing'},hash_(appId+'|'+hash_(JSON.stringify(existing))+'|p1a-jd-score'));
     set_(JC.S.A,r,{'Status':'Scoring','Blocker Category':'','Exact Input Needed':'','Your Required Action':'No action','Last Operator Update':now_(),'Next Action':'System-owned: canonical JD already exists; scoring queued.'});
     resolve_(appId,'Canonical JD already available');
     upsertWorkerState_('p1a_jd_last_result','PASS',JSON.stringify({applicationId:appId,mode:'EXISTING_ARTIFACT',queueJobId:q}));
@@ -74,9 +107,8 @@ const worker=`function workerJD_(appId,p){
   const raw=p1aJdTextFromRetrieval_(ret.url||a['Canonical Apply URL']||a['Job URL'],ret);
   if(!ret.ok||!raw){block_(appId,a['Company'],a['Role'],'JD Capture','Open the job, expand the full description, Save as PDF, upload it to Job Copilot â€” JD Captures as '+appId+'.pdf. No summary is needed.',a['Job URL']||a['Canonical Apply URL']);set_(JC.S.A,r,{'Status':'Blocked','Blocker Category':'full_jd_unavailable','Exact Input Needed':'Upload full JD PDF named '+appId+'.pdf','Your Required Action':'Upload the JD PDF; automation resumes automatically.'});upsertWorkerState_('p1a_jd_last_result','USER_BLOCKER',JSON.stringify({applicationId:appId,provider:ret.provider,error:ret.error||'NO_SUFFICIENT_JD_EVIDENCE'}));throw new Error('USER_BLOCKER: JD unavailable');}
   parseSaveJD_(appId,a,ret.url||a['Canonical Apply URL']||a['Job URL'],raw);
-  const ar=find_(JC.S.A,appId),after=ar?obj_(SH_(JC.S.A),ar):null,artifact=loadJDArtifact_(appId),complete=jdReadbackPercent_(after);
-  if(!artifact||complete<70)throw new Error('DETERMINISTIC:P1A_JD_PERSISTENCE_OR_COMPLETENESS_FAILED');
-  const q=jdAdmitScore_(appId,{source:'p1a-jd-recovery',provider:ret.provider},hash_(appId+'|'+hash_(raw)+'|p1a-jd-recovery'));
+  const artifact=loadJDArtifact_(appId),complete=jdVerifySaved_(appId,artifact,true).completeness;
+  const q=jdAdmitScore_(appId,{source:'p1a-jd-recovery',provider:ret.provider},hash_(appId+'|'+hash_(JSON.stringify(artifact))+'|p1a-jd-score'));
   upsertWorkerState_('p1a_jd_last_result','PASS',JSON.stringify({applicationId:appId,provider:ret.provider,url:ret.url,completeness:complete,queueJobId:q}).slice(0,1500));
   return{status:'RECOVERED',provider:ret.provider,completeness:complete,queueJobId:q};
 }`;
