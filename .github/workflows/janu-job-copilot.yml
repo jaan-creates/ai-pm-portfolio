@@ -152,6 +152,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-queue-claim-status.mjs" "$LIVE_DIR"
       - name: Lock direct queue execution and flush durable state
         run: node "$PROJECT_DIR/scripts/patch-queue-run-lock.mjs" "$LIVE_DIR"
+      - name: Serialize queue admission across entrypoints
+        run: node "$PROJECT_DIR/scripts/patch-queue-admission-lock.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
         run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
       - name: Stamp the candidate for independent runtime comparison
