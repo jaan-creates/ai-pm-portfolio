@@ -154,6 +154,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-queue-run-lock.mjs" "$LIVE_DIR"
       - name: Serialize queue admission across entrypoints
         run: node "$PROJECT_DIR/scripts/patch-queue-admission-lock.mjs" "$LIVE_DIR"
+      - name: Preserve completed worker outcome after elapsed-time warning
+        run: node "$PROJECT_DIR/scripts/patch-post-worker-timeout.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
         run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
       - name: Stamp the candidate for independent runtime comparison
