@@ -30,3 +30,17 @@ function candidateClaimGuard_(resume,registry){
   }
   return {checked:bullets.length};
 }
+function candidateSourceGuard_(resume,approvedBase,registry){
+  const source=candidateClaimNorm_(approvedBase),entries=candidateApprovedWording_(registry),phrases=[];
+  Object.keys(entries).forEach(id=>phrases.push(...(entries[id].safe.length?entries[id].safe:entries[id].claim)));
+  const fields=[['headline',resume.headline],['summary',resume.summary],['career_break',resume.career_break],['education',resume.education]];
+  (resume.core_skills||[]).forEach((v,i)=>fields.push(['core_skills_'+i,v]));
+  (resume.remaining_gaps||[]).forEach((v,i)=>fields.push(['remaining_gaps_'+i,v]));
+  (resume.experiences||[]).forEach((e,i)=>{fields.push(['experience_title_'+i,e.title_line]);fields.push(['experience_dates_'+i,e.date_line]);});
+  for(const [field,value] of fields){
+    const text=candidateClaimNorm_(value);
+    if(!text)continue;
+    if(!source || !(source.includes(text)||phrases.some(p=>p.includes(text))))throw new Error('DETERMINISTIC:CANDIDATE_PROSE_UNVERIFIED:'+field);
+  }
+  return {checked:fields.length};
+}

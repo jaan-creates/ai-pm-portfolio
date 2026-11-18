@@ -15,7 +15,16 @@ const oldPrompt='Every bullet must cite evidence_ids. Preserve employers';
 const newPrompt='Every bullet must use the exact Safe wording of its cited canonical EV evidence ID (or its exact Claim if Safe wording is absent). Do not paraphrase or combine claims. Every bullet must cite evidence_ids. Preserve employers';
 if(s.includes(oldPrompt)&&!s.includes(newPrompt))s=s.replace(oldPrompt,newPrompt);
 if(!s.includes(newPrompt))throw new Error('Resume prompt contract not recognized');
+const proseCall='validateEvidence_(d,ev);candidateSourceGuard_(d,base,ev);';
+if(!s.includes(proseCall)){
+  const occur=s.split('validateEvidence_(d,ev);').length-1;
+  if(occur!==2)throw new Error('Unexpected resume validation paths '+occur);
+  s=s.replaceAll('validateEvidence_(d,ev);',proseCall);
+}
+if(s.split(proseCall).length-1!==2)throw new Error('Resume prose guard not wired at both validation paths');
+const sourceHelper=helper.slice(helper.indexOf('function candidateSourceGuard_('));
 if(!s.includes('function candidateClaimGuard_('))s+='\n'+helper+'\n';
-else if(!s.includes(helper))throw new Error('Unknown existing candidate claim helper');
+else if(!s.includes('function candidateSourceGuard_('))s+='\n'+sourceHelper+'\n';
+else if(!s.includes(sourceHelper))throw new Error('Unknown existing candidate source guard');
 if(s!==original)fs.writeFileSync(file,s);
 console.log(JSON.stringify({changed:s!==original,contract:'CANDIDATE-CLAIM-EXACT-WORDING-1'}));
