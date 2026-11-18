@@ -6,10 +6,14 @@ function p06Artifact_(appId,version,type){
   }
   return null;
 }
+function p06RendererSignature_(){
+  const template=DriveApp.getFileById(JC.IDS.TPL);
+  return hash_(String(render_)+'|'+template.getId()+'|'+template.getLastUpdated().toISOString());
+}
 function p06RecordQaPass_(appId,version,docId,text){
   const before=hash_(text),after=hash_(DocumentApp.openById(docId).getBody().getText());
   if(before!==after)throw new Error('DETERMINISTIC:P06_DOCUMENT_CHANGED_DURING_QA');
-  append_(P12.SHEETS.ART,{'Application ID':appId,'Resume Version ID':version,'Artifact Type':'QaPassed','Drive File ID':docId,'Content Hash':before,'Created At':now_(),'Status':'Ready','Notes':'PDF blob QA passed; no submission PDF published'});
+  append_(P12.SHEETS.ART,{'Application ID':appId,'Resume Version ID':version,'Artifact Type':'QaPassed','Drive File ID':docId,'Content Hash':before,'Created At':now_(),'Status':'Ready','Notes':p06RendererSignature_()});
   const receipt=p06Artifact_(appId,version,'QaPassed');
   if(!receipt||receipt['Content Hash']!==before)throw new Error('DETERMINISTIC:P06_QA_RECEIPT_READBACK');
   return receipt;
@@ -23,6 +27,8 @@ function p06ReadyApproval_(appId,version,reg){
   if(!version||!reg||!reg['PDF Resume Link'])return false;
   const qa=p06Artifact_(appId,version,'QaPassed'),approval=p06Artifact_(appId,version,'ApprovalReceipt'),official=p06Artifact_(appId,version,'OfficialPDF');
   if(!qa||!approval||!official||!approval['Input Hash']||!approval['Notes'])return false;
+  let approved;try{approved=JSON.parse(approval['Notes']);}catch(e){return false;}
+  if(!approved.approvedAt||!approved.renderer||approved.renderer!==qa['Notes']||approved.renderer!==official['Notes']||approved.renderer!==p06RendererSignature_())return false;
   if(qa['Content Hash']!==approval['Content Hash']||qa['Content Hash']!==official['Input Hash']||String(official['URL'])!==String(reg['PDF Resume Link']))return false;
   const app=obj_(SH_(JC.S.A),find_(JC.S.A,appId)),docId=fileId_(app['Tailored Resume Link']);
   return !!docId&&hash_(DocumentApp.openById(docId).getBody().getText())===approval['Content Hash'];
@@ -35,6 +41,7 @@ function p06PublishApprovedPdf_(appId,event){
   if(!qa||reg['QA Status']!=='Passed'||![P12.RR_REVIEW_PENDING,'Approved'].includes(reg['Review Decision'])||!docId)throw new Error('DETERMINISTIC:P06_QA_OR_VERSION_MISSING');
   const contentHash=hash_(DocumentApp.openById(docId).getBody().getText());
   if(contentHash!==qa['Content Hash']||String(qa['Drive File ID'])!==docId)throw new Error('DETERMINISTIC:P06_APPROVED_CONTENT_CHANGED');
+  const renderer=p06RendererSignature_();if(qa['Notes']!==renderer)throw new Error('DETERMINISTIC:P06_RENDERER_OR_TEMPLATE_CHANGED');
   if(reg['Review Decision']==='Approved'){
     const prior=p06Artifact_(appId,version,'ApprovalReceipt');
     if(!prior||prior['Input Hash']!==actor||!p06ReadyApproval_(appId,version,reg))throw new Error('DETERMINISTIC:P06_EXISTING_PUBLICATION_CONFLICT');
@@ -43,7 +50,7 @@ function p06PublishApprovedPdf_(appId,event){
   let approval=p06Artifact_(appId,version,'ApprovalReceipt');
   if(approval&&(approval['Content Hash']!==contentHash||approval['Input Hash']!==actor))throw new Error('DETERMINISTIC:P06_APPROVAL_CONFLICT');
   if(!approval){
-    append_(P12.SHEETS.ART,{'Application ID':appId,'Resume Version ID':version,'Artifact Type':'ApprovalReceipt','Drive File ID':docId,'Content Hash':contentHash,'Input Hash':actor,'Created At':now_(),'Status':'Ready','Notes':'Candidate approved exact version and content at '+iso_()});
+    append_(P12.SHEETS.ART,{'Application ID':appId,'Resume Version ID':version,'Artifact Type':'ApprovalReceipt','Drive File ID':docId,'Content Hash':contentHash,'Input Hash':actor,'Created At':now_(),'Status':'Ready','Notes':JSON.stringify({approvedAt:iso_(),renderer:renderer})});
     approval=p06Artifact_(appId,version,'ApprovalReceipt');
     if(!approval||approval['Content Hash']!==contentHash||approval['Input Hash']!==actor||!approval['Notes'])throw new Error('DETERMINISTIC:P06_APPROVAL_READBACK');
   }
@@ -54,7 +61,7 @@ function p06PublishApprovedPdf_(appId,event){
     try{
       if(hash_(DocumentApp.openById(docId).getBody().getText())!==contentHash)throw new Error('DETERMINISTIC:P06_DOCUMENT_CHANGED_DURING_PUBLICATION');
       const pdfHash=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,pdf.getBlob().getBytes()).map(b=>('0'+((b+256)%256).toString(16)).slice(-2)).join('');
-      append_(P12.SHEETS.ART,{'Application ID':appId,'Resume Version ID':version,'Artifact Type':'OfficialPDF','Drive File ID':pdf.getId(),'URL':pdf.getUrl(),'Content Hash':pdfHash,'Input Hash':contentHash,'Created At':now_(),'Status':'Ready','Notes':'Published only after approval receipt'});
+      append_(P12.SHEETS.ART,{'Application ID':appId,'Resume Version ID':version,'Artifact Type':'OfficialPDF','Drive File ID':pdf.getId(),'URL':pdf.getUrl(),'Content Hash':pdfHash,'Input Hash':contentHash,'Created At':now_(),'Status':'Ready','Notes':renderer});
       official=p06Artifact_(appId,version,'OfficialPDF');
       if(!official||official['Drive File ID']!==pdf.getId()||official['Content Hash']!==pdfHash)throw new Error('DETERMINISTIC:P06_PDF_READBACK');
     }catch(e){pdf.setTrashed(true);throw e;}
