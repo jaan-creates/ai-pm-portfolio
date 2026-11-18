@@ -41,6 +41,44 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  release-readiness-probe:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check release credential availability
+        shell: bash
+        run: test -n "$CLASPRC_JSON" && test -n "$CLASP_JSON"
+      - name: Install release CLI
+        run: npm install --global @google/clasp@3.4.1
+      - name: Pull live preimage without mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p .janu-readonly
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > .janu-readonly/.clasp.json
+          (cd .janu-readonly && clasp pull)
+          node startup-track/projects/2-janu-job-copilot/scripts/validate-release.mjs .janu-readonly
+      - name: Probe live script execution authority without worker mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd .janu-readonly && clasp --json run diagnoseTriggersPhase1_2 --params '[]') > /tmp/janu-readonly-probe.json
+          node - <<'NODE'
+          const fs=require('fs'),raw=fs.readFileSync('/tmp/janu-readonly-probe.json','utf8');
+          let result;try{result=JSON.parse(raw)}catch{throw Error('Release credential cannot execute the read-only live diagnostic')}
+          if(result.error||!result.response||!result.response.counts)throw Error('Read-only live diagnostic returned no trigger evidence');
+          console.log('Release credential pulled live source and read trigger topology successfully');
+          NODE
   deploy-production:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["main","janu-job-copilot/apps-script-ci","janu-job-copilot/p1a-release"]'), github.ref_name) && inputs.verify_run == '' && inputs.verify_attempt == '' && inputs.verify_hash == '')
     runs-on: ubuntu-latest
@@ -158,6 +196,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-post-worker-timeout.mjs" "$LIVE_DIR"
       - name: Hold interrupted queue work with unknown side effects
         run: node "$PROJECT_DIR/scripts/patch-stale-queue-hold.mjs" "$LIVE_DIR"
+      - name: Hold worker errors with unknown side effects and honor retry due time
+        run: node "$PROJECT_DIR/scripts/patch-queue-worker-uncertainty.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
         run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
       - name: Stamp the candidate for independent runtime comparison
