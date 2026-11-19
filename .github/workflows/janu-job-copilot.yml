@@ -209,6 +209,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-post-worker-timeout.mjs" "$LIVE_DIR"
       - name: Hold interrupted queue work with unknown side effects
         run: node "$PROJECT_DIR/scripts/patch-stale-queue-hold.mjs" "$LIVE_DIR"
+      - name: Verify stale lease outcomes cannot silently cancel uncertain work
+        run: node "$PROJECT_DIR/scripts/test-stale-queue-hold.mjs"
       - name: Hold worker errors with unknown side effects and honor retry due time
         run: node "$PROJECT_DIR/scripts/patch-queue-worker-uncertainty.mjs" "$LIVE_DIR"
       - name: Age eligible queue work to prevent application starvation

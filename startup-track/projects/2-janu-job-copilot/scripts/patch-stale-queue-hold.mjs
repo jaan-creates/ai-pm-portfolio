@@ -13,21 +13,18 @@ if(!s.includes(marker)){
   const lock=p04TrackedScriptLock_();if(!lock.tryLock(5000))throw new Error('temporarily unavailable P04 recovery lock');
   try{
   const s=SH_(JC.S.Q);if(s.getLastRow()<2)return{requeued:0,cancelled:0,held:0};
-  const v=s.getRange(2,1,s.getLastRow()-1,16).getValues();let cx=0,held=0;
+  const v=s.getRange(2,1,s.getLastRow()-1,16).getValues();let held=0;
   for(let i=0;i<v.length;i++){
     if(String(v[i][3]||'')!=='running')continue;
     const app=String(v[i][1]||''),type=String(v[i][2]||''),payload=v[i][13]?(()=>{try{return JSON.parse(v[i][13]);}catch(e){return{};}})():{};
     const needed=queueJobFresh_(app,type,payload,String(v[i][5]||'')),act=staleLeaseDecision_(v[i][3],v[i][9],v[i][6],v[i][7],needed),row=i+2;
-    if(act==='requeue'){
+    if(act==='requeue'||act==='cancel'){
       /* ${marker}: worker may have committed an external side effect before interruption. */
       s.getRange(row,4).setValue('recovery_hold');s.getRange(row,12).setValue('STALE_LEASE_OUTCOME_UNKNOWN');
       s.getRange(row,13).setValue('Worker outcome is uncertain after interruption. Reconcile side effects before explicit replay.');s.getRange(row,16).setValue(now_());held++;
-    }else if(act==='cancel'){
-      s.getRange(row,4).setValue('cancelled');s.getRange(row,11).setValue(now_());s.getRange(row,12).setValue('STALE_LEASE_CANCELLED');
-      s.getRange(row,13).setValue('Running lease exceeded 15 minutes and work is no longer current or attempts exhausted.');s.getRange(row,16).setValue(now_());cx++;
     }
   }
-  return{requeued:0,cancelled:cx,held:held};
+  return{requeued:0,cancelled:0,held:held};
   }finally{lock.releaseLock();}
 }`;
   s=s.slice(0,start)+replacement+s.slice(end);

@@ -17,7 +17,7 @@ function harness() {
   const rows = [headers, ['Q-1', 'APP-1', 'PDF_CAPTURE', 'queued', 'input-hash', 'idem-1', 0, 3, new Date(0), '', '', '', '', JSON.stringify({fileId: 'F-1'}), new Date(0), new Date(0)]];
   const receipts = new Map();
   const properties = new Map();
-  let workerCalls = 0, failSuccessWrite = false, failReceiptWrite = false, lockHeld = false, budgetFailure = false, workerThrows = false, workerErrorKind = 'TRANSIENT', circuitOpened = false, clockMs = 100000;
+  let workerCalls = 0, failSuccessWrite = false, failReceiptWrite = false, lockHeld = false, budgetFailure = false, budgetErrorMessage = 'transient budget precheck', workerThrows = false, workerErrorKind = 'TRANSIENT', workerErrorMessage = 'worker failed after side effect', circuitOpened = false, queueFresh = true, clockMs = 100000;
   const sheet = {
     getLastRow: () => rows.length,
     getRange: (row, col) => ({
@@ -36,11 +36,12 @@ function harness() {
     now_: () => new Date(clockMs), hash_: value => 'hash:' + String(value),
     P_: () => ({getProperty: key => properties.get(key) || '', setProperty: (key, value) => properties.set(key, value)}),
     circuitOpen_: () => circuitOpened, rendererCanarySemanticFreshOverride_: () => false,
-    queueJobFresh_: () => true, rendererQuarantineBlocks_: () => false,
-    workerPDF_: () => {workerCalls++; if (workerThrows) throw Error('worker failed after side effect'); return {fileId: 'F-1'};},
+    queueJobFresh_: () => queueFresh, rendererQuarantineBlocks_: () => false,
+    parseDateish_: value => new Date(value),
+    workerPDF_: () => {workerCalls++; if (workerThrows) throw Error(workerErrorMessage); return {fileId: 'F-1'};},
     workerJD_: () => {}, workerScore_: () => {}, workerCompany_: () => {}, workerContacts_: () => {},
     workerResume_: () => {}, workerArtifactMigrate_: () => {}, workerQA_: () => {},
-    budgetGuard_: () => {if (budgetFailure) throw Error('transient budget precheck');},
+    budgetGuard_: () => {if (budgetFailure) throw Error(budgetErrorMessage);},
     backoffAt_: () => new Date(clockMs + 100000), find_: () => null,
     upsertWorkerState_: (key, value) => {if (failReceiptWrite && key.startsWith('p04_queue_completion_')) {failReceiptWrite = false; throw Error('worker state outage');} receipts.set(key, value);},
     rendererWorkerStateValue_: key => receipts.get(key) || '',
@@ -52,8 +53,8 @@ function harness() {
     closeCircuit_: () => {circuitOpened = false;}, openCircuit_: () => {circuitOpened = true;}, classifyError_: () => ({kind: workerErrorKind, code: workerErrorKind + '_WRITE'}),
     p04TrackedScriptLock_: () => lock,
   });
-  for (const name of ['p04RunQCore_', 'p04CompletionReceiptMatches_', 'p04RecordContactWitness_', 'p04ContactWitnessMatches_', 'inspectRecoveryHeldQueueJob', 'reconcileRecoveryHeldQueueJob', 'workerContacts_']) vm.runInContext(functionText(name), context);
-  return {context, rows, receipts, properties, get calls() {return workerCalls;}, get circuitOpen() {return circuitOpened;}, restoreDependency() {circuitOpened = false;}, failNextSuccessWrite() {failSuccessWrite = true;}, failNextReceiptWrite() {failReceiptWrite = true;}, failBudgetPrecheck() {budgetFailure = true;}, failWorkerAs(kind) {workerThrows = true; workerErrorKind = kind;}, advanceClock(ms) {clockMs += ms;}, holdLock() {lockHeld = true;}, releaseLock() {lockHeld = false;}};
+  for (const name of ['p04RunQCore_', 'p04CompletionReceiptMatches_', 'p04RecordContactWitness_', 'p04ContactWitnessMatches_', 'inspectRecoveryHeldQueueJob', 'reconcileRecoveryHeldQueueJob', 'workerContacts_', 'staleLeaseDecision_', 'recoverStaleQueueLeases_']) vm.runInContext(functionText(name), context);
+  return {context, rows, receipts, properties, get calls() {return workerCalls;}, get circuitOpen() {return circuitOpened;}, restoreDependency() {circuitOpened = false;}, openDependencyCircuit() {circuitOpened = true;}, setFresh(value) {queueFresh = value;}, failNextSuccessWrite() {failSuccessWrite = true;}, failNextReceiptWrite() {failReceiptWrite = true;}, failBudgetPrecheck(message = 'transient budget precheck') {budgetFailure = true; budgetErrorMessage = message;}, failWorkerAs(kind, message = 'worker failed after side effect') {workerThrows = true; workerErrorKind = kind; workerErrorMessage = message;}, useRealClassifier() {vm.runInContext(functionText('classifyError_'), context);}, advanceClock(ms) {clockMs += ms;}, holdLock() {lockHeld = true;}, releaseLock() {lockHeld = false;}};
 }
 
 test('post-worker completion-write failure closes only from matching durable receipt', () => {
@@ -190,4 +191,91 @@ test('pre-worker transient failure retries only when due and stops at maximum at
   assert.throws(() => h.context.p04RunQCore_(2), /transient budget precheck/);
   assert.equal(h.rows[1][6], 3); assert.equal(h.rows[1][3], 'failed');
   assert.equal(h.calls, 0); assert.equal(h.receipts.size, 0);
+});
+
+test('post-worker timeout, rate limit, quota and deterministic faults remain held after dependency restoration', () => {
+  for (const [message, expectedCode, opensCircuit] of [
+    ['provider timed out after write', 'TRANSIENT_PROVIDER', false],
+    ['OpenAI 429: rate limit', 'TRANSIENT_PROVIDER', false],
+    ['OpenAI 429: insufficient_quota', 'PROVIDER_ACCOUNT', true],
+    ['DETERMINISTIC:bad output schema', 'CODE_OR_SCHEMA', false],
+  ]) {
+    const h = harness();
+    h.useRealClassifier();
+    h.failWorkerAs('unused', message);
+    assert.throws(() => h.context.p04RunQCore_(2), /./, message);
+    assert.equal(h.rows[1][3], 'recovery_hold', message);
+    assert.equal(h.rows[1][11], 'WORKER_OUTCOME_UNKNOWN', message);
+    assert.match(String(h.rows[1][12]), new RegExp(expectedCode), message);
+    assert.equal(h.circuitOpen, opensCircuit, message);
+    h.restoreDependency();
+    h.advanceClock(600000);
+    assert.equal(h.context.p04RunQCore_(2), 0, message);
+    assert.equal(h.context.reconcileRecoveryHeldQueueJob('Q-1').status, 'recovery_hold', message);
+    assert.equal(h.calls, 1, message);
+  }
+});
+
+test('pre-worker rate limit backs off, while global outage stops admission and opens circuit', () => {
+  const rate = harness();
+  rate.useRealClassifier();
+  rate.rows[1][2] = 'JD_PARSE_SCORE_MAP';
+  rate.failBudgetPrecheck('OpenAI 429: rate limit');
+  assert.throws(() => rate.context.p04RunQCore_(2), /rate limit/);
+  assert.equal(rate.rows[1][3], 'queued');
+  assert.equal(rate.rows[1][6], 1);
+  assert.equal(rate.context.p04RunQCore_(2), 0);
+  assert.equal(rate.calls, 0);
+  rate.advanceClock(100000);
+  assert.throws(() => rate.context.p04RunQCore_(2), /rate limit/);
+  assert.equal(rate.rows[1][6], 2);
+
+  const quota = harness();
+  quota.useRealClassifier();
+  quota.rows[1][2] = 'JD_PARSE_SCORE_MAP';
+  quota.failBudgetPrecheck('OpenAI 429: insufficient_quota');
+  assert.throws(() => quota.context.p04RunQCore_(2), /insufficient_quota/);
+  assert.equal(quota.rows[1][3], 'failed');
+  assert.equal(quota.circuitOpen, true);
+  assert.equal(quota.calls, 0);
+  quota.rows[1][3] = 'queued';
+  assert.throws(() => quota.context.p04RunQCore_(2), /WORKER_RUNTIME_CIRCUIT_OPEN/);
+  assert.equal(quota.rows[1][6], 1);
+  assert.equal(quota.calls, 0);
+});
+
+test('completion receipt requires exact attempt and job identity before closing an outage hold', () => {
+  const h = harness();
+  h.failNextSuccessWrite();
+  assert.throws(() => h.context.p04RunQCore_(2), /completion status write lost/);
+  const key = 'p04_queue_completion_Q-1';
+  const receipt = JSON.parse(h.receipts.get(key));
+  for (const changed of [{attempt: receipt.attempt + 1}, {idempotencyKey: 'other-key'}, {resultHash: ''}]) {
+    h.receipts.set(key, JSON.stringify({...receipt, ...changed}));
+    assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-1').proof, 'NO_MATCHING_COMPLETION_RECEIPT');
+    assert.equal(h.context.reconcileRecoveryHeldQueueJob('Q-1').status, 'recovery_hold');
+    assert.equal(h.calls, 1);
+  }
+  h.receipts.set(key, JSON.stringify(receipt));
+  assert.equal(h.context.reconcileRecoveryHeldQueueJob('Q-1').status, 'succeeded');
+  assert.equal(h.calls, 1);
+});
+
+test('expired running lease stays held at retry limit or when current work became stale', () => {
+  for (const [attempt, fresh] of [[3, true], [1, false]]) {
+    const h = harness();
+    h.rows[1][3] = 'running';
+    h.rows[1][6] = attempt;
+    h.rows[1][9] = new Date(0);
+    h.setFresh(fresh);
+    h.advanceClock(1000000);
+    const result = h.context.recoverStaleQueueLeases_();
+    assert.equal(result.held, 1);
+    assert.equal(result.cancelled, 0);
+    assert.equal(h.rows[1][3], 'recovery_hold');
+    assert.equal(h.rows[1][11], 'STALE_LEASE_OUTCOME_UNKNOWN');
+    assert.equal(h.context.p04RunQCore_(2), 0);
+    assert.equal(h.context.reconcileRecoveryHeldQueueJob('Q-1').status, 'recovery_hold');
+    assert.equal(h.calls, 0);
+  }
 });

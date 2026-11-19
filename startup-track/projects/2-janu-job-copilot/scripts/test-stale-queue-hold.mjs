@@ -21,6 +21,14 @@ function livePreflightPhase1_2_(){const qa=activeQueueAudit_(),issues=[];if(qa.s
     const result=context.recoverStaleQueueLeases_();assert.equal(result.held,1);assert.equal(result.requeued,0);
     assert.equal(held,false);assert.equal(rows[1][3],'recovery_hold');assert.equal(rows[2][3],'queued');assert.equal(context.duplicate(rows,1),true);assert.equal(context.pdfFileState_().active,true);
     assert.equal(context.activeQueueAudit_().recoveryHold,1);assert.equal(context.livePreflightPhase1_2_().ok,false);
+    for(const reason of ['attempts exhausted','work no longer needed']){
+      rows[1][3]='running';context.staleLeaseDecision_=()=> 'cancel';
+      const uncertain=context.recoverStaleQueueLeases_();
+      assert.equal(uncertain.held,1,reason);assert.equal(uncertain.cancelled,0,reason);
+      assert.equal(rows[1][3],'recovery_hold',reason);
+      assert.equal(rows[1][11],'STALE_LEASE_OUTCOME_UNKNOWN',reason);
+      assert.equal(context.duplicate(rows,1),true,reason);
+    }
     execFileSync(process.execPath,[patch,dir]);assert.equal(fs.readFileSync(file,'utf8'),source);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
