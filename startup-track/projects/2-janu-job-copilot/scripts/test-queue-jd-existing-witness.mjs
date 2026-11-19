@@ -51,6 +51,7 @@ function harness(mode='existing'){
     p04ContactWitnessMatches_:()=>false,p04CompanyWitnessMatches_:()=>false,
     p04JdRecoveredWitnessMatches_:()=>false,
     p04JdClosedWitnessMatches_:()=>false,
+    p04ScoreWitnessMatches_:()=>false,
     p04RecordJdClosedWitness_:()=>{},
     p04TrackedScriptLock_:()=>({tryLock:()=>true,releaseLock:()=>{}}),
   });

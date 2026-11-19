@@ -48,6 +48,7 @@ function harness() {
     p04JdExistingWitnessMatches_: () => false,
     p04JdRecoveredWitnessMatches_: () => false,
     p04JdClosedWitnessMatches_: () => false,
+    p04ScoreWitnessMatches_: () => false,
     closeCircuit_: () => {circuitOpened = false;}, openCircuit_: () => {circuitOpened = true;}, classifyError_: () => ({kind: workerErrorKind, code: workerErrorKind + '_WRITE'}),
     p04TrackedScriptLock_: () => lock,
   });
