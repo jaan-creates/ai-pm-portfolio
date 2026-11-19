@@ -213,6 +213,10 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-queue-worker-uncertainty.mjs" "$LIVE_DIR"
       - name: Age eligible queue work to prevent application starvation
         run: node "$PROJECT_DIR/scripts/patch-queue-fairness.mjs" "$LIVE_DIR"
+      - name: Prevent continuation from duplicating recovery-held work
+        run: node "$PROJECT_DIR/scripts/patch-queue-hold-admission.mjs" "$LIVE_DIR"
+      - name: Verify held work cannot be admitted twice
+        run: node "$PROJECT_DIR/scripts/test-queue-hold-admission.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
         run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
       - name: Stamp the candidate for independent runtime comparison
