@@ -23,10 +23,18 @@ function p04RunQCore_(r){
     execFileSync(process.execPath,[patch,dir]);const source=fs.readFileSync(file,'utf8');
     const rows=[Array(16).fill(''),['Q-1','APP','PDF_CAPTURE','queued','','',0,3,new Date(100000),'','','','','',new Date(0),new Date(0)]];
     const sheet={getRange(row,col){return{getDisplayValue:()=>String(rows[row-1][col-1]),getValue:()=>rows[row-1][col-1],setValue:v=>{rows[row-1][col-1]=v;}};}};
-    let sideEffects=0;const context=vm.createContext({SH_:()=>sheet,now_:()=>new Date(0),workerJD_:()=>{},workerPDF_:()=>{sideEffects++;throw Error('HTTP 429 temporary');},classifyError_:()=>({kind:'TRANSIENT',code:'TRANSIENT_PROVIDER'}),openCircuit_:()=>{},learnRuntimeFailure_:()=>{}});
+    let sideEffects=0,errorKind='TRANSIENT';const context=vm.createContext({SH_:()=>sheet,now_:()=>new Date(0),workerJD_:()=>{},workerPDF_:()=>{sideEffects++;throw Error('worker threw after side effect');},classifyError_:()=>({kind:errorKind,code:errorKind+'_PROVIDER'}),openCircuit_:()=>{},learnRuntimeFailure_:()=>{}});
     vm.runInContext(source,context);assert.equal(context.p04RunQCore_(2),0);assert.equal(sideEffects,0);
-    rows[1][8]=new Date(0);assert.throws(()=>context.p04RunQCore_(2),/HTTP 429/);assert.equal(rows[1][3],'recovery_hold');
+    rows[1][8]=new Date(0);assert.throws(()=>context.p04RunQCore_(2),/worker threw after side effect/);assert.equal(rows[1][3],'recovery_hold');
     assert.equal(rows[1][11],'WORKER_OUTCOME_UNKNOWN');assert.equal(context.p04RunQCore_(2),0);assert.equal(sideEffects,1);
+    for(const kind of ['USER','GLOBAL','DETERMINISTIC']){
+      rows[1][3]='queued';errorKind=kind;
+      assert.throws(()=>context.p04RunQCore_(2),/worker threw after side effect/);
+      assert.equal(rows[1][3],'recovery_hold',kind+' worker outcome must remain held');
+      assert.equal(rows[1][11],'WORKER_OUTCOME_UNKNOWN');
+      assert.equal(context.p04RunQCore_(2),0,'held job must not run again');
+    }
+    assert.equal(sideEffects,4);
     execFileSync(process.execPath,[patch,dir]);assert.equal(fs.readFileSync(file,'utf8'),source);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });

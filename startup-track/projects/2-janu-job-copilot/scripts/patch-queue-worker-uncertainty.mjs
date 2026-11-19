@@ -11,7 +11,7 @@ if(!s.includes(marker)){
     ["s.getRange(r,16).setValue(started);\n  try{","s.getRange(r,16).setValue(started);\n  let __p04WorkerEntered=false;try{"],
     ["    ({JD_RETRIEVE:workerJD_","    __p04WorkerEntered=true;({JD_RETRIEVE:workerJD_"],
     ["const c=classifyError_(e),detail=String(e.stack||e).slice(0,4000);s.getRange(r,12).setValue(c.code);s.getRange(r,13).setValue(detail);",
-     "const c=classifyError_(e),detail=String(e.stack||e).slice(0,4000);s.getRange(r,12).setValue(c.code);s.getRange(r,13).setValue(detail);if(__p04WorkerEntered&&c.kind!=='USER'){/* "+marker+" */s.getRange(r,4).setValue('recovery_hold');s.getRange(r,12).setValue('WORKER_OUTCOME_UNKNOWN');s.getRange(r,13).setValue(c.code+': '+detail);try{if(c.kind==='GLOBAL')openCircuit_(/BUDGET/.test(c.code)?'Budget':'OpenAI',c.code,detail);if(c.kind==='DETERMINISTIC')learnRuntimeFailure_(app,type,c.code,detail,qid);}catch(__p04HoldTelemetryError){}throw e;}"],
+     "const c=classifyError_(e),detail=String(e.stack||e).slice(0,4000);s.getRange(r,12).setValue(c.code);s.getRange(r,13).setValue(detail);if(__p04WorkerEntered){/* "+marker+" */s.getRange(r,4).setValue('recovery_hold');s.getRange(r,12).setValue('WORKER_OUTCOME_UNKNOWN');s.getRange(r,13).setValue(c.code+': '+detail);try{if(c.kind==='GLOBAL')openCircuit_(/BUDGET/.test(c.code)?'Budget':'OpenAI',c.code,detail);if(c.kind==='DETERMINISTIC')learnRuntimeFailure_(app,type,c.code,detail,qid);}catch(__p04HoldTelemetryError){}throw e;}"],
   ];
   for(const [before,after] of replacements){if(s.split(before).length-1!==1)throw new Error('Queue worker anchor not recognized: '+before.slice(0,90));s=s.replace(before,after);}
 }
