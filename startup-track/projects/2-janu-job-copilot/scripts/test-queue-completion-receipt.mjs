@@ -44,6 +44,7 @@ function harness() {
     backoffAt_: () => new Date(clockMs + 100000), find_: () => null,
     upsertWorkerState_: (key, value) => {if (failReceiptWrite && key.startsWith('p04_queue_completion_')) {failReceiptWrite = false; throw Error('worker state outage');} receipts.set(key, value);},
     rendererWorkerStateValue_: key => receipts.get(key) || '',
+    p04CompanyWitnessMatches_: () => false,
     closeCircuit_: () => {circuitOpened = false;}, openCircuit_: () => {circuitOpened = true;}, classifyError_: () => ({kind: workerErrorKind, code: workerErrorKind + '_WRITE'}),
     p04TrackedScriptLock_: () => lock,
   });
