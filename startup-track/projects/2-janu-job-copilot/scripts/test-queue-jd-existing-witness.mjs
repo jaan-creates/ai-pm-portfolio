@@ -13,6 +13,7 @@ function harness(mode='existing'){
   const queueHeaders=['Queue Job ID','Application ID','Worker Type','Status','Input Hash','Idempotency Key','Attempts','Max Attempts','Next Run At','Started At','Finished At','Error Code','Error Detail','Payload Ref','Created At','Updated At'];
   const appHeaders=['Application ID','Company','Role','Canonical Apply URL','JD Completeness %','Status','Decision','Blocker Category','Exact Input Needed'];
   const jdHeaders=['JD Snapshot ID','Application ID','Completeness %','Snapshot Status','JD Text / Document Link'];
+  const artifactHeaders=['Application ID','JD Snapshot ID','Artifact Type','Drive File ID','Content Hash','Status'];
   const tables=new Map();
   function sheet(name,headers,initial=[]){const rows=[headers,...initial];const out={rows,getLastRow:()=>rows.length,getLastColumn:()=>headers.length,
     getRange(row,col,height=1,width=1){return{
@@ -25,11 +26,12 @@ function harness(mode='existing'){
   const queue=sheet('Queue',queueHeaders,[['Q-JD','APP-1','JD_RETRIEVE','queued','input-hash','idem-1',0,3,new Date(0),'','','','',JSON.stringify({}),new Date(0),new Date(0)]]);
   const app=sheet('Applications',appHeaders,[['APP-1','Example Co','Product Manager','https://example.invalid/job',mode==='existing'?90:0,'New','Apply','','']]);
   const jd=sheet('JD Snapshots',jdHeaders,mode==='existing'?[['JD-1','APP-1',90,'Verified Full JD','full JD']]:[]);
+  const jdArtifacts=sheet('JD Artifacts',artifactHeaders,mode==='existing'?[['APP-1','JD-1','StructuredJD','FILE-1','hash-1','Active']]:[]);
   const receipts=new Map();let artifact=mode==='existing'?{title:'Product Manager',completeness:90}:null,failReceipt=false,failAppWrite=false,failScore=false;
   const find=(name,id,head='Application ID')=>{const rows=tables.get(name).rows,ix=rows[0].indexOf(head),index=rows.findIndex((r,i)=>i>0&&String(r[ix]??'')===String(id));return index>0?index+1:null;};
   const readObj=(s,row)=>Object.fromEntries(s.rows[0].map((h,i)=>[h,s.rows[row-1][i]??'']));
   const context=vm.createContext({
-    JC:{S:{Q:'Queue',A:'Applications',JD:'JD Snapshots'},W:{JD:'JD_RETRIEVE',SCORE:'JD_PARSE_SCORE_MAP'},RETRIES:3},P12:{MAX_JOB_RUNTIME_MS:100000},
+    JC:{S:{Q:'Queue',A:'Applications',JD:'JD Snapshots'},W:{JD:'JD_RETRIEVE',SCORE:'JD_PARSE_SCORE_MAP'},RETRIES:3},P12:{MAX_JOB_RUNTIME_MS:100000,SHEETS:{JDART:'JD Artifacts'}},
     SH_:name=>tables.get(name),hm_:s=>Object.fromEntries(s.rows[0].map((h,i)=>[h,i+1])),find_:find,obj_:readObj,
     set_:(name,row,values)=>{if(failAppWrite&&name==='Applications'&&values.Status==='Scoring'){failAppWrite=false;throw Error('application write lost');}const s=tables.get(name);for(const [key,value] of Object.entries(values)){const col=s.rows[0].indexOf(key);if(col>=0)s.rows[row-1][col]=value;}},
     now_:()=>new Date(100000),hash_:value=>crypto.createHash('sha256').update(String(value)).digest('hex'),
@@ -50,7 +52,7 @@ function harness(mode='existing'){
     p04TrackedScriptLock_:()=>({tryLock:()=>true,releaseLock:()=>{}}),
   });
   for(const name of ['p04RunQCore_','p04CompletionReceiptMatches_','p04JdExistingOutputHash_','p04RecordJdExistingWitness_','p04JdExistingWitnessMatches_','inspectRecoveryHeldQueueJob','reconcileRecoveryHeldQueueJob','workerJD_'])vm.runInContext(functionText(name),context);
-  return{context,queue,app,jd,receipts,get artifact(){return artifact;},setArtifact:value=>{artifact=value;},loseReceipt(){failReceipt=true;},loseAppWrite(){failAppWrite=true;},loseScore(){failScore=true;}};
+  return{context,queue,app,jd,jdArtifacts,receipts,get artifact(){return artifact;},setArtifact:value=>{artifact=value;},loseReceipt(){failReceipt=true;},loseAppWrite(){failAppWrite=true;},loseScore(){failScore=true;}};
 }
 
 test('saved JD, snapshot, application and score admission recover a lost receipt without replay',()=>{
@@ -66,7 +68,8 @@ test('changed artifact, snapshot, score admission or queue identity keeps saved 
   const h=harness();h.loseReceipt();assert.throws(()=>h.context.p04RunQCore_(2),/completion receipt lost/);
   h.setArtifact({title:'Changed',completeness:90});assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-JD').proof,'NO_MATCHING_COMPLETION_RECEIPT');
   h.setArtifact({title:'Product Manager',completeness:90});h.jd.rows[1][4]='changed';assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-JD').proof,'NO_MATCHING_COMPLETION_RECEIPT');
-  h.jd.rows[1][4]='full JD';h.queue.rows[2][4]='changed';assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-JD').proof,'NO_MATCHING_COMPLETION_RECEIPT');
+  h.jd.rows[1][4]='full JD';h.jdArtifacts.rows[1][3]='OTHER-FILE';assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-JD').proof,'NO_MATCHING_COMPLETION_RECEIPT');
+  h.jdArtifacts.rows[1][3]='FILE-1';h.queue.rows[2][4]='changed';assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-JD').proof,'NO_MATCHING_COMPLETION_RECEIPT');
   h.queue.rows[2][4]='score-input';h.queue.rows[1][6]=99;assert.equal(h.context.reconcileRecoveryHeldQueueJob('Q-JD').status,'recovery_hold');
 });
 
