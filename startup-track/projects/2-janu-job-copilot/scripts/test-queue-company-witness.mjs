@@ -52,6 +52,7 @@ function harness(){
     upsertWorkerState_:(key,value)=>{if(failReceipt&&key.startsWith('p04_queue_completion_')){failReceipt=false;throw Error('completion receipt lost');}receipts.set(key,value);},
     rendererWorkerStateValue_:key=>receipts.get(key)||'',
     p04ContactWitnessMatches_:()=>false,
+    p04JdExistingWitnessMatches_:()=>false,
     p04TrackedScriptLock_:()=>({tryLock:()=>true,releaseLock:()=>{}}),
   });
   for(const name of ['p04RunQCore_','p04CompletionReceiptMatches_','p04CompanyOutputHash_','p04RecordCompanyWitness_','p04CompanyWitnessMatches_','inspectRecoveryHeldQueueJob','reconcileRecoveryHeldQueueJob','workerCompany_'])vm.runInContext(functionText(name),context);
