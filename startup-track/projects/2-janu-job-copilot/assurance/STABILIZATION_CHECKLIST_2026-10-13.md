@@ -689,3 +689,14 @@ The current pending gates are therefore:
 - [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
 
 **Decision:** Latest sourcing execution is healthy at the cycle level, but scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
+
+
+## 2026-11-19 scheduled-cycle and health-publisher divergence
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261119-0845-DAILY-01` succeeded 09:05–09:06 IST as a durable bounded no-op: 7 raw roles, 0 qualified, 4 duplicates/reidentifications rejected, 0 promoted, 3 excluded, 0 errors. It audited 130 populated Applications and made no Applications or Sources Inbox write.
+- [x] **Identity-quality evidence:** CodeRabbit was matched using vacancy verification URL/evidence hash despite historical shifted columns; Jobgether was recognized as a recruiter mirror of an existing CertifyOS vacancy. This is a positive identity-control case, not a new application.
+- [x] **Health-publisher divergence:** `__System Health` was updated 2026-11-19 but reports last success 2026-11-02 and `SOURCING_SCHEDULER_STALE`, while `__Sourcing Runs` contains successful scheduled runs through Nov 19. The health publisher is therefore not reconciling the authoritative sourcing ledger and cannot be treated as a current scheduler-health signal.
+- [ ] **Current scheduler closure:** Preserve the open circuit until the health computation is repaired and independently read back against expected-date scheduled rows, including successful no-op cycles. Do not clear the incident merely because the worker continues to run.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** Scheduled sourcing continues to execute correctly at the cycle level, but the control-plane health publisher has a confirmed reconciliation defect. Overall scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
