@@ -16,7 +16,7 @@ export function canonicalDeployment(deployments) {
   return one;
 }
 
-export function createController({ invoke, read, write }) {
+export function createController({ invoke, read, write, pause = () => {} }) {
   const deployments = () => canonicalDeployment(invoke('list-deployments'));
   const state = file => {
     const value = read(file);
@@ -27,6 +27,17 @@ export function createController({ invoke, read, write }) {
   };
   const same = (actual, saved) => {
     if (actual.deploymentId !== saved.deploymentId || actual.description !== saved.description) throw new Error('Canonical deployment identity changed');
+  };
+  const settled = (saved, expected, label) => {
+    let consecutive = 0;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const current = deployments();
+      same(current, saved);
+      consecutive = current.versionNumber === expected ? consecutive + 1 : 0;
+      if (consecutive === 2) return current;
+      if (attempt < 7) pause(1000);
+    }
+    throw new Error(`Canonical pin ${label} readback mismatch after bounded retries`);
   };
   return {
     snapshot(file) {
@@ -45,29 +56,29 @@ export function createController({ invoke, read, write }) {
       saved.newVersion = result.versionNumber;
       write(file,saved); // Persist before attempting a network mutation whose response may be lost.
       invoke('update-deployment',saved.deploymentId,'--versionNumber',String(saved.newVersion),'--description',saved.description);
-      const after = deployments();
-      same(after,saved);
-      if (after.versionNumber !== saved.newVersion) throw new Error('Canonical pin promotion readback mismatch');
+      settled(saved,saved.newVersion,'promotion');
       saved.promoted = true;
       write(file,saved);
       return {status:'PROMOTED',previousVersion:saved.previousVersion,newVersion:saved.newVersion};
     },
     verify(file) {
-      const saved = state(file), current = deployments();
-      same(current,saved);
-      if (!Number.isSafeInteger(saved.newVersion) || current.versionNumber !== saved.newVersion) throw new Error('Canonical pin readback mismatch');
-      return {status:'VERIFIED',version:current.versionNumber};
+      const saved = state(file);
+      if (!Number.isSafeInteger(saved.newVersion)) throw new Error('Canonical pin readback mismatch');
+      settled(saved,saved.newVersion,'verification');
+      return {status:'VERIFIED',version:saved.newVersion};
     },
     rollback(file) {
       const saved = state(file), current = deployments();
       same(current,saved);
-      if (current.versionNumber === saved.previousVersion) return {status:'ALREADY_PREVIOUS',version:saved.previousVersion};
-      if (!Number.isSafeInteger(saved.newVersion) || current.versionNumber !== saved.newVersion) throw new Error('Unexpected external pin change; manual recovery required');
+      if (!Number.isSafeInteger(saved.newVersion)) {
+        if (current.versionNumber !== saved.previousVersion) throw new Error('Unexpected external pin change; manual recovery required');
+        return {status:'ALREADY_PREVIOUS',version:saved.previousVersion};
+      }
+      if (current.versionNumber !== saved.previousVersion && current.versionNumber !== saved.newVersion) throw new Error('Unexpected external pin change; manual recovery required');
+      // Always write the previous version: a stale read can say "previous" after a successful but delayed promotion.
       invoke('update-deployment',saved.deploymentId,'--versionNumber',String(saved.previousVersion),'--description',saved.description);
-      const after = deployments();
-      same(after,saved);
-      if (after.versionNumber !== saved.previousVersion) throw new Error('Canonical pin rollback readback mismatch');
-      return {status:'ROLLED_BACK',version:after.versionNumber};
+      settled(saved,saved.previousVersion,'rollback');
+      return {status:'ROLLED_BACK',version:saved.previousVersion};
     },
   };
 }
@@ -87,6 +98,7 @@ if (process.argv[1] && path.resolve(fileURLToPath(import.meta.url)) === path.res
     invoke:clasp,
     read:p=>JSON.parse(fs.readFileSync(p,'utf8')),
     write:(p,v)=>fs.writeFileSync(p,JSON.stringify(v),{encoding:'utf8',mode:0o600}),
+    pause:ms=>Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,ms),
   });
   console.log(JSON.stringify(controller[command](file,...rest)));
 }
