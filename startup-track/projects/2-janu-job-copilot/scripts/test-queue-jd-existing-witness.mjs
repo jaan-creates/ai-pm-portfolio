@@ -49,6 +49,7 @@ function harness(mode='existing'){
     upsertWorkerState_:(key,value)=>{if(failReceipt&&key.startsWith('p04_queue_completion_')){failReceipt=false;throw Error('completion receipt lost');}receipts.set(key,value);},
     rendererWorkerStateValue_:key=>receipts.get(key)||'',
     p04ContactWitnessMatches_:()=>false,p04CompanyWitnessMatches_:()=>false,
+    p04JdRecoveredWitnessMatches_:()=>false,
     p04TrackedScriptLock_:()=>({tryLock:()=>true,releaseLock:()=>{}}),
   });
   for(const name of ['p04RunQCore_','p04CompletionReceiptMatches_','p04JdExistingOutputHash_','p04RecordJdExistingWitness_','p04JdExistingWitnessMatches_','inspectRecoveryHeldQueueJob','reconcileRecoveryHeldQueueJob','workerJD_'])vm.runInContext(functionText(name),context);
@@ -77,8 +78,8 @@ test('partial score admission or application write leaves no JD witness',()=>{
   for(const failure of ['loseScore','loseAppWrite']){const h=harness();h[failure]();assert.throws(()=>h.context.p04RunQCore_(2));assert.equal(h.queue.rows[1][3],'recovery_hold');assert.equal(h.receipts.has('p04_jd_existing_witness_Q-JD'),false);}
 });
 
-test('new retrieval and closed-vacancy branches remain held without their own output proof',()=>{
-  for(const mode of ['recovered','closed']){const h=harness(mode);h.loseReceipt();assert.throws(()=>h.context.p04RunQCore_(2),/completion receipt lost/);assert.equal(h.context.reconcileRecoveryHeldQueueJob('Q-JD').status,'recovery_hold');}
+test('closed-vacancy branch remains held without its own output proof',()=>{
+  const h=harness('closed');h.loseReceipt();assert.throws(()=>h.context.p04RunQCore_(2),/completion receipt lost/);assert.equal(h.context.reconcileRecoveryHeldQueueJob('Q-JD').status,'recovery_hold');
 });
 
 test('saved JD changing between inspection and reconciliation cannot close hold',()=>{

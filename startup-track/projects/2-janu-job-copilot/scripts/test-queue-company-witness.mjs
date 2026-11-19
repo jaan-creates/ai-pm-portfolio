@@ -53,6 +53,7 @@ function harness(){
     rendererWorkerStateValue_:key=>receipts.get(key)||'',
     p04ContactWitnessMatches_:()=>false,
     p04JdExistingWitnessMatches_:()=>false,
+    p04JdRecoveredWitnessMatches_:()=>false,
     p04TrackedScriptLock_:()=>({tryLock:()=>true,releaseLock:()=>{}}),
   });
   for(const name of ['p04RunQCore_','p04CompletionReceiptMatches_','p04CompanyOutputHash_','p04RecordCompanyWitness_','p04CompanyWitnessMatches_','inspectRecoveryHeldQueueJob','reconcileRecoveryHeldQueueJob','workerCompany_'])vm.runInContext(functionText(name),context);
