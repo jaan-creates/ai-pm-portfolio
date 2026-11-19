@@ -49,6 +49,7 @@ function harness(){
     upsertWorkerState_:(key,value)=>{if(failReceipt&&key.startsWith('p04_queue_completion_')){failReceipt=false;throw Error('completion receipt lost');}if(failLastResult&&key==='p1a_jd_last_result'){failLastResult=false;throw Error('result write lost');}receipts.set(key,value);},
     rendererWorkerStateValue_:key=>receipts.get(key)||'',
     p04ContactWitnessMatches_:()=>false,p04CompanyWitnessMatches_:()=>false,
+    p04JdClosedWitnessMatches_:()=>false,
     p04TrackedScriptLock_:()=>({tryLock:()=>true,releaseLock:()=>{}}),
   });
   for(const name of ['p04RunQCore_','p04CompletionReceiptMatches_','p04JdExistingOutputHash_','p04RecordJdExistingWitness_','p04JdExistingWitnessMatches_','p04JdRecoveredOutputHash_','p04RecordJdRecoveredWitness_','p04JdRecoveredWitnessMatches_','inspectRecoveryHeldQueueJob','reconcileRecoveryHeldQueueJob','workerJD_'])vm.runInContext(functionText(name),context);
