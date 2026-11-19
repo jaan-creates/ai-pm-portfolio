@@ -237,6 +237,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-queue-migration-witness.mjs" "$LIVE_DIR"
       - name: Witness complete QA pass or repair by exact queue attempt
         run: node "$PROJECT_DIR/scripts/patch-queue-qa-witness.mjs" "$LIVE_DIR"
+      - name: Witness direct and source-intake PDF capture by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-pdf-witness.mjs" "$LIVE_DIR"
       - name: Verify completion receipt and fail-closed hold reconciliation
         run: node "$PROJECT_DIR/scripts/test-queue-completion-receipt.mjs" "$LIVE_DIR"
       - name: Verify company worker witness and partial-write hold
@@ -255,6 +257,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/test-queue-migration-witness.mjs" "$LIVE_DIR"
       - name: Verify QA pass and repair witnesses with partial writes
         run: node "$PROJECT_DIR/scripts/test-queue-qa-witness.mjs" "$LIVE_DIR"
+      - name: Verify PDF capture witnesses and partial writes
+        run: node "$PROJECT_DIR/scripts/test-queue-pdf-witness.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
         run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
       - name: Stamp the candidate for independent runtime comparison
