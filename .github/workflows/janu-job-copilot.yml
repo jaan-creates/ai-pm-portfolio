@@ -219,6 +219,8 @@ jobs:
         run: node "$PROJECT_DIR/scripts/test-queue-hold-admission.mjs" "$LIVE_DIR"
       - name: Persist worker completion proof before queue success
         run: node "$PROJECT_DIR/scripts/patch-queue-completion-receipt.mjs" "$LIVE_DIR"
+      - name: Witness disabled contact worker output by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-contact-witness.mjs" "$LIVE_DIR"
       - name: Verify completion receipt and fail-closed hold reconciliation
         run: node "$PROJECT_DIR/scripts/test-queue-completion-receipt.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression

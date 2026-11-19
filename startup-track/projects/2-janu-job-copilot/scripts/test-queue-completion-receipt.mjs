@@ -16,6 +16,7 @@ function harness() {
   const headers = ['Queue Job ID', 'Application ID', 'Worker Type', 'Status', 'Input Hash', 'Idempotency Key', 'Attempts', 'Max Attempts', 'Next Run At', 'Started At', 'Finished At', 'Error Code', 'Error Detail', 'Payload Ref', 'Created At', 'Updated At'];
   const rows = [headers, ['Q-1', 'APP-1', 'PDF_CAPTURE', 'queued', 'input-hash', 'idem-1', 0, 3, new Date(0), '', '', '', '', JSON.stringify({fileId: 'F-1'}), new Date(0), new Date(0)]];
   const receipts = new Map();
+  const properties = new Map();
   let workerCalls = 0, failSuccessWrite = false, failReceiptWrite = false, lockHeld = false, budgetFailure = false, workerThrows = false, workerErrorKind = 'TRANSIENT', circuitOpened = false, clockMs = 100000;
   const sheet = {
     getLastRow: () => rows.length,
@@ -30,9 +31,10 @@ function harness() {
   };
   const lock = {tryLock: () => {if (lockHeld) return false; lockHeld = true; return true;}, releaseLock: () => {lockHeld = false;}};
   const context = vm.createContext({
-    JC: {S: {Q: 'Queue'}, W: {PDF: 'PDF_CAPTURE'}, RETRIES: 3}, P12: {MAX_JOB_RUNTIME_MS: 100000},
+    JC: {S: {Q: 'Queue'}, W: {PDF: 'PDF_CAPTURE', CT: 'CONTACT_ENRICH'}, RETRIES: 3}, P12: {MAX_JOB_RUNTIME_MS: 100000},
     SH_: () => sheet, hm_: () => Object.fromEntries(headers.map((h, i) => [h, i + 1])),
-    now_: () => new Date(clockMs), hash_: () => 'result-hash',
+    now_: () => new Date(clockMs), hash_: value => 'hash:' + String(value),
+    P_: () => ({getProperty: key => properties.get(key) || '', setProperty: (key, value) => properties.set(key, value)}),
     circuitOpen_: () => circuitOpened, rendererCanarySemanticFreshOverride_: () => false,
     queueJobFresh_: () => true, rendererQuarantineBlocks_: () => false,
     workerPDF_: () => {workerCalls++; if (workerThrows) throw Error('worker failed after side effect'); return {fileId: 'F-1'};},
@@ -40,13 +42,13 @@ function harness() {
     workerResume_: () => {}, workerArtifactMigrate_: () => {}, workerQA_: () => {},
     budgetGuard_: () => {if (budgetFailure) throw Error('transient budget precheck');},
     backoffAt_: () => new Date(clockMs + 100000), find_: () => null,
-    upsertWorkerState_: (key, value) => {if (failReceiptWrite) {failReceiptWrite = false; throw Error('worker state outage');} receipts.set(key, value);},
+    upsertWorkerState_: (key, value) => {if (failReceiptWrite && key.startsWith('p04_queue_completion_')) {failReceiptWrite = false; throw Error('worker state outage');} receipts.set(key, value);},
     rendererWorkerStateValue_: key => receipts.get(key) || '',
     closeCircuit_: () => {circuitOpened = false;}, openCircuit_: () => {circuitOpened = true;}, classifyError_: () => ({kind: workerErrorKind, code: workerErrorKind + '_WRITE'}),
     p04TrackedScriptLock_: () => lock,
   });
-  for (const name of ['p04RunQCore_', 'p04CompletionReceiptMatches_', 'inspectRecoveryHeldQueueJob', 'reconcileRecoveryHeldQueueJob']) vm.runInContext(functionText(name), context);
-  return {context, rows, receipts, get calls() {return workerCalls;}, get circuitOpen() {return circuitOpened;}, restoreDependency() {circuitOpened = false;}, failNextSuccessWrite() {failSuccessWrite = true;}, failNextReceiptWrite() {failReceiptWrite = true;}, failBudgetPrecheck() {budgetFailure = true;}, failWorkerAs(kind) {workerThrows = true; workerErrorKind = kind;}, advanceClock(ms) {clockMs += ms;}, holdLock() {lockHeld = true;}, releaseLock() {lockHeld = false;}};
+  for (const name of ['p04RunQCore_', 'p04CompletionReceiptMatches_', 'p04RecordContactWitness_', 'p04ContactWitnessMatches_', 'inspectRecoveryHeldQueueJob', 'reconcileRecoveryHeldQueueJob', 'workerContacts_']) vm.runInContext(functionText(name), context);
+  return {context, rows, receipts, properties, get calls() {return workerCalls;}, get circuitOpen() {return circuitOpened;}, restoreDependency() {circuitOpened = false;}, failNextSuccessWrite() {failSuccessWrite = true;}, failNextReceiptWrite() {failReceiptWrite = true;}, failBudgetPrecheck() {budgetFailure = true;}, failWorkerAs(kind) {workerThrows = true; workerErrorKind = kind;}, advanceClock(ms) {clockMs += ms;}, holdLock() {lockHeld = true;}, releaseLock() {lockHeld = false;}};
 }
 
 test('post-worker completion-write failure closes only from matching durable receipt', () => {
@@ -110,6 +112,64 @@ test('dependency outage after worker entry opens circuit and recovery never repl
   assert.equal(h.context.p04RunQCore_(2), 0);
   assert.equal(h.context.reconcileRecoveryHeldQueueJob('Q-1').status, 'recovery_hold');
   assert.equal(h.calls, 1);
+});
+
+test('disabled contact output witness closes a lost-receipt hold without replay', () => {
+  const h = harness();
+  h.rows[1][2] = 'CONTACT_ENRICH';
+  h.failNextReceiptWrite();
+  assert.throws(() => h.context.p04RunQCore_(2), /worker state outage/);
+  assert.equal(h.rows[1][3], 'recovery_hold');
+  assert.equal(h.properties.get('DONE_CT_APP-1'), '1');
+  assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-1').proof, 'MATCHED_CONTACT_DISABLED');
+  const result = h.context.reconcileRecoveryHeldQueueJob('Q-1');
+  assert.equal(result.status, 'succeeded');
+  assert.equal(result.proof, 'MATCHED_CONTACT_DISABLED');
+  assert.equal(result.replayed, false);
+  assert.equal(h.rows[1][11], 'RECOVERED_FROM_CONTACT_WITNESS');
+});
+
+test('contact witness rejects changed attempt, input and completion flag', () => {
+  const h = harness();
+  h.rows[1][2] = 'CONTACT_ENRICH';
+  h.failNextReceiptWrite();
+  assert.throws(() => h.context.p04RunQCore_(2), /worker state outage/);
+  const key = 'p04_contact_witness_Q-1';
+  const saved = h.receipts.get(key);
+  h.receipts.set(key, JSON.stringify({...JSON.parse(saved), attempt: 99}));
+  assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-1').proof, 'NO_MATCHING_COMPLETION_RECEIPT');
+  h.receipts.set(key, saved); h.rows[1][4] = 'other-input';
+  assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-1').proof, 'NO_MATCHING_COMPLETION_RECEIPT');
+  h.rows[1][4] = 'input-hash'; h.properties.delete('DONE_CT_APP-1');
+  assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-1').proof, 'NO_MATCHING_COMPLETION_RECEIPT');
+  h.properties.set('DONE_CT_APP-1', '1'); h.properties.set('ENABLE_CONTACT_ENRICH', '1');
+  assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-1').proof, 'NO_MATCHING_COMPLETION_RECEIPT');
+  assert.equal(h.context.reconcileRecoveryHeldQueueJob('Q-1').status, 'recovery_hold');
+});
+
+test('enabled contact path has no disabled-output witness', () => {
+  const h = harness();
+  h.rows[1][2] = 'CONTACT_ENRICH';
+  h.properties.set('ENABLE_CONTACT_ENRICH', '1');
+  assert.throws(() => h.context.p04RunQCore_(2), /CONTACT_PROVIDER_NOT_CONFIGURED/);
+  assert.equal(h.rows[1][3], 'recovery_hold');
+  assert.equal(h.receipts.has('p04_contact_witness_Q-1'), false);
+  assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-1').proof, 'NO_MATCHING_COMPLETION_RECEIPT');
+});
+
+test('contact output changed after inspection cannot be reconciled', () => {
+  const h = harness();
+  h.rows[1][2] = 'CONTACT_ENRICH';
+  h.failNextReceiptWrite();
+  assert.throws(() => h.context.p04RunQCore_(2), /worker state outage/);
+  const inspect = h.context.inspectRecoveryHeldQueueJob;
+  h.context.inspectRecoveryHeldQueueJob = id => {
+    const result = inspect(id);
+    h.properties.delete('DONE_CT_APP-1');
+    return result;
+  };
+  assert.throws(() => h.context.reconcileRecoveryHeldQueueJob('Q-1'), /WITNESS_CHANGED_DURING_RECONCILIATION/);
+  assert.equal(h.rows[1][3], 'recovery_hold');
 });
 
 test('pre-worker transient failure retries only when due and stops at maximum attempts', () => {
