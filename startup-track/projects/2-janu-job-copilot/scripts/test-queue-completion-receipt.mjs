@@ -16,7 +16,7 @@ function harness() {
   const headers = ['Queue Job ID', 'Application ID', 'Worker Type', 'Status', 'Input Hash', 'Idempotency Key', 'Attempts', 'Max Attempts', 'Next Run At', 'Started At', 'Finished At', 'Error Code', 'Error Detail', 'Payload Ref', 'Created At', 'Updated At'];
   const rows = [headers, ['Q-1', 'APP-1', 'PDF_CAPTURE', 'queued', 'input-hash', 'idem-1', 0, 3, new Date(0), '', '', '', '', JSON.stringify({fileId: 'F-1'}), new Date(0), new Date(0)]];
   const receipts = new Map();
-  let workerCalls = 0, failSuccessWrite = false, failReceiptWrite = false, lockHeld = false;
+  let workerCalls = 0, failSuccessWrite = false, failReceiptWrite = false, lockHeld = false, budgetFailure = false, clockMs = 100000;
   const sheet = {
     getLastRow: () => rows.length,
     getRange: (row, col) => ({
@@ -32,19 +32,21 @@ function harness() {
   const context = vm.createContext({
     JC: {S: {Q: 'Queue'}, W: {PDF: 'PDF_CAPTURE'}, RETRIES: 3}, P12: {MAX_JOB_RUNTIME_MS: 100000},
     SH_: () => sheet, hm_: () => Object.fromEntries(headers.map((h, i) => [h, i + 1])),
-    now_: () => new Date(100000), hash_: () => 'result-hash',
+    now_: () => new Date(clockMs), hash_: () => 'result-hash',
     circuitOpen_: () => false, rendererCanarySemanticFreshOverride_: () => false,
     queueJobFresh_: () => true, rendererQuarantineBlocks_: () => false,
     workerPDF_: () => {workerCalls++; return {fileId: 'F-1'};},
     workerJD_: () => {}, workerScore_: () => {}, workerCompany_: () => {}, workerContacts_: () => {},
     workerResume_: () => {}, workerArtifactMigrate_: () => {}, workerQA_: () => {},
+    budgetGuard_: () => {if (budgetFailure) throw Error('transient budget precheck');},
+    backoffAt_: () => new Date(clockMs + 100000), find_: () => null,
     upsertWorkerState_: (key, value) => {if (failReceiptWrite) {failReceiptWrite = false; throw Error('worker state outage');} receipts.set(key, value);},
     rendererWorkerStateValue_: key => receipts.get(key) || '',
     closeCircuit_: () => {}, classifyError_: () => ({kind: 'TRANSIENT', code: 'TRANSIENT_WRITE'}),
     p04TrackedScriptLock_: () => lock,
   });
   for (const name of ['p04RunQCore_', 'p04CompletionReceiptMatches_', 'inspectRecoveryHeldQueueJob', 'reconcileRecoveryHeldQueueJob']) vm.runInContext(functionText(name), context);
-  return {context, rows, receipts, get calls() {return workerCalls;}, failNextSuccessWrite() {failSuccessWrite = true;}, failNextReceiptWrite() {failReceiptWrite = true;}, holdLock() {lockHeld = true;}, releaseLock() {lockHeld = false;}};
+  return {context, rows, receipts, get calls() {return workerCalls;}, failNextSuccessWrite() {failSuccessWrite = true;}, failNextReceiptWrite() {failReceiptWrite = true;}, failBudgetPrecheck() {budgetFailure = true;}, advanceClock(ms) {clockMs += ms;}, holdLock() {lockHeld = true;}, releaseLock() {lockHeld = false;}};
 }
 
 test('post-worker completion-write failure closes only from matching durable receipt', () => {
@@ -82,4 +84,19 @@ test('receipt-store outage holds completed worker without replay or false succes
   assert.equal(h.context.reconcileRecoveryHeldQueueJob('Q-1').proof, 'NO_MATCHING_COMPLETION_RECEIPT');
   assert.equal(h.rows[1][3], 'recovery_hold');
   assert.equal(h.calls, 1);
+});
+
+test('pre-worker transient failure retries only when due and stops at maximum attempts', () => {
+  const h = harness();
+  h.rows[1][2] = 'JD_PARSE_SCORE_MAP'; h.failBudgetPrecheck();
+  assert.throws(() => h.context.p04RunQCore_(2), /transient budget precheck/);
+  assert.equal(h.rows[1][3], 'queued'); assert.equal(h.rows[1][6], 1);
+  assert.equal(h.context.p04RunQCore_(2), 0);
+  h.advanceClock(100000);
+  assert.throws(() => h.context.p04RunQCore_(2), /transient budget precheck/);
+  assert.equal(h.rows[1][6], 2);
+  h.advanceClock(100000);
+  assert.throws(() => h.context.p04RunQCore_(2), /transient budget precheck/);
+  assert.equal(h.rows[1][6], 3); assert.equal(h.rows[1][3], 'failed');
+  assert.equal(h.calls, 0); assert.equal(h.receipts.size, 0);
 });
