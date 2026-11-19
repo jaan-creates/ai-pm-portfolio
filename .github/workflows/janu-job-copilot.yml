@@ -217,6 +217,10 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-queue-hold-admission.mjs" "$LIVE_DIR"
       - name: Verify held work cannot be admitted twice
         run: node "$PROJECT_DIR/scripts/test-queue-hold-admission.mjs" "$LIVE_DIR"
+      - name: Persist worker completion proof before queue success
+        run: node "$PROJECT_DIR/scripts/patch-queue-completion-receipt.mjs" "$LIVE_DIR"
+      - name: Verify completion receipt and fail-closed hold reconciliation
+        run: node "$PROJECT_DIR/scripts/test-queue-completion-receipt.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
         run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
       - name: Stamp the candidate for independent runtime comparison
