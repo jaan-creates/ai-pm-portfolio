@@ -241,6 +241,10 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-queue-qa-witness.mjs" "$LIVE_DIR"
       - name: Witness direct and source-intake PDF capture by exact queue attempt
         run: node "$PROJECT_DIR/scripts/patch-queue-pdf-witness.mjs" "$LIVE_DIR"
+      - name: Admit handpicked Sources Inbox URLs into the existing JD worker
+        run: node "$PROJECT_DIR/scripts/patch-source-inbox-admission.mjs" "$LIVE_DIR"
+      - name: Test handpicked URL intake and deduplication
+        run: node "$PROJECT_DIR/scripts/test-source-inbox-admission.mjs" "$LIVE_DIR"
       - name: Verify completion receipt and fail-closed hold reconciliation
         run: node "$PROJECT_DIR/scripts/test-queue-completion-receipt.mjs" "$LIVE_DIR"
       - name: Verify company worker witness and partial-write hold
