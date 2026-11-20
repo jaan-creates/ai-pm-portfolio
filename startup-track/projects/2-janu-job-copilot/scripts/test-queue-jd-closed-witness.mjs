@@ -9,7 +9,7 @@ if(!directory)throw new Error('Assembled private source directory required');
 const source=fs.readFileSync(`${directory}/TrackerWorkflow.js`,'utf8');
 function functionText(name){const start=source.indexOf(`function ${name}(`);if(start<0)throw new Error(`Missing ${name}`);const end=source.indexOf('\nfunction ',start+1);return source.slice(start,end<0?undefined:end);}
 
-function harness(mode='closed'){
+function harness(mode='closed',localeDate=false){
   const queueHeaders=['Queue Job ID','Application ID','Worker Type','Status','Input Hash','Idempotency Key','Attempts','Max Attempts','Next Run At','Started At','Finished At','Error Code','Error Detail','Payload Ref','Created At','Updated At'];
   const appHeaders=['Application ID','Company','Role','Canonical Apply URL','Status','Decision','Vacancy Status','Last Vacancy Verified At','Vacancy Verification Source','Vacancy Verification URL','Vacancy Evidence Hash','Submission Ready?','Blocker Category','Exact Input Needed','Your Required Action','State Consistency'];
   const actionHeaders=['Record ID','Action Type','Workflow Status'];
@@ -30,7 +30,7 @@ function harness(mode='closed'){
   const actions=sheet('Actions',actionHeaders,[['APP-1','JD Capture','Blocked']]);
   const receipts=new Map();let failReceipt=false,failClosure=false,failCancel=false,failAction=false,failResult=false,failEvidence=false;
   const find=(name,id,head='Application ID')=>{const rows=tables.get(name).rows,ix=rows[0].indexOf(head),index=rows.findIndex((r,i)=>i>0&&String(r[ix]??'')===String(id));return index>0?index+1:null;};
-  const readObj=(s,row)=>Object.fromEntries(s.rows[0].map((h,i)=>[h,s.rows[row-1][i]??'']));
+  const readObj=(s,row)=>Object.fromEntries(s.rows[0].map((h,i)=>[h,localeDate&&h==='Last Vacancy Verified At'&&s.rows[row-1][i] instanceof Date?'20/11/2026':s.rows[row-1][i]??'']));
   const context=vm.createContext({
     JC:{S:{Q:'Queue',A:'Applications',ACT:'Actions'},W:{JD:'JD_RETRIEVE'},RETRIES:3},P12:{MAX_JOB_RUNTIME_MS:100000},
     SH_:name=>tables.get(name),hm_:s=>Object.fromEntries(s.rows[0].map((h,i)=>[h,i+1])),find_:find,obj_:readObj,
@@ -41,7 +41,7 @@ function harness(mode='closed'){
     budgetGuard_:()=>{},backoffAt_:()=>new Date(200000),closeCircuit_:()=>{},classifyError_:()=>({kind:'TRANSIENT',code:'TRANSIENT_WRITE'}),
     loadJDArtifact_:()=>null,jdReadbackPercent_:()=>0,
     p1aJdRetrieveForApp_:()=>mode==='closed'?{explicitClosed:true,provider:'ATS',url:'https://example.invalid/job'}:{ok:false,provider:'UNAVAILABLE',url:'https://example.invalid/job'},
-    p1aRecordJdRetrieval_:()=>{if(failEvidence)return null;app.rows[1][6]=mode==='closed'?'CLOSED':'UNKNOWN';app.rows[1][7]=new Date(100000);app.rows[1][8]='ATS';app.rows[1][9]='https://example.invalid/job';app.rows[1][10]='closure-hash';if(mode==='closed'){app.rows[1][4]='Closed';actions.rows[1]=['','',''];if(failCancel){failCancel=false;throw Error('queue cancellation lost');}queue.rows[2][3]='cancelled';queue.rows[2][11]='OBSOLETE_CLOSED_VACANCY';}return{provider:'ATS',url:'https://example.invalid/job',hash:'closure-hash'};},
+    p1aRecordJdRetrieval_:()=>{if(failEvidence)return null;app.rows[1][6]=mode==='closed'?'CLOSED':'UNKNOWN';app.rows[1][7]=localeDate?new Date('2026-11-20T14:00:00Z'):new Date(100000);app.rows[1][8]='ATS';app.rows[1][9]='https://example.invalid/job';app.rows[1][10]='closure-hash';if(mode==='closed'){app.rows[1][4]='Closed';actions.rows[1]=['','',''];if(failCancel){failCancel=false;throw Error('queue cancellation lost');}queue.rows[2][3]='cancelled';queue.rows[2][11]='OBSOLETE_CLOSED_VACANCY';}return{provider:'ATS',url:'https://example.invalid/job',hash:'closure-hash'};},
     resolve_:()=>{if(failAction){failAction=false;throw Error('action resolution lost');}actions.rows[1]=['','',''];},
     p1aJdTextFromRetrieval_:()=>'',block_:()=>{},
     upsertWorkerState_:(key,value)=>{if(failReceipt&&key.startsWith('p04_queue_completion_')){failReceipt=false;throw Error('completion receipt lost');}if(failResult&&key==='p1a_jd_last_result'){failResult=false;throw Error('result write lost');}receipts.set(key,value);},
@@ -60,6 +60,13 @@ test('closed vacancy, resolved action and cancelled queue recover a lost receipt
   assert.equal(h.context.inspectRecoveryHeldQueueJob('Q-JD').proof,'MATCHED_JD_CLOSED');
   const result=h.context.reconcileRecoveryHeldQueueJob('Q-JD');assert.equal(result.status,'succeeded');assert.equal(result.replayed,false);
   assert.equal(h.queue.rows[1][11],'RECOVERED_FROM_JD_CLOSED_WITNESS');
+});
+
+test('closed vacancy witness reads raw date when display locale is day-first',()=>{
+  const h=harness('closed',true);
+  assert.equal(h.context.p04RunQCore_(2),1);
+  assert.equal(h.queue.rows[1][3],'succeeded');
+  assert.equal(h.receipts.has('p04_jd_closed_witness_Q-JD'),true);
 });
 
 test('changed vacancy evidence, action, queued work or attempt keeps closure held',()=>{
