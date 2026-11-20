@@ -700,3 +700,14 @@ The current pending gates are therefore:
 - [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
 
 **Decision:** Scheduled sourcing continues to execute correctly at the cycle level, but the control-plane health publisher has a confirmed reconciliation defect. Overall scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
+
+
+## 2026-11-20 scheduled-cycle and health-publisher divergence
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261120-0845-DAILY-01` succeeded 09:43 IST with 7 raw roles, 2 qualified, 0 canonical collisions, 2 promoted, 5 excluded, and 0 errors. It audited 130 populated Applications and atomically wrote two Applications plus one telemetry record.
+- [x] **Vacancy identity and uncertainty handling:** Two distinct HighLevel Lever requisitions were promoted with direct Apply links, while detail access, full JD and salary remain explicitly pending because the employer board returned 403. The system did not convert that limitation into a false verification claim.
+- [x] **Health-publisher divergence persists:** `__System Health` is checked on 2026-11-20 but still reports last success 2026-11-02 and `SOURCING_SCHEDULER_STALE`, while `__Sourcing Runs` contains successful scheduled cycles through Nov 20.
+- [ ] **Current scheduler closure:** Repair and independently read back the health computation against expected-date scheduled rows and successful no-op cycles. Do not clear the circuit from a single successful run.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** Scheduled sourcing continues to execute at the cycle level, but the health publisher remains non-authoritative. Overall scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
