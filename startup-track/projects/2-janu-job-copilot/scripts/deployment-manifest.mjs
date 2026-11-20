@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {fullProjectDigest} from './check-source-snapshot.mjs';
 
 const args = process.argv.slice(2);
 const hashOnly = args.includes('--hash-only');
@@ -26,6 +27,10 @@ const files = sourceFiles.map(name => {
 const aggregateInput = files.map(x => `${x.name}:${x.sha256}`).join('\n');
 const sourceAggregateSha256 = sha256(Buffer.from(aggregateInput, 'utf8'));
 
+if (args.includes('--full-project-hash')) {
+  process.stdout.write(fullProjectDigest(root));
+  process.exit(0);
+}
 if (hashOnly) {
   process.stdout.write(sourceAggregateSha256);
   process.exit(0);
@@ -39,6 +44,7 @@ const manifest = {
   expectedVersion: process.env.EXPECTED_VERSION || null,
   expectedSuite: process.env.EXPECTED_SUITE || null,
   sourceAggregateSha256,
+  fullProjectSha256: fullProjectDigest(root),
   files
 };
 

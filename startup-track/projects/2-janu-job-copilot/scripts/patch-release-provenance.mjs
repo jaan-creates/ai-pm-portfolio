@@ -44,13 +44,14 @@ function recordDeploymentProvenance(commitSha,runId,runAttempt,sourceHash,versio
   const x=releaseProvenanceValidate_(commitSha,runId,runAttempt,sourceHash,version,suite);
   const verifiedAt=iso_();
   const evidence={outcome:'PASS',commitSha:x.commitSha,runId:x.runId,runAttempt:x.runAttempt,sourceHash:x.sourceHash,version:x.version,suite:x.suite,verifiedAt:verifiedAt};
-  upsertWorkerState_('deployment_provenance_status','PASS',JSON.stringify(evidence));
+  upsertWorkerState_('deployment_provenance_status','PENDING','Writing candidate release identity');
   upsertWorkerState_('deployment_git_commit',x.commitSha,'Verified production deployment commit');
   upsertWorkerState_('deployment_github_run_id',x.runId,'GitHub Actions workflow run ID');
   upsertWorkerState_('deployment_github_run_attempt',x.runAttempt,'GitHub Actions workflow run attempt');
   upsertWorkerState_('deployment_source_sha256',x.sourceHash,'Post-push transformed source SHA-256');
   upsertWorkerState_('deployment_runtime_identity',x.version+' / '+x.suite,'Embedded runtime version / regression suite');
   upsertWorkerState_('deployment_verified_at',verifiedAt,'Release provenance persisted after post-push source-hash verification');
+  upsertWorkerState_('deployment_provenance_status','PASS',JSON.stringify(evidence));
   return evidence;
 }
 function runReleaseProvenanceContractSelfTest(){
@@ -64,6 +65,44 @@ if (!source.includes('function recordDeploymentProvenance(')) {
   const index = source.indexOf(anchor);
   if (index < 0) throw new Error('release identity anchor missing');
   source = source.slice(0, index) + block + '\n' + source.slice(index);
+}
+
+// Upgrade the original write ordering on previously patched production sources.
+const oldStart = "  upsertWorkerState_('deployment_provenance_status','PASS',JSON.stringify(evidence));";
+const originalStart = oldStart + "\n  upsertWorkerState_('deployment_git_commit'";
+if (source.includes(originalStart)) {
+  source = source.replace(originalStart,
+    "  upsertWorkerState_('deployment_provenance_status','PENDING','Writing candidate release identity');\n  upsertWorkerState_('deployment_git_commit'");
+  const end = "  return evidence;\n}";
+  const start = source.indexOf('function recordDeploymentProvenance(');
+  const pos = source.indexOf(end,start);
+  if (pos < 0 || source.slice(start,pos).includes('\nfunction ')) throw new Error('Unknown provenance writer shape');
+  source = source.slice(0,pos) + oldStart + '\n' + source.slice(pos);
+}
+if (!source.includes("upsertWorkerState_('deployment_provenance_status','PENDING'")) {
+  throw new Error('Unrecognized provenance writer; review before release');
+}
+if (!source.includes('function readJanuDeploymentProvenance(')) {
+  const reader = `function readJanuDeploymentProvenance(){
+    const sheet = SH_('__Worker State');
+    if (!sheet) throw new Error('Worker State unavailable');
+    const values = new Map();
+    const fields = ['deployment_git_commit','deployment_github_run_id','deployment_github_run_attempt',
+      'deployment_source_sha256','deployment_runtime_identity','deployment_verified_at','deployment_provenance_status'];
+    for (const [key,value] of sheet.getDataRange().getValues().slice(1)) {
+      if (!fields.includes(key)) continue;
+      if (values.has(key)) throw new Error('Duplicate provenance field');
+      values.set(key,value);
+    }
+    if (values.size !== fields.length) throw new Error('Incomplete persisted provenance');
+    const [version,suite] = String(values.get('deployment_runtime_identity')).split(' / ');
+    const verified = values.get('deployment_verified_at');
+    return {commitSha:String(values.get('deployment_git_commit')),runId:String(values.get('deployment_github_run_id')),
+      runAttempt:String(values.get('deployment_github_run_attempt')),sourceHash:String(values.get('deployment_source_sha256')),
+      version:version,suite:suite,verifiedAt:verified instanceof Date ? verified.toISOString() : String(verified),
+      outcome:values.get('deployment_provenance_status')};
+  }`;
+  source = source.replace(anchor,reader+'\n'+anchor);
 }
 
 for (const token of [
