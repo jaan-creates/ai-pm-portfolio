@@ -2,3 +2,26 @@ import assert from 'node:assert/strict';import fs from 'node:fs';import path fro
 const exactRecoveryEnqueue="input,{recoverySafe:true,ownedAdmission:true}";
 assert.ok(patch.includes(exactRecoveryEnqueue),'score-completion RESUME_GENERATE must forward recoverySafe and ownedAdmission');
 assert.match(patch,/source:'score-completion-admission-v1'.*reason:'SCORE_COMPLETE_NEEDS_RESUME'.*contract:'P1-A-SCORE-COMPLETION-ADMISSION-1'/,'score-completion recovery contract must remain bound to the owned admission');
+// The health self-test must run only when the health tick is invoked. A file-scope
+// call silently writes Worker State during every Apps Script execution.
+const {mkdtempSync,rmSync,writeFileSync,readFileSync}=fs;
+const {tmpdir}=await import('node:os');
+const {execFileSync}=await import('node:child_process');
+const dir=mkdtempSync(path.join(tmpdir(),'janu-score-health-'));
+try{
+  const fixture=[
+    'const P12={};',
+    'function find_(){} function obj_(){} function set_(){} function enqueue_(){} function hash_(){}',
+    'function workerScore_(appId,p){return {};}',
+    'function phase1HealthTick(){return true;}',
+    'function verifyReleaseIdentity(){}'
+  ].join('\n');
+  const file=path.join(dir,'TrackerWorkflow.js');writeFileSync(file,fixture);
+  const script=path.join(project,'scripts','patch-p1a-score-completion-admission.mjs');
+  execFileSync(process.execPath,[script,dir]);
+  const once=readFileSync(file,'utf8');
+  assert.match(once,/function phase1HealthTick\(\)\{try\{runP1AScoreCompletionAdmissionSelfTest\(\);\}/);
+  assert.doesNotMatch(once,/\ntry\{runP1AScoreCompletionAdmissionSelfTest\(\);\}/);
+  execFileSync(process.execPath,[script,dir]);
+  assert.equal(readFileSync(file,'utf8'),once,'patch must be idempotent');
+}finally{rmSync(dir,{recursive:true,force:true});}
