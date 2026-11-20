@@ -68,6 +68,11 @@ jobs:
           printf '%s' "$CLASP_JSON" > .janu-readonly/.clasp.json
           (cd .janu-readonly && clasp pull)
           node startup-track/projects/2-janu-job-copilot/scripts/validate-release.mjs .janu-readonly
+      - name: Test URL intake against an ephemeral live-source copy
+        shell: bash
+        run: |
+          node startup-track/projects/2-janu-job-copilot/scripts/patch-source-inbox-admission.mjs .janu-readonly
+          node startup-track/projects/2-janu-job-copilot/scripts/test-source-inbox-admission.mjs .janu-readonly
       - name: Probe live script execution authority without worker mutation
         shell: bash
         run: |
