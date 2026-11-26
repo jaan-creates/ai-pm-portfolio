@@ -711,3 +711,13 @@ The current pending gates are therefore:
 - [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
 
 **Decision:** Scheduled sourcing continues to execute at the cycle level, but the health publisher remains non-authoritative. Overall scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
+
+
+## 2026-11-25 scheduled-cycle failure refresh
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261125-0845-DAILY-01` is `FAILED` / `PARTIAL_SUCCESS_FAILED_RETRIEVAL`; 4 raw roles, 1 qualified, 0 duplicates, 1 promoted, 2 excluded, 1 retrieval error, no finish timestamp. Oportun requisition 4727491005 / R14206 was promoted after a full 134-Application identity audit; JumpCloud retrieval failed and was held.
+- [x] **Failure truth preserved:** The last-success timestamp did not advance, and Daily Sourcing remains degraded. This correctly distinguishes partial work from a successful cycle.
+- [ ] **Scheduler closure:** The stale circuit remains open; health last success is 2026-11-22 and no independently verified health reconciliation exists for the Nov 25 failed cycle.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** The sourcing worker is operationally active but has now produced a current retrieval failure with incomplete terminal metadata. Overall scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
