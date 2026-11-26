@@ -74,7 +74,7 @@ function PreviewVisual({ candidates, itemTitle }: { candidates: string[]; itemTi
   if (!candidate) {
     return <div className="media-card-visual visual-fallback"><Sparkles size={26} /><span>Preview unavailable</span><small>{itemTitle || "Original source preserved"}</small></div>;
   }
-  return <div className="media-card-visual has-preview"><img src={candidate} alt={itemTitle || "Saved item preview"} onError={() => setIndex((current) => current + 1)} /></div>;
+  return <div className="media-card-visual has-preview">{/* eslint-disable-next-line @next/next/no-img-element -- preview hosts are user-provided and intentionally not allowlisted */}<img src={candidate} alt={itemTitle || "Saved item preview"} onError={() => setIndex((current) => current + 1)} /></div>;
 }
 export function PersonalLibrary() {
   const supabase = createSupabaseBrowserClient();
