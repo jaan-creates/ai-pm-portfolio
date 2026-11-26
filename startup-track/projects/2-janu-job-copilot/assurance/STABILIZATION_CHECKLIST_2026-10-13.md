@@ -721,3 +721,13 @@ The current pending gates are therefore:
 - [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
 
 **Decision:** The sourcing worker is operationally active but has now produced a current retrieval failure with incomplete terminal metadata. Overall scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
+
+
+## 2026-11-26 scheduled-cycle retrieval failure refresh
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261126-0845-DAILY-01` is `FAILED / FAILED_RETRIEVAL`; 7 roles assessed, 0 qualified, 3 canonical duplicates rejected, 0 promoted, 1 excluded, 3 retrieval errors, and no finish timestamp. It checked 135 populated Applications and made no Applications or Sources Inbox write.
+- [x] **Failure truth preserved:** Last-success did not advance; the cycle held uncertain roles rather than promoting them without current vacancy or eligibility evidence. This is correct safety behavior, but terminal metadata remains incomplete.
+- [ ] **Scheduler/health closure:** `__System Health` remains stale at last success 2026-11-22 and BLOCKED/OPEN; current failed-cycle readback is not reflected in the health publisher.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** The sourcing worker is active but retrieval reliability and terminal observability remain unstable. Overall scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
