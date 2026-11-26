@@ -1,5 +1,8 @@
 "use client";
 
+/* Preview URLs come from saved sources and cannot be safely allowlisted as Next image domains. */
+/* eslint-disable @next/next/no-img-element */
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, ExternalLink, LogOut, Search, Settings2, Sparkles, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
