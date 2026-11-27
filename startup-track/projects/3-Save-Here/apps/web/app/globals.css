@@ -785,3 +785,10 @@ button {
   font-size: 12px;
   font-weight: 700;
 }
+
+/* SH-57: source-first card hierarchy and compact tag treatment */
+.card-source{margin:0 0 9px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.media-card-copy .suggested-tags{margin-top:12px}
+.added-tag{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9f1c9!important;background:rgba(203,229,106,.14)!important;border-color:rgba(203,229,106,.3)!important}
+.visual-fallback span{max-width:82%;display:-webkit-box;overflow:hidden;text-align:center;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+.visual-fallback small{text-align:center}
