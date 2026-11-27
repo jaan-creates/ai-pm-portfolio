@@ -37,6 +37,11 @@ function displayLabel(value: string | null | undefined) {
   return value ? value.replaceAll("_", " ") : "Saved link";
 }
 
+function sourceLabel(domain: string | null | undefined, source: string | null | undefined) {
+  const value = domain || (source ? (() => { try { return new URL(source).hostname; } catch { return ""; } })() : "");
+  return value.replace(/^www\\./i, "").split(".")[0]?.replace(/[-_]+/g, " ").replace(/\\b\\w/g, (letter) => letter.toUpperCase()) || "Saved link";
+}
+
 function initials(email: string) {
   return email.split("@")[0].slice(0, 2).toUpperCase() || "ME";
 }
@@ -48,7 +53,7 @@ function previewFrom(item: Item) {
 function previewCandidatesFrom(item: Item) {
   const metadata = item.ai_metadata;
   const candidates: string[] = [];
-  for (const candidate of [metadata?.preview_image_url, metadata?.thumbnail_url, metadata?.image_url]) {
+  for (const candidate of [metadata?.preview_image_url, metadata?.thumbnail_url, metadata?.image_url, metadata?.og_image_url, metadata?.open_graph_image_url]) {
     if (typeof candidate === "string" && /^https?:\/\//i.test(candidate) && !candidates.includes(candidate)) candidates.push(candidate);
   }
   const source = item.original_url ?? item.canonical_url;
@@ -250,17 +255,20 @@ export function PersonalLibrary() {
           const url = item.original_url ?? item.canonical_url;
           const previewUrl = previewFrom(item);
           const hasTitle = Boolean(item.title?.trim());
-          const topics = [...(item.topics ?? []), ...(item.ai_metadata?.suggested_tags ?? [])].filter((topic, index, all) => topic && all.indexOf(topic) === index).slice(0, 5);
+          const addedTag = item.user_note?.trim() || "";
+          const topics = [...(item.topics ?? []), ...(item.ai_metadata?.suggested_tags ?? [])].filter((topic, index, all) => topic && all.indexOf(topic) === index).slice(0, addedTag ? 5 : 6);
+          const source = sourceLabel(item.source_domain, item.original_url ?? item.canonical_url);
           const previewDescription = typeof item.ai_metadata?.preview_description === "string" ? item.ai_metadata.preview_description.trim() : "";
           return (
             <article className="media-card" key={item.id} role={url ? "link" : undefined} tabIndex={url ? 0 : undefined} onClick={(event) => { if ((event.target as HTMLElement).closest("button,a")) return; if (url) window.open(url, "_blank", "noopener,noreferrer"); }} onKeyDown={(event) => { if (event.key === "Enter" && url) window.open(url, "_blank", "noopener,noreferrer"); }}>
               <div className={previewUrl ? "media-card-visual has-preview" : "media-card-visual visual-fallback"} style={previewUrl ? { backgroundImage: `url("${previewUrl}")` } : undefined}>
-                {!previewUrl && <><Sparkles size={26} /><span>Preview unavailable</span><small>Original source preserved</small></>}
+                {!previewUrl && <><Sparkles size={26} /><span>{hasTitle ? item.title : source}</span><small>Source preserved · preview unavailable</small></>}
               </div>
               <div className="media-card-copy">
-                {(hasTitle || previewDescription || item.source_domain) && <h2 title={item.title ?? undefined}>{item.title?.trim() || previewDescription.split(/[.!?]/)[0].trim() || item.source_domain}</h2>}
+                <div className="card-source">{source}</div>
+                {(hasTitle || previewDescription || item.source_domain) && <h2 title={item.title ?? undefined}>{item.title?.trim() || previewDescription.split(/[.!?]/)[0].trim() || source}</h2>}
                 {previewDescription && <p className="metadata-summary">{previewDescription}</p>}
-                {item.user_note && <><span className="card-context-label">Added tag</span><p className="personal-note">{item.user_note}</p></>}
+                {addedTag && <span className="suggested-tag added-tag" title={addedTag}>Added: {addedTag}</span>}
                 {topics.length > 0 && <div className="suggested-tags" aria-label="Suggested tags">{topics.map((topic) => <span className="suggested-tag" key={topic}>{topic}</span>)}</div>}
                 <div className="lifecycle-actions" aria-label="Save actions"><button onClick={() => setSelectedItem(item)} aria-label="View save details">Details</button><button onClick={() => void updateItemStatus(item.id, "completed")} aria-label="Mark as done">Done</button><button onClick={() => void updateItemStatus(item.id, "reference")} aria-label="Keep as reference">Reference</button><button onClick={() => void deleteItem(item.id)} aria-label="Remove save">Remove</button></div>
               </div>
