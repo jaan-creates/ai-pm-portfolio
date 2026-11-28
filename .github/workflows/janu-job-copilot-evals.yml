@@ -1,0 +1,33 @@
+name: Janu Job Copilot Offline Evals
+on:
+  pull_request:
+    paths:
+      - 'startup-track/projects/2-janu-job-copilot/**'
+      - '.github/workflows/janu-job-copilot*.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run source-level patch tests
+        run: |
+          set -euo pipefail
+          p=startup-track/projects/2-janu-job-copilot
+          node "$p/scripts/test-trace-golden-v0-patch.mjs" "$p"
+          node "$p/scripts/test-release-provenance-patch.mjs" "$p"
+          node "$p/scripts/test-vacancy-lifecycle-convergence.mjs" "$p"
+      - name: Run synthetic invariant and regression checks
+        run: node startup-track/projects/2-janu-job-copilot/evals/run.mjs
+      - name: Upload machine-readable evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: janu-offline-evals
+          path: startup-track/projects/2-janu-job-copilot/evals/report.json
+          if-no-files-found: warn
