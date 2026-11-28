@@ -37,3 +37,16 @@ pnpm check
 ```
 
 The automated auth evaluation checks that Google OAuth, current-origin redirects, session listeners, magic-link fallback, sign-out, authenticated user lookup, and client-side secret safety remain present. A real Google round-trip still requires the provider configuration above and must be tested once in production.
+
+
+## If no Google Cloud project exists
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) and sign in with the Gmail account that should own this integration.
+2. Open the project picker → **New Project**. Name it **Save Here Auth** and create it.
+3. Open **Google Auth Platform → Branding** and configure the app name and support email.
+4. In **Audience**, choose the appropriate audience. For a private personal pilot, keep the app in testing and add your Gmail address as a test user.
+5. In **Data Access**, ensure `openid`, `email`, and `profile` are allowed.
+6. In **Clients**, create a **Web application** client. Add `https://save-here.vercel.app` as an origin and use the Supabase callback URL as the redirect URI.
+7. Copy the client ID and secret into Supabase Auth → Providers → Google. Do not put either value in GitHub, Vercel client variables, or the browser bundle.
+
+If Google is not enabled, the app now explains that state and keeps email sign-in usable rather than showing a raw Supabase error.
