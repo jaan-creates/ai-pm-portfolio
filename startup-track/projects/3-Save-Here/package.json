@@ -3,19 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@11.19.0",
-  "engines": {
-    "node": ">=24.19.0 <25"
-  },
+  "engines": { "node": ">=24.19.0 <25" },
   "scripts": {
     "dev": "pnpm --filter @save-recall/web dev",
     "build": "pnpm --filter @save-recall/web build",
     "lint": "pnpm -r lint",
     "security:public": "node scripts/check-public-safety.mjs",
+    "eval:auth": "node scripts/evaluate-auth.mjs",
     "eval:recall": "node scripts/evaluate-recall.mjs",
     "eval:evidence": "node scripts/evaluate-evidence.mjs",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "check": "pnpm security:public && pnpm lint && pnpm typecheck && pnpm test && pnpm eval:recall && pnpm eval:evidence && pnpm build"
+    "check": "pnpm security:public && pnpm lint && pnpm typecheck && pnpm test && pnpm eval:auth && pnpm eval:recall && pnpm eval:evidence && pnpm build"
   },
   "devDependencies": {
     "eslint": "9.39.1",
