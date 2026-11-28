@@ -15,10 +15,7 @@ export function AuthGate() {
 
   useEffect(() => {
     let active = true;
-    if (!supabase) {
-      setBusy(false);
-      return () => { active = false; };
-    }
+    if (!supabase) return () => { active = false; };
     void supabase.auth.getSession().then(({ data }) => {
       if (active) {
         setSession(data.session);
