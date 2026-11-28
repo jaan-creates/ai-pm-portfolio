@@ -731,3 +731,13 @@ The current pending gates are therefore:
 - [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
 
 **Decision:** The sourcing worker is active but retrieval reliability and terminal observability remain unstable. Overall scheduler and product DoD remain **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
+
+
+## 2026-11-28 scheduled-cycle failure refresh
+
+- [x] **Latest scheduled sourcing evidence:** `SRC-20261128-0845-DAILY-01` is `FAILED / FAILED_RETRIEVAL`; 6 roles assessed, 0 qualified, 3 canonical duplicates rejected, 0 promoted, 1 excluded, 2 retrieval errors, and no finish timestamp. It read 135 Applications and made no Applications or Sources Inbox write.
+- [x] **Failure truth preserved:** Two distinct JumpCloud/HighLevel vacancies were held rather than promoted because direct verification returned HTTP 403; last-success was not advanced. Nov 27 has no recorded telemetry row, and the tracker identifies Nov 23 as the last recorded successful cycle.
+- [ ] **Scheduler/health closure:** `__System Health` remains stale at last success 2026-11-22 and BLOCKED/OPEN; the Nov 28 failed cycle and Nov 27 missing row are not reconciled by the health publisher.
+- [ ] **Release blockers unchanged:** FL-146 owner-only OAuth renewal, FL-096/FL-098, FL-143/144/145, runtime identity, versioned telemetry, approval-first PDF/renderer and business-outcome evidence remain open.
+
+**Decision:** Retrieval reliability has now failed on consecutive observed scheduled cycles (Nov 25, Nov 26, Nov 28) with a missing Nov 27 telemetry row. The sourcing worker remains fail-closed, but scheduler, retrieval and terminal-observability stability are not proven. Overall product DoD remains **INCOMPLETE / RELEASE HOLD**. No worker, trigger, protected configuration, or deployment was changed by this monitor.
