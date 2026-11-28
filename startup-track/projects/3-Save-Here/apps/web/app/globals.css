@@ -792,3 +792,6 @@ button {
 .added-tag{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9f1c9!important;background:rgba(203,229,106,.14)!important;border-color:rgba(203,229,106,.3)!important}
 .visual-fallback span{max-width:82%;display:-webkit-box;overflow:hidden;text-align:center;-webkit-box-orient:vertical;-webkit-line-clamp:3}
 .visual-fallback small{text-align:center}
+
+
+.google-button{width:100%;min-height:46px;display:flex;align-items:center;justify-content:center;gap:9px;color:var(--text);background:#fff;border:1px solid rgba(0,0,0,.14);border-radius:14px;font-weight:760;cursor:pointer;transition:transform 160ms ease,filter 160ms ease}.google-button:hover{transform:translateY(-1px);filter:brightness(.97)}.google-button:focus-visible{outline:3px solid rgba(203,229,106,.6);outline-offset:2px}.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}.auth-divider::before,.auth-divider::after{content:"";height:1px;flex:1;background:var(--line)}
