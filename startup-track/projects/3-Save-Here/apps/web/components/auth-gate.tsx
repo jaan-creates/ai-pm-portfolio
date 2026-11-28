@@ -6,7 +6,11 @@ import { configureSupabaseBrowserClient, createSupabaseBrowserClient } from "@/l
 import { PersonalLibrary } from "@/components/personal-library";
 import type { Session } from "@supabase/supabase-js";
 
-function GoogleMark() {\n  return <svg className="google-button-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.23c0-.7-.06-1.38-.18-2.03H12v3.84h5.38a4.6 4.6 0 0 1-1.99 3.02v2.51h3.22c1.88-1.73 2.99-4.28 2.99-7.34Z"/><path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.61-2.43l-3.22-2.51c-.9.6-2.04.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.06v2.59A9.98 9.98 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.39 13.89A6 6 0 0 1 6.07 12c0-.66.11-1.3.32-1.89V7.52H3.06A10 10 0 0 0 2 12c0 1.61.39 3.13 1.06 4.48l3.33-2.59Z"/><path fill="#EA4335" d="M12 5.98c1.47 0 2.79.51 3.83 1.51l2.87-2.87C16.95 2.91 14.7 2 12 2a9.98 9.98 0 0 0-8.94 5.52l3.33 2.59C7.18 7.74 9.39 5.98 12 5.98Z"/></svg>;\n}\n\nexport function AuthGate() {
+function GoogleMark() {
+  return <svg className="google-button-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.23c0-.7-.06-1.38-.18-2.03H12v3.84h5.38a4.6 4.6 0 0 1-1.99 3.02v2.51h3.22c1.88-1.73 2.99-4.28 2.99-7.34Z"/><path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.61-2.43l-3.22-2.51c-.9.6-2.04.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.06v2.59A9.98 9.98 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.39 13.89A6 6 0 0 1 6.07 12c0-.66.11-1.3.32-1.89V7.52H3.06A10 10 0 0 0 2 12c0 1.61.39 3.13 1.06 4.48l3.33-2.59Z"/><path fill="#EA4335" d="M12 5.98c1.47 0 2.79.51 3.83 1.51l2.87-2.87C16.95 2.91 14.7 2 12 2a9.98 9.98 0 0 0-8.94 5.52l3.33 2.59C7.18 7.74 9.39 5.98 12 5.98Z"/></svg>;
+}
+
+export function AuthGate() {
   const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -55,7 +59,10 @@ function GoogleMark() {\n  return <svg className="google-button-icon" viewBox="0
       provider: "google",
       options: { redirectTo: window.location.origin, queryParams: { prompt: "select_account" } },
     });
-    if (error) {\n      const providerDisabled = error.code === "validation_failed" || error.message.toLowerCase().includes("provider is not enabled");\n      setMessage(providerDisabled ? "Google sign-in is not enabled yet. Use email sign-in, or enable Google in Supabase Auth → Providers." : "Google sign-in could not start. Use email sign-in instead.");\n    }
+    if (error) {
+      const providerDisabled = error.code === "validation_failed" || error.message.toLowerCase().includes("provider is not enabled");
+      setMessage(providerDisabled ? "Google sign-in is not enabled yet. Use email sign-in, or enable Google in Supabase Auth → Providers." : "Google sign-in could not start. Use email sign-in instead.");
+    }
   }
 
   async function sendLink(event: FormEvent) {
