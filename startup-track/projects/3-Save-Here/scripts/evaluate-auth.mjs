@@ -13,6 +13,8 @@ const checks = [
   ["OAuth returns to the current origin", includes(authGate, "redirectTo: window.location.origin")],
   ["Magic-link fallback remains available", includes(authGate, "signInWithOtp")],
   ["OAuth failure explains fallback", includes(authGate, "Use email sign-in instead")],
+  ["Disabled Google provider is explained", includes(authGate, "provider is not enabled") && includes(authGate, "enable Google in Supabase")],
+  ["Google button has an accessible branded mark", includes(authGate, "GoogleMark") && includes(authGate, "aria-hidden=\"true\"")],
   ["Session listener updates the account view", includes(authGate, "onAuthStateChange")],
   ["Sign out remains available", includes(library, "signOut")],
   ["Library resolves the authenticated user", includes(library, "auth.getUser()")],
