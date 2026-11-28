@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { LockKeyhole, Mail, Sparkles } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { configureSupabaseBrowserClient, createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { PersonalLibrary } from "@/components/personal-library";
 import type { Session } from "@supabase/supabase-js";
 
@@ -11,11 +11,27 @@ export function AuthGate() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
-  const supabase = createSupabaseBrowserClient();
+  const [configError, setConfigError] = useState(false);
+  const [supabase, setSupabase] = useState(() => createSupabaseBrowserClient());
 
   useEffect(() => {
+    if (supabase) return;
     let active = true;
-    if (!supabase) return () => { active = false; };
+    void fetch("/api/auth/config", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("config unavailable")))
+      .then((config: { url: string; anonKey: string }) => {
+        if (!active) return;
+        const client = configureSupabaseBrowserClient(config.url, config.anonKey);
+        if (client) setSupabase(client);
+        else setConfigError(true);
+      })
+      .catch(() => { if (active) setConfigError(true); });
+    return () => { active = false; };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true;
     void supabase.auth.getSession().then(({ data }) => {
       if (active) {
         setSession(data.session);
@@ -37,10 +53,7 @@ export function AuthGate() {
     }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-        queryParams: { prompt: "select_account" },
-      },
+      options: { redirectTo: window.location.origin, queryParams: { prompt: "select_account" } },
     });
     if (error) setMessage("Google sign-in could not start. Use email sign-in instead.");
   }
@@ -59,11 +72,11 @@ export function AuthGate() {
     setMessage(error ? error.message : "Check your email for the secure sign-in link.");
   }
 
-  if (!supabase) {
+  if (configError && !supabase) {
     return <main className="auth-screen"><section className="auth-card"><p className="auth-message" role="alert">Sign-in configuration is unavailable.</p></section></main>;
   }
-  if (busy) {
-    return <main className="auth-screen"><section className="auth-card"><div className="auth-brand"><span className="auth-brand-mark"><Sparkles size={18} /></span><span>Save Here</span></div><p className="auth-lede">Loading your private library…</p></section></main>;
+  if (busy || !supabase) {
+    return <main className="auth-screen"><section className="auth-card"><div className="auth-brand"><span className="auth-brand-mark"><Sparkles size={18} /></span><span>Save Here</span></div><p className="auth-lede">Preparing your private sign-in…</p></section></main>;
   }
   if (!session) {
     return (
