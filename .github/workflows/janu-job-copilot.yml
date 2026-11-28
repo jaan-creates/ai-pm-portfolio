@@ -8,6 +8,7 @@ on:
       - janu-job-copilot/p1a-release
     paths:
       - 'startup-track/projects/2-janu-job-copilot/scripts/**'
+      - 'startup-track/projects/2-janu-job-copilot/runtime/**'
       - '.github/workflows/janu-job-copilot.yml'
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -15,8 +16,22 @@ on:
       - main
     paths:
       - 'startup-track/projects/2-janu-job-copilot/scripts/**'
+      - 'startup-track/projects/2-janu-job-copilot/runtime/**'
       - '.github/workflows/janu-job-copilot.yml'
   workflow_dispatch:
+    inputs:
+      verify_run:
+        description: 'Verify an already pushed candidate after approved pin promotion (original run ID)'
+        required: false
+        type: string
+      verify_attempt:
+        description: 'Original candidate run attempt'
+        required: false
+        type: string
+      verify_hash:
+        description: 'fullProjectSha256 from the original push manifest (script, HTML and manifest)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -26,8 +41,57 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  release-readiness-probe:
+    if: github.event_name != 'workflow_dispatch' || (inputs.verify_run == '' && inputs.verify_attempt == '' && inputs.verify_hash == '')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check release credential availability
+        shell: bash
+        run: test -n "$CLASPRC_JSON" && test -n "$CLASP_JSON"
+      - name: Install release CLI
+        run: npm install --global @google/clasp@3.4.1
+      - name: Pull live preimage without mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p .janu-readonly
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > .janu-readonly/.clasp.json
+          (cd .janu-readonly && clasp pull)
+          node startup-track/projects/2-janu-job-copilot/scripts/validate-release.mjs .janu-readonly
+      - name: Test URL intake against an ephemeral live-source copy
+        shell: bash
+        run: |
+          node startup-track/projects/2-janu-job-copilot/scripts/patch-source-inbox-admission.mjs .janu-readonly
+          node startup-track/projects/2-janu-job-copilot/scripts/test-source-inbox-admission.mjs .janu-readonly
+      - name: Probe live script execution authority without worker mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd .janu-readonly && clasp --json run runRendererCanaryControlStatus --params '[]') > /tmp/janu-readonly-probe.json
+          node - <<'NODE'
+          const fs=require('fs'),raw=fs.readFileSync('/tmp/janu-readonly-probe.json','utf8');
+          let result;try{result=JSON.parse(raw)}catch{throw Error('Release credential cannot execute the read-only live diagnostic')}
+          if(result.error||!result.response||result.response.contract!=='CANARY-SCHEDULER-HANDOFF-001')throw Error('Read-only live diagnostic returned no control status');
+          console.log('Release credential pulled live source and read control status successfully');
+          NODE
+      - name: Snapshot canonical API pin without mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd .janu-readonly && node "$GITHUB_WORKSPACE/startup-track/projects/2-janu-job-copilot/scripts/manage-canonical-pin.mjs" snapshot /tmp/janu-readonly-pin.json)
   deploy-production:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.head_ref == 'janu-job-copilot/apps-script-ci' || github.head_ref == 'janu-job-copilot/p1a-release'
+    needs: release-readiness-probe
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["main","janu-job-copilot/apps-script-ci","janu-job-copilot/p1a-release"]'), github.ref_name) && inputs.verify_run == '' && inputs.verify_attempt == '' && inputs.verify_hash == '')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -60,7 +124,7 @@ jobs:
           test -n "$CLASPRC_JSON" || { echo 'Missing JANU_CLASPRC_JSON'; exit 2; }
           test -n "$CLASP_JSON" || { echo 'Missing JANU_CLASP_JSON'; exit 2; }
       - name: Install clasp
-        run: npm install --global @google/clasp
+        run: npm install --global @google/clasp@3.4.1
       - name: Prepare ephemeral Apps Script workspace
         shell: bash
         run: |
@@ -77,10 +141,16 @@ jobs:
       - name: Snapshot pre-deploy source for in-run rollback
         shell: bash
         run: |
-          rm -rf /tmp/janu-predeploy
-          mkdir -p /tmp/janu-predeploy
-          find "$LIVE_DIR" -maxdepth 1 -type f \( -name '*.gs' -o -name '*.js' -o -name 'appsscript.json' \) -exec cp {} /tmp/janu-predeploy/ \;
-          test -n "$(find /tmp/janu-predeploy -maxdepth 1 -type f -print -quit)" || { echo 'Pre-deploy source backup is empty'; exit 2; }
+          backup="$(mktemp -d)"
+          node "$PROJECT_DIR/scripts/check-source-snapshot.mjs" --backup "$LIVE_DIR" "$backup"
+          echo "JANU_PREIMAGE=$backup" >> "$GITHUB_ENV"
+      - name: Snapshot canonical API executable for rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="$RUNNER_TEMP/janu-canonical-pin.json"
+          (cd "$LIVE_DIR" && node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/manage-canonical-pin.mjs" snapshot "$state")
+          echo "JANU_PIN_STATE=$state" >> "$GITHUB_ENV"
       - name: Assert accepted P0 baseline
         shell: bash
         run: |
@@ -118,6 +188,12 @@ jobs:
         run: node "$PROJECT_DIR/scripts/patch-p1a-vacancy-worker.mjs" "$LIVE_DIR"
       - name: Wire RetrievalProvider into JD worker
         run: node "$PROJECT_DIR/scripts/patch-p1a-jd-worker.mjs" "$LIVE_DIR"
+      - name: Add deterministic queue admission quarantine
+        run: node "$PROJECT_DIR/scripts/patch-recovery-admission.mjs" "$LIVE_DIR"
+      - name: Add candidate claim wording guard
+        run: node "$PROJECT_DIR/scripts/patch-candidate-claim-guard.mjs" "$LIVE_DIR"
+      - name: Defer official PDF until candidate approval
+        run: node "$PROJECT_DIR/scripts/patch-approval-before-pdf.mjs" "$LIVE_DIR"
       - name: Add connected release provenance writeback
         run: node "$PROJECT_DIR/scripts/patch-release-provenance.mjs" "$LIVE_DIR"
       - name: Add TRACE-GOLDEN-01 trace and same-fixture runner
@@ -128,8 +204,76 @@ jobs:
         run: node "$PROJECT_DIR/scripts/test-p1a-score-completion-admission.mjs" "$PROJECT_DIR"
       - name: Apply official ATS JD retrieval routes
         run: node "$PROJECT_DIR/scripts/patch-p1a-jd-official-ats.mjs" "$LIVE_DIR"
+      - name: Reject terminal queue replay
+        run: node "$PROJECT_DIR/scripts/patch-queue-claim-status.mjs" "$LIVE_DIR"
+      - name: Lock direct queue execution and flush durable state
+        run: node "$PROJECT_DIR/scripts/patch-queue-run-lock.mjs" "$LIVE_DIR"
+      - name: Serialize queue admission across entrypoints
+        run: node "$PROJECT_DIR/scripts/patch-queue-admission-lock.mjs" "$LIVE_DIR"
+      - name: Preserve completed worker outcome after elapsed-time warning
+        run: node "$PROJECT_DIR/scripts/patch-post-worker-timeout.mjs" "$LIVE_DIR"
+      - name: Hold interrupted queue work with unknown side effects
+        run: node "$PROJECT_DIR/scripts/patch-stale-queue-hold.mjs" "$LIVE_DIR"
+      - name: Verify stale lease outcomes cannot silently cancel uncertain work
+        run: node "$PROJECT_DIR/scripts/test-stale-queue-hold.mjs"
+      - name: Hold worker errors with unknown side effects and honor retry due time
+        run: node "$PROJECT_DIR/scripts/patch-queue-worker-uncertainty.mjs" "$LIVE_DIR"
+      - name: Age eligible queue work to prevent application starvation
+        run: node "$PROJECT_DIR/scripts/patch-queue-fairness.mjs" "$LIVE_DIR"
+      - name: Prevent continuation from duplicating recovery-held work
+        run: node "$PROJECT_DIR/scripts/patch-queue-hold-admission.mjs" "$LIVE_DIR"
+      - name: Verify held work cannot be admitted twice
+        run: node "$PROJECT_DIR/scripts/test-queue-hold-admission.mjs" "$LIVE_DIR"
+      - name: Persist worker completion proof before queue success
+        run: node "$PROJECT_DIR/scripts/patch-queue-completion-receipt.mjs" "$LIVE_DIR"
+      - name: Witness disabled contact worker output by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-contact-witness.mjs" "$LIVE_DIR"
+      - name: Witness company worker row, flag and cost by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-company-witness.mjs" "$LIVE_DIR"
+      - name: Witness saved JD and score admission by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-jd-existing-witness.mjs" "$LIVE_DIR"
+      - name: Witness newly retrieved JD and score admission by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-jd-recovered-witness.mjs" "$LIVE_DIR"
+      - name: Witness closed vacancy and cancelled work by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-jd-closed-witness.mjs" "$LIVE_DIR"
+      - name: Witness complete score map and resume admission by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-score-witness.mjs" "$LIVE_DIR"
+      - name: Witness completed resume output by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-resume-witness.mjs" "$LIVE_DIR"
+      - name: Witness complete artifact migration by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-migration-witness.mjs" "$LIVE_DIR"
+      - name: Witness complete QA pass or repair by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-qa-witness.mjs" "$LIVE_DIR"
+      - name: Witness direct and source-intake PDF capture by exact queue attempt
+        run: node "$PROJECT_DIR/scripts/patch-queue-pdf-witness.mjs" "$LIVE_DIR"
+      - name: Admit handpicked Sources Inbox URLs into the existing JD worker
+        run: node "$PROJECT_DIR/scripts/patch-source-inbox-admission.mjs" "$LIVE_DIR"
+      - name: Test handpicked URL intake and deduplication
+        run: node "$PROJECT_DIR/scripts/test-source-inbox-admission.mjs" "$LIVE_DIR"
+      - name: Verify completion receipt and fail-closed hold reconciliation
+        run: node "$PROJECT_DIR/scripts/test-queue-completion-receipt.mjs" "$LIVE_DIR"
+      - name: Verify company worker witness and partial-write hold
+        run: node "$PROJECT_DIR/scripts/test-queue-company-witness.mjs" "$LIVE_DIR"
+      - name: Verify saved JD witness and unresolved JD paths
+        run: node "$PROJECT_DIR/scripts/test-queue-jd-existing-witness.mjs" "$LIVE_DIR"
+      - name: Verify newly retrieved JD witness and partial writes
+        run: node "$PROJECT_DIR/scripts/test-queue-jd-recovered-witness.mjs" "$LIVE_DIR"
+      - name: Verify closed-vacancy witness and partial writes
+        run: node "$PROJECT_DIR/scripts/test-queue-jd-closed-witness.mjs" "$LIVE_DIR"
+      - name: Verify score-map witness and partial writes
+        run: node "$PROJECT_DIR/scripts/test-queue-score-witness.mjs" "$LIVE_DIR"
+      - name: Verify resume witness and partial writes
+        run: node "$PROJECT_DIR/scripts/test-queue-resume-witness.mjs" "$LIVE_DIR"
+      - name: Verify migration witness and protected preimages
+        run: node "$PROJECT_DIR/scripts/test-queue-migration-witness.mjs" "$LIVE_DIR"
+      - name: Verify QA pass and repair witnesses with partial writes
+        run: node "$PROJECT_DIR/scripts/test-queue-qa-witness.mjs" "$LIVE_DIR"
+      - name: Verify PDF capture witnesses and partial writes
+        run: node "$PROJECT_DIR/scripts/test-queue-pdf-witness.mjs" "$LIVE_DIR"
       - name: Run official ATS JD retrieval regression
         run: node "$PROJECT_DIR/scripts/test-p1a-jd-official-ats.mjs" "$PROJECT_DIR"
+      - name: Stamp the candidate for independent runtime comparison
+        run: node "$PROJECT_DIR/scripts/stamp-release-build.mjs" "$LIVE_DIR" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT"
       - name: JavaScript syntax validation
         shell: bash
         run: |
@@ -200,49 +344,68 @@ jobs:
       - name: Verify deployed source hash and rollback on mismatch
         shell: bash
         run: |
-          (cd "$LIVE_DIR" && clasp pull)
-          ACTUAL_SOURCE_HASH="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$LIVE_DIR" --hash-only)"
-          if [ "$ACTUAL_SOURCE_HASH" != "$EXPECTED_SOURCE_HASH" ]; then
-            echo "Deployed source hash mismatch: expected $EXPECTED_SOURCE_HASH, got $ACTUAL_SOURCE_HASH"
-            find "$LIVE_DIR" -maxdepth 1 -type f \( -name '*.gs' -o -name '*.js' -o -name 'appsscript.json' \) -delete
-            cp /tmp/janu-predeploy/* "$LIVE_DIR"/
-            (cd "$LIVE_DIR" && clasp push --force)
-            echo 'Pre-deploy source restored after hash mismatch.'
+          set -euo pipefail
+          pulled="$(mktemp -d)"
+          cp "$LIVE_DIR/.clasp.json" "$pulled/.clasp.json"
+          (cd "$pulled" && clasp pull)
+          ACTUAL_SOURCE_HASH="$(node "$PROJECT_DIR/scripts/deployment-manifest.mjs" "$pulled" --hash-only)"
+          if ! node "$PROJECT_DIR/scripts/check-source-snapshot.mjs" "$LIVE_DIR" "$pulled"; then
+            echo 'Post-push source mismatch. Attempting the existing in-run rollback.'
+            restore="$(mktemp -d)"
+            cp "$LIVE_DIR/.clasp.json" "$restore/.clasp.json"
+            cp -R "$JANU_PREIMAGE/." "$restore/"
+            (cd "$restore" && clasp push --force)
+            reread="$(mktemp -d)"
+            cp "$LIVE_DIR/.clasp.json" "$reread/.clasp.json"
+            (cd "$reread" && clasp pull)
+            node "$PROJECT_DIR/scripts/check-source-snapshot.mjs" "$JANU_PREIMAGE" "$reread"
+            echo 'Rollback readback matched. Candidate rejected.'
             exit 12
           fi
+          test "$EXPECTED_SOURCE_HASH" = "$ACTUAL_SOURCE_HASH"
           echo "DEPLOYED_SOURCE_HASH=$ACTUAL_SOURCE_HASH" >> "$GITHUB_ENV"
           echo "Verified deployed source hash: $ACTUAL_SOURCE_HASH"
-      - name: Persist and verify connected deployment provenance
+      - name: Promote canonical API executable and verify runtime identity
         working-directory: .janu-live
         shell: bash
         run: |
-          # These functions were just pushed in this workflow. Execute against current HEAD/dev source;
-          # --nondev targets the previously deployed executable and can hide newly pushed functions.
-          clasp run runReleaseProvenanceContractSelfTest
-          PARAMS="$(node -e 'console.log(JSON.stringify([process.env.GITHUB_SHA,process.env.GITHUB_RUN_ID,process.env.GITHUB_RUN_ATTEMPT,process.env.DEPLOYED_SOURCE_HASH,process.env.EXPECTED_VERSION,process.env.EXPECTED_SUITE]))')"
-          echo 'Persisting privacy-safe deployment provenance to connected product state.'
-          clasp run recordDeploymentProvenance --params "$PARAMS"
-      - name: Verify owned Apply admission self-test immediately
-        working-directory: .janu-live
-        run: clasp run runP1AOwnedApplyAdmissionSelfTest --nondev
-      - name: Attempt P1-A self-test immediately
-        continue-on-error: true
-        working-directory: .janu-live
-        run: clasp run runP1AContractSelfTest --nondev
-      - name: Attempt P1-B self-test immediately
-        continue-on-error: true
-        working-directory: .janu-live
-        run: clasp run runP1BContractSelfTest --nondev
-      - name: Attempt P1-C self-test immediately
-        continue-on-error: true
-        working-directory: .janu-live
-        run: clasp run runP1CContractSelfTest --nondev
-      - name: Attempt bounded health/control tick
-        continue-on-error: true
-        working-directory: .janu-live
-        run: clasp run phase1HealthTick --nondev
+          set -euo pipefail
+          pin="$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/manage-canonical-pin.mjs"
+          if node "$pin" promote "$JANU_PIN_STATE" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+            && node "$pin" verify "$JANU_PIN_STATE" \
+            && node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/verify-runtime-release.mjs"; then
+            exit 0
+          fi
+          echo 'Canonical pin promotion or runtime identity failed. Restoring pin and source.'
+          set +e
+          node "$pin" rollback "$JANU_PIN_STATE"
+          pin_status=$?
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          restore="$(mktemp -d)"
+          cp "$LIVE_DIR/.clasp.json" "$restore/.clasp.json"
+          cp -R "$JANU_PREIMAGE/." "$restore/"
+          set +e
+          (cd "$restore" && clasp push --force)
+          source_status=$?
+          set -e
+          reread="$(mktemp -d)"
+          cp "$LIVE_DIR/.clasp.json" "$reread/.clasp.json"
+          (cd "$reread" && clasp pull)
+          set +e
+          node "$PROJECT_DIR/scripts/check-source-snapshot.mjs" "$JANU_PREIMAGE" "$reread"
+          readback_status=$?
+          set -e
+          if (( pin_status != 0 || source_status != 0 || readback_status != 0 )); then
+            echo 'Rollback failed or readback mismatched. Manual recovery required.'
+            exit 13
+          fi
+          echo 'Canonical pin and pre-push source restored and independently read back. Candidate rejected.'
+          exit 12
       - name: Deployment summary
         if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
         shell: bash
         run: |
           echo '## Janu Job Copilot P1 deployment' >> "$GITHUB_STEP_SUMMARY"
@@ -250,7 +413,7 @@ jobs:
           echo "- Git commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "- GitHub Actions run: $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
           echo "- Verified transformed-source SHA-256: ${DEPLOYED_SOURCE_HASH:-not verified}" >> "$GITHUB_STEP_SUMMARY"
-          echo '- Verified deployment identity is persisted to connected Job Copilot Worker State only after post-push source-hash verification.' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Runtime acceptance job status: $JOB_STATUS" >> "$GITHUB_STEP_SUMMARY"
           echo '- Privacy-safe source manifest uploaded; source text is not published as an artifact.' >> "$GITHUB_STEP_SUMMARY"
           echo '- P1 contract telemetry is not treated as end-to-end feature completion.' >> "$GITHUB_STEP_SUMMARY"
           echo '- TRACE-GOLDEN-01 adds bounded same-fixture trace reconstruction and does not create an independent retrieval/provider path.' >> "$GITHUB_STEP_SUMMARY"
@@ -263,3 +426,47 @@ jobs:
           echo '- Existing P0 release validator remains mandatory before push.' >> "$GITHUB_STEP_SUMMARY"
           echo '- Documentation/governance changes are validated separately and do not trigger this production deploy workflow.' >> "$GITHUB_STEP_SUMMARY"
           echo '- No other ai-pm-portfolio project directories are read or modified.' >> "$GITHUB_STEP_SUMMARY"
+
+  verify-existing-candidate:
+    if: github.event_name == 'workflow_dispatch' && contains(fromJSON('["main","janu-job-copilot/apps-script-ci","janu-job-copilot/p1a-release"]'), github.ref_name) && (inputs.verify_run != '' || inputs.verify_attempt != '' || inputs.verify_hash != '')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PROJECT_DIR: startup-track/projects/2-janu-job-copilot
+      EXPECTED_VERSION: '1.3.8'
+      EXPECTED_SUITE: 'p0-regression-v19'
+      ORIGINAL_RUN: ${{ inputs.verify_run }}
+      ORIGINAL_ATTEMPT: ${{ inputs.verify_attempt }}
+      ORIGINAL_PROJECT_HASH: ${{ inputs.verify_hash }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check original release identity inputs
+        shell: bash
+        run: |
+          [[ "$ORIGINAL_RUN" =~ ^[1-9][0-9]*$ && "$ORIGINAL_ATTEMPT" =~ ^[1-9][0-9]*$ && "$ORIGINAL_PROJECT_HASH" =~ ^[a-f0-9]{64}$ ]]
+      - name: Install release CLI
+        run: npm install --global @google/clasp@3.4.1
+      - name: Verify original build without pushing source
+        shell: bash
+        env:
+          CLASPRC_JSON: ${{ secrets.JANU_CLASPRC_JSON }}
+          CLASP_JSON: ${{ secrets.JANU_CLASP_JSON }}
+        run: |
+          set -euo pipefail
+          umask 077
+          scratch="$(mktemp -d)"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > "$scratch/.clasp.json"
+          cd "$scratch"
+          clasp pull
+          manifest="$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/deployment-manifest.mjs"
+          actual="$(node "$manifest" "$scratch" --full-project-hash)"
+          test "$actual" = "$ORIGINAL_PROJECT_HASH"
+          DEPLOYED_SOURCE_HASH="$(node "$manifest" "$scratch" --hash-only)"
+          export DEPLOYED_SOURCE_HASH
+          GITHUB_RUN_ID="$ORIGINAL_RUN" GITHUB_RUN_ATTEMPT="$ORIGINAL_ATTEMPT" node "$GITHUB_WORKSPACE/$PROJECT_DIR/scripts/verify-runtime-release.mjs"
